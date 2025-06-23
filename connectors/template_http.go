@@ -59,12 +59,9 @@ func (c *TemplateHTTPConnector) Execute(query interface{}) (interface{}, error) 
 	case string:
 		// Simple URL string
 		url = q
-	case HTTPQuery:
-		// Structured HTTP query (for compatibility)
-		url = q.URL
-	case TemplateHTTPQuery:
-		// Enhanced query with headers, method, etc.
-		return c.executeAdvanced(q)
+	// TEMPLATE: Add support for structured queries as needed
+	// case CustomQueryType:
+	//     return c.executeCustom(q)
 	default:
 		return nil, fmt.Errorf("unsupported query type: %T", query)
 	}

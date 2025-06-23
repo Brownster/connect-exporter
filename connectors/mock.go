@@ -44,10 +44,6 @@ func (m *MockConnector) Execute(query interface{}) (interface{}, error) {
 	switch q := query.(type) {
 	case string:
 		key = q
-	case HTTPQuery:
-		key = q.URL
-	case TemplateHTTPQuery:
-		key = q.URL
 	default:
 		key = fmt.Sprintf("%+v", query)
 	}
@@ -86,7 +82,7 @@ func (m *MockConnector) AddError(query string, err error) {
 
 // AddErrorString adds a predefined error message for a query.
 func (m *MockConnector) AddErrorString(query, errMsg string) {
-	m.errors[query] = fmt.Errorf(errMsg)
+	m.errors[query] = fmt.Errorf("%s", errMsg)
 }
 
 // AddResponseWithDelay adds a response with a simulated delay.

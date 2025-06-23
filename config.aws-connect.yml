@@ -1,0 +1,74 @@
+# AWS Connect Exporter Configuration
+# Production configuration template for AWS Connect monitoring
+
+# Server configuration
+listen_address: 127.0.0.1
+listen_port: 9090
+log_level: info
+
+# AWS Configuration
+aws:
+  # AWS region where your Connect instance is located
+  region: "us-east-1"
+  # AWS Connect Instance ARN - REQUIRED
+  # Format: arn:aws:connect:region:account-id:instance/instance-id
+  instance_arn: "arn:aws:connect:us-east-1:123456789012:instance/your-instance-id"
+
+# Collector Configuration
+collectors:
+  # Realtime Queue Metrics Collector
+  realtime_queue:
+    enabled: true
+    interval: 60  # Collection interval in seconds (1 minute)
+    
+  # Agent Status Collector  
+  agent_status:
+    enabled: true
+    interval: 300  # Collection interval in seconds (5 minutes)
+
+# Global settings
+global:
+  # Default timeout for all operations
+  timeout: 30s
+  
+  # Default labels to add to all metrics
+  labels:
+    environment: "production"
+    service: "aws-connect"
+    
+  # Retry configuration
+  retry:
+    max_attempts: 3
+    backoff_duration: 1s
+    max_backoff_duration: 5s
+
+# Optional: Custom metric configurations
+metrics:
+  # Metric filtering (disable unwanted metrics)
+  disabled_metrics: []
+  
+  # Custom metric labels (applied to all metrics)
+  custom_labels:
+    team: "contact-center"
+    cost_center: "customer-service"
+
+# AWS IAM Permissions Required:
+# - connect:ListQueues
+# - connect:GetCurrentMetricData  
+# - connect:ListAgentStatuses
+#
+# Example IAM Policy:
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [
+#     {
+#       "Effect": "Allow",
+#       "Action": [
+#         "connect:ListQueues",
+#         "connect:GetCurrentMetricData",
+#         "connect:ListAgentStatuses"
+#       ],
+#       "Resource": "arn:aws:connect:*:*:instance/your-instance-id"
+#     }
+#   ]
+# }
