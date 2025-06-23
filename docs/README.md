@@ -1,6 +1,6 @@
 # Documentation
 
-This folder contains developer resources for **RSS Exporter**.
+This folder contains developer resources for **AWS Connect Exporter**.
 
 - [Architecture Overview](architecture.md)
 - [Developer Guide](developer-guide.md)

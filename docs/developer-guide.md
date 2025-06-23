@@ -1,6 +1,6 @@
 # Developer Guide
 
-This guide provides instructions for building, testing and extending **RSS Exporter**.
+This guide provides instructions for building, testing and extending **AWS Connect Exporter**.
 
 ## Requirements
 
