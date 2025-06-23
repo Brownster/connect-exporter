@@ -54,10 +54,11 @@ const ITEMS_PER_PAGE = 2;       // Number of items returned per page
 const VALID_METRICS = {
   CONTACTS_IN_QUEUE: 'COUNT',
   OLDEST_CONTACT_AGE: 'SECONDS',
-  AGENTS_ON_CALL: 'COUNT',
+  AGENTS_ON_CONTACT: 'COUNT',
   AGENTS_AVAILABLE: 'COUNT',
   AGENTS_STAFFED: 'COUNT',
   AGENTS_AFTER_CONTACT_WORK: 'COUNT',
+  AGENTS_ERROR: 'COUNT',
   CONTACTS_SCHEDULED: 'COUNT'
 };
 
@@ -147,6 +148,18 @@ const MOCK_QUEUES = {
     RoutingProfile: 'tf-support',
     StaffingTarget: { min: 20, max: 70 },
     Channel: 'CHAT',
+    Priority: 2,
+    HoursOfOperation: 'ExtendedHours',
+    OutboundCallerId: '+987654321'
+  },
+  'monitoring_task': {
+    Id: 'queue-task-999',
+    Name: 'Monitoring Task Queue',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-monitoring-task-01`,
+    QueueType: 'AGENT',
+    RoutingProfile: 'tf-support',
+    StaffingTarget: { min: 10, max: 25 },
+    Channel: 'TASK',
     Priority: 2,
     HoursOfOperation: 'ExtendedHours',
     OutboundCallerId: '+987654321'
@@ -246,20 +259,20 @@ const MetricGenerators = {
       value: baseValues.CONTACTS_IN_QUEUE.value * (Math.floor(Math.random() * 20) + 10),
       unit: VALID_METRICS.OLDEST_CONTACT_AGE
     }),
-    AGENTS_ON_CALL: (queue, baseValues) => {
-      // AGENTS_ON_CALL is some fraction of AGENTS_STAFFED, 
+    AGENTS_ON_CONTACT: (queue, baseValues) => {
+      // AGENTS_ON_CONTACT is some fraction of AGENTS_STAFFED,
       // but at least as many as we have contacts in queue
-      const maxAgentsForCalls = Math.floor(baseValues.AGENTS_STAFFED.value * 0.7);
-      const minAgentsNeeded = Math.min(baseValues.CONTACTS_IN_QUEUE.value, maxAgentsForCalls);
+      const maxAgentsForContacts = Math.floor(baseValues.AGENTS_STAFFED.value * 0.7);
+      const minAgentsNeeded = Math.min(baseValues.CONTACTS_IN_QUEUE.value, maxAgentsForContacts);
       return {
-        value: Math.max(minAgentsNeeded, Math.floor(maxAgentsForCalls * 0.6)),
-        unit: VALID_METRICS.AGENTS_ON_CALL
+        value: Math.max(minAgentsNeeded, Math.floor(maxAgentsForContacts * 0.6)),
+        unit: VALID_METRICS.AGENTS_ON_CONTACT
       };
     },
     AGENTS_AVAILABLE: (queue, baseValues) => {
       // AGENTS_AVAILABLE = AGENTS_STAFFED - busyAgents - acwAgents - otherStates
-      const busyAgents = baseValues.AGENTS_ON_CALL.value;
-      const acwAgents = Math.floor(baseValues.AGENTS_ON_CALL.value * 0.2);
+      const busyAgents = baseValues.AGENTS_ON_CONTACT.value;
+      const acwAgents = Math.floor(baseValues.AGENTS_ON_CONTACT.value * 0.2);
       const otherStates = Math.floor(baseValues.AGENTS_STAFFED.value * 0.2);
       const availableAgents = Math.max(0, baseValues.AGENTS_STAFFED.value - busyAgents - acwAgents - otherStates);
       return {
@@ -268,9 +281,14 @@ const MetricGenerators = {
       };
     },
     AGENTS_AFTER_CONTACT_WORK: (queue, baseValues) => ({
-      // AGENTS_AFTER_CONTACT_WORK is set to 20% of AGENTS_ON_CALL
-      value: Math.max(1, Math.floor(baseValues.AGENTS_ON_CALL.value * 0.2)),
+      // AGENTS_AFTER_CONTACT_WORK is set to 20% of AGENTS_ON_CONTACT
+      value: Math.max(1, Math.floor(baseValues.AGENTS_ON_CONTACT.value * 0.2)),
       unit: VALID_METRICS.AGENTS_AFTER_CONTACT_WORK
+    }),
+    AGENTS_ERROR: (queue, baseValues) => ({
+      // A small fraction of agents may be in error state
+      value: Math.floor(baseValues.AGENTS_STAFFED.value * 0.05),
+      unit: VALID_METRICS.AGENTS_ERROR
     }),
     CONTACTS_SCHEDULED: (queue, baseValues) => ({
       // Random number of scheduled contacts between 1 and 5
@@ -313,8 +331,9 @@ function validateMetrics(metrics) {
 
 /**
  * validateFilters(filters)
- * Ensures that each filter has a valid array of queue ARNs
- * and optionally a valid channel if specified.
+ * Ensures that each filter has a valid array of queue IDs
+ * and optionally valid channel information (single Channel or
+ * Channels array).
  * 
  * @param {Array} filters - Array of filter objects
  * @return {boolean} true if valid, false otherwise
@@ -362,21 +381,36 @@ function validateFilters(filters) {
         return found;
     });
 
-    // 4. Channel validation (if specified)
+    let channelsValid = true;
+
+    // 4a. Single channel validation (legacy)
     if (filters.Channel) {
         console.log('\n📡 Validating Channel:', filters.Channel);
-        if (!VALID_CHANNELS.includes(filters.Channel)) {
+        channelsValid = VALID_CHANNELS.includes(filters.Channel);
+        if (!channelsValid) {
             console.log('❌ Invalid channel. Valid channels are:', VALID_CHANNELS);
             return false;
         }
         console.log('✅ Channel validation passed');
     }
 
+    // 4b. Channels array validation (new style)
+    if (Array.isArray(filters.Channels)) {
+        console.log('\n📡 Validating Channels array:', filters.Channels);
+        channelsValid = filters.Channels.every(ch => VALID_CHANNELS.includes(ch));
+        if (!channelsValid) {
+            console.log('❌ Invalid channels. Valid channels are:', VALID_CHANNELS);
+            return false;
+        }
+        console.log('✅ Channels validation passed');
+    }
+
     // 5. Final result
     console.log('\n=== Filter Validation Result ===');
-    console.log(validQueues ? '✅ All validations passed' : '❌ Validation failed');
-    
-    return validQueues;
+    const result = validQueues && channelsValid;
+    console.log(result ? '✅ All validations passed' : '❌ Validation failed');
+
+    return result;
 }
 
 /****************************************************
@@ -571,10 +605,22 @@ app.all('/{*path}', (req, res, next) => {
             console.log('\n📊 Generating metrics...');
             const allMetricResults = [];
             const queueIds = body.Filters.Queues;
-            
+
+            const channelFilters = [];
+            if (body.Filters.Channel) {
+                channelFilters.push(body.Filters.Channel);
+            }
+            if (Array.isArray(body.Filters.Channels)) {
+                channelFilters.push(...body.Filters.Channels);
+            }
+
             queueIds.forEach(queueId => {
                 const queue = Object.values(MOCK_QUEUES).find(q => q.Id === queueId);
                 if (queue) {
+                    if (channelFilters.length > 0 && !channelFilters.includes(queue.Channel)) {
+                        console.log(`Skipping queue ${queue.Id} due to channel filter`);
+                        return;
+                    }
                     console.log(`Generating metrics for queue: ${queue.Name} (${queue.Id})`);
                     const generator = new MetricGenerator(queue);
                     const metrics = generator.generateMetrics(
