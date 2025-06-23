@@ -58,6 +58,9 @@ collectors:
 - `aws_connect_agent_status_display_order`
 - `aws_connect_agent_status_custom`
 
+All realtime queue metrics include a `channel` label. Possible values are
+`VOICE`, `CHAT`, or `TASK`.
+
 ## Required IAM Permissions
 
 - `connect:ListQueues`

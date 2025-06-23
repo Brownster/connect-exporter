@@ -148,6 +148,9 @@ CMD ["/aws-connect-exporter", "--config.file=/config.yml"]
 | `aws_connect_realtime_queue_agents_after_contact_work` | Gauge | Number of agents in after contact work | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 | `aws_connect_realtime_queue_agents_error` | Gauge | Number of agents in error state | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 
+The `channel` label indicates whether a queue handles `VOICE`, `CHAT`, or `TASK`
+contacts.
+
 ### Agent Status Metrics
 
 | Metric Name | Type | Description | Labels |
