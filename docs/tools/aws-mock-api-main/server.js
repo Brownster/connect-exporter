@@ -437,7 +437,10 @@ function paginateResults(items, nextToken) {
 /****************************************************
  * MAIN ROUTE HANDLER
  ****************************************************/
-app.all('*', (req, res, next) => {
+// Express 5.x no longer supports using `*` as a catch-all route
+// and will throw a `Missing parameter name` error via path-to-regexp.
+// Use a named wildcard parameter instead which also matches the root path.
+app.all('/{*path}', (req, res, next) => {
     console.log('\n=== Incoming Request ===');
     console.log('Method:', req.method);
     console.log('Path:', req.path);
@@ -615,7 +618,8 @@ app.post('/admin/errorRate', (req, res) => {
 });
 
 //OPTIONS handler for CORS preflight requests
-app.options('*', (req, res) => {
+// Express 5.x also rejects `*` here, so use a wildcard parameter
+app.options('/{*path}', (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header('Access-Control-Allow-Headers', '*');
