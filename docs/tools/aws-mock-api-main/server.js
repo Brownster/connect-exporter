@@ -154,6 +154,19 @@ const MOCK_QUEUES = {
 };
 
 /****************************************************
+ * MOCK AGENT STATUSES
+ *
+ * These entries simulate agent status objects returned
+ * by the AWS Connect ListAgentStatuses API.
+ ****************************************************/
+const MOCK_AGENT_STATUSES = [
+  { Id: 'status-001', Name: 'Available', Type: 'ROUTABLE' },
+  { Id: 'status-002', Name: 'Busy', Type: 'ROUTABLE' },
+  { Id: 'status-003', Name: 'After Contact Work', Type: 'ROUTABLE' },
+  { Id: 'status-004', Name: 'Custom Break', Type: 'CUSTOM' }
+];
+
+/****************************************************
  * SOPHISTICATED METRIC GENERATION
  * 
  * We separate metrics into baseMetrics and 
@@ -593,6 +606,41 @@ app.all('/{*path}', (req, res, next) => {
             console.error('\n❌ Internal error:', error);
             return res.status(500).json(AWS_ERRORS.INTERNAL_SERVICE_ERROR);
         }
+    }
+    else if (action === 'ListAgentStatuses' || req.path.includes('/agent-status/')) {
+        console.log('\n=== Processing Agent Status Request ===');
+
+        let instanceId;
+        if (req.path.includes('/agent-status/')) {
+            instanceId = req.path.split('/agent-status/')[1]?.split('?')[0];
+            console.log('📍 Extracted instanceId from path:', instanceId);
+        } else {
+            instanceId = req.query.InstanceId || req.body.InstanceId;
+            console.log('📍 Using instanceId from request:', instanceId);
+        }
+
+        if (!instanceId || instanceId !== INSTANCE_ID) {
+            console.log('❌ Invalid instanceId:', instanceId);
+            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+        }
+
+        const nextToken = req.query.nextToken || req.body.NextToken;
+        if (nextToken && isNaN(parseInt(nextToken))) {
+            console.log('Invalid nextToken:', nextToken);
+            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
+        }
+
+        const error = shouldError();
+        if (error) {
+            console.log('Random error triggered:', error);
+            return res.status(500).json(error);
+        }
+
+        const { items, nextToken: newNextToken } = paginateResults(MOCK_AGENT_STATUSES, nextToken);
+        return res.json({
+            AgentStatusSummaryList: items,
+            NextToken: newNextToken
+        });
     }
     
     // If not an AWS SDK request, continue to other routes
