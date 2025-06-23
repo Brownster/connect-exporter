@@ -1,9 +1,0 @@
-listen_address: 127.0.0.1
-listen_port: 9090
-log_level: info
-
-services:
-  - name: example-service
-    url: https://api.example.com/health
-    interval: 60
-  # TEMPLATE: Add your service configurations here
