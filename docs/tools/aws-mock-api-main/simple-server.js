@@ -183,6 +183,72 @@ const server = http.createServer((req, res) => {
         return;
     }
     
+    // Handle REST-style metrics endpoints (POST requests)
+    if (method === 'POST' && path.includes('/metrics/current/')) {
+        console.log('Handling REST-style GetCurrentMetricData request');
+        
+        if (shouldSimulateError()) {
+            console.log('Simulating error response');
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                __type: 'InternalServiceException',
+                message: 'Simulated server error'
+            }));
+            return;
+        }
+        
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            try {
+                const requestData = body ? JSON.parse(body) : {};
+                console.log('GetCurrentMetricData body:', body);
+                
+                const filters = requestData.Filters;
+                const queueIds = filters?.Queues || [];
+                const metrics = generateMetrics(queueIds);
+                
+                const response = {
+                    MetricResults: metrics
+                };
+                
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(response));
+            } catch (e) {
+                console.error('Error parsing GetCurrentMetricData request:', e);
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    __type: 'InvalidParameterException',
+                    message: 'Invalid request format'
+                }));
+            }
+        });
+        return;
+    }
+    
+    // Handle REST-style agent status endpoints (GET requests)
+    if (method === 'GET' && path.includes('/agent-status/')) {
+        console.log('Handling REST-style ListAgentStatuses request');
+        
+        if (shouldSimulateError()) {
+            console.log('Simulating error response');
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                __type: 'InternalServiceException',
+                message: 'Simulated server error'
+            }));
+            return;
+        }
+        
+        const response = {
+            AgentStatusSummaryList: MOCK_AGENT_STATUSES
+        };
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(response));
+        return;
+    }
+    
     // AWS Connect API endpoints (JSON over POST)
     if (method === 'POST' && path === '/') {
         const action = req.headers['x-amz-target'];
