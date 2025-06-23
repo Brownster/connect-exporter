@@ -47,14 +47,12 @@ func NewRealtimeQueueCollector(app *kingpin.Application, config connectors.AWSCo
 
 // RealtimeQueueScraper collects real-time metrics from AWS Connect queues
 type RealtimeQueueScraper struct {
-	config connectors.AWSConnectConfig
+	// No longer store config - get it from connector during scrape
 }
 
 // NewRealtimeQueueScraper creates a new scraper instance
 func NewRealtimeQueueScraper(app *kingpin.Application, config connectors.AWSConnectConfig) *RealtimeQueueScraper {
-	return &RealtimeQueueScraper{
-		config: config,
-	}
+	return &RealtimeQueueScraper{}
 }
 
 // Scrape performs the actual data collection
@@ -65,9 +63,12 @@ func (s *RealtimeQueueScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 		return nil, fmt.Errorf("invalid connector type: expected AWSConnectConnector, got %T", c)
 	}
 
+	// Get configuration from connector
+	config := conn.GetConfig()
+
 	logrus.WithFields(logrus.Fields{
-		"instance_arn":       s.config.AWS.InstanceARN,
-		"region":             s.config.AWS.Region,
+		"instance_arn":       config.AWS.InstanceARN,
+		"region":             config.AWS.Region,
 		"collector_version":  realtimeQueueCollectorVersion,
 	}).Debug("Starting realtime queue metrics collection")
 
@@ -78,7 +79,7 @@ func (s *RealtimeQueueScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 	}
 
 	if len(queues) == 0 {
-		logrus.WithField("instance_arn", s.config.AWS.InstanceARN).Warn("No queues found for instance")
+		logrus.WithField("instance_arn", config.AWS.InstanceARN).Warn("No queues found for instance")
 		return []maas.Metric{}, nil
 	}
 
@@ -110,7 +111,7 @@ func (s *RealtimeQueueScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 		}
 
 		batchQueues := queues[i:end]
-		batchMetrics, err := s.processQueueBatch(conn, batchQueues, currentMetrics, i, end)
+		batchMetrics, err := s.processQueueBatch(conn, batchQueues, currentMetrics, config, i, end)
 		if err != nil {
 			// Log error but continue with other batches
 			logrus.WithFields(logrus.Fields{
@@ -135,7 +136,7 @@ func (s *RealtimeQueueScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 }
 
 // processQueueBatch handles metrics collection for a batch of queues
-func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConnector, batchQueues []connectors.Queue, currentMetrics []types.CurrentMetric, batchStart, batchEnd int) ([]maas.Metric, error) {
+func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConnector, batchQueues []connectors.Queue, currentMetrics []types.CurrentMetric, config connectors.AWSConnectConfig, batchStart, batchEnd int) ([]maas.Metric, error) {
 	metrics := make([]maas.Metric, 0)
 	queueIDs := make([]string, len(batchQueues))
 	queueMap := make(map[string]connectors.Queue)
@@ -153,7 +154,7 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 	}).Debug("Processing queue batch")
 
 	input := &connect.GetCurrentMetricDataInput{
-		InstanceId:     &s.config.AWS.InstanceARN,
+		InstanceId:     &config.AWS.InstanceARN,
 		Filters:        &types.Filters{Queues: queueIDs},
 		CurrentMetrics: currentMetrics,
 	}
@@ -213,7 +214,7 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 			queue.ID,
 			queue.Name,
 			queue.Type,
-			s.config.AWS.Region,
+			config.AWS.Region,
 		}
 
 		// Process each metric collection

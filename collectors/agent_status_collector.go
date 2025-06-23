@@ -40,14 +40,12 @@ func NewAgentStatusCollector(app *kingpin.Application, config connectors.AWSConn
 
 // AgentStatusScraper collects agent status metrics from AWS Connect
 type AgentStatusScraper struct {
-	config connectors.AWSConnectConfig
+	// No longer store config - get it from connector during scrape
 }
 
 // NewAgentStatusScraper creates a new scraper instance
 func NewAgentStatusScraper(app *kingpin.Application, config connectors.AWSConnectConfig) *AgentStatusScraper {
-	return &AgentStatusScraper{
-		config: config,
-	}
+	return &AgentStatusScraper{}
 }
 
 // Scrape collects agent status metrics and returns them as a slice of maas.Metric
@@ -58,10 +56,13 @@ func (s *AgentStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 		return nil, fmt.Errorf("invalid connector type: expected AWSConnectConnector, got %T", c)
 	}
 
+	// Get configuration from connector
+	config := conn.GetConfig()
+
 	// Log the start of the metrics collection process
 	logrus.WithFields(logrus.Fields{
-		"instance_arn":       s.config.AWS.InstanceARN,
-		"region":             s.config.AWS.Region,
+		"instance_arn":       config.AWS.InstanceARN,
+		"region":             config.AWS.Region,
 		"collector_version":  agentStatusCollectorVersion,
 	}).Debug("Starting agent status metrics collection")
 
@@ -74,7 +75,7 @@ func (s *AgentStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 	for {
 		// Create the input for ListAgentStatuses API call
 		input := &connect.ListAgentStatusesInput{
-			InstanceId: &s.config.AWS.InstanceARN,
+			InstanceId: &config.AWS.InstanceARN,
 			MaxResults: aws.Int32(maxAgentsPerRequest),
 			NextToken:  nextToken,
 		}
@@ -96,7 +97,7 @@ func (s *AgentStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 				*agentStatus.Id,
 				*agentStatus.Name,
 				string(agentStatus.Type),
-				s.config.AWS.Region,
+				config.AWS.Region,
 			}
 
 			// Create metric for agent status count (always 1 per status type)

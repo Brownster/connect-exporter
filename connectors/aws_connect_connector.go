@@ -29,6 +29,8 @@ type AWSConnectConnector struct {
 	configFileFlag  *string
 	// Indicates if the connector has been configured
 	configured bool
+	// Store the full configuration for collectors to access
+	config AWSConnectConfig
 }
 
 // Queue represents queue metadata
@@ -311,6 +313,8 @@ func (c *AWSConnectConnector) configure() error {
 	// Set connector values
 	c.region = cfg.AWS.Region
 	c.instanceARN = cfg.AWS.InstanceARN
+	// Store the full configuration for collectors to access
+	c.config = cfg
 
 	logrus.WithFields(logrus.Fields{
 		"instance_arn": cfg.AWS.InstanceARN,
@@ -356,6 +360,11 @@ func (c *AWSConnectConnector) configure() error {
 
 	c.configured = true
 	return nil
+}
+
+// GetConfig returns the full configuration for collectors to access
+func (c *AWSConnectConnector) GetConfig() AWSConnectConfig {
+	return c.config
 }
 
 // GetInstanceID extracts the instance ID from the ARN
