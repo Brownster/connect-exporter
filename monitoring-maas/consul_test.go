@@ -1,12 +1,13 @@
 package maas
 
 import (
+	"os/exec"
 	"testing"
 
+	"github.com/alecthomas/kingpin/v2"
 	consul "github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/sdk/testutil"
 	"github.com/stretchr/testify/suite"
-	"github.com/alecthomas/kingpin/v2"
 )
 
 type ConsulTestSuite struct {
@@ -20,6 +21,10 @@ const expectedServices = 1
 const expectedPort = 9100
 
 func (s *ConsulTestSuite) SetupTest() {
+	if _, err := exec.LookPath("consul"); err != nil {
+		s.T().Skip("consul binary not found on $PATH; skipping tests that require Consul")
+	}
+
 	s.Application = kingpin.New("test", "help")
 	s.Labeler = NewDefaultLabels()
 	s.Labeler.Flags(s.Application)
