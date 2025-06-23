@@ -1,0 +1,53 @@
+# Multi-stage build for Go exporter
+FROM golang:1.21-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the application
+# TEMPLATE: Replace 'my_exporter' with your exporter name
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o my_exporter ./cmd/my_exporter
+
+# Final stage - minimal runtime image
+FROM scratch
+
+# Import certificates and timezone data
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+
+# Copy the binary
+COPY --from=builder /app/my_exporter /my_exporter
+
+# Create non-root user (if needed for advanced security)
+# COPY --from=builder /etc/passwd /etc/passwd
+# USER nobody
+
+# Expose port
+EXPOSE 9090
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD ["/my_exporter", "--web.listen-address=:9090", "--help"] || exit 1
+
+# Command to run
+ENTRYPOINT ["/my_exporter"]
+
+# Default arguments
+CMD ["--config.file=/app/config.yml"]
+
+# Labels for better maintainability
+LABEL maintainer="your-email@company.com"
+LABEL description="TEMPLATE: Description of your exporter"
+LABEL version="1.0.0"

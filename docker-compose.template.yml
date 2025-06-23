@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # TEMPLATE: Replace 'my-exporter' with your exporter name
+  my-exporter:
+    build: .
+    container_name: my-exporter
+    ports:
+      - "9090:9090"
+    volumes:
+      # Mount configuration file
+      - ./config.yml:/app/config.yml:ro
+      # TEMPLATE: Mount any additional files your exporter needs
+      - ./data:/app/data:ro
+      - /var/log:/var/log:ro
+    environment:
+      # TEMPLATE: Add environment variables your exporter needs
+      - LOG_LEVEL=info
+      - CONFIG_FILE=/app/config.yml
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Include Prometheus for local testing
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # Optional: Include Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  grafana-storage:

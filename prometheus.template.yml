@@ -1,0 +1,40 @@
+# Template Prometheus configuration for testing your exporter
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# TEMPLATE: Replace with your exporter details
+scrape_configs:
+  # Your exporter
+  - job_name: 'my-exporter'
+    static_configs:
+      - targets: ['my-exporter:9090']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    
+  # Optional: Monitor other services
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    
+  # TEMPLATE: Add more scrape configs as needed
+  # - job_name: 'other-exporter'
+  #   static_configs:
+  #     - targets: ['other-exporter:9091']
+
+# Alerting rules (optional)
+rule_files:
+  - "alerts/*.yml"
+
+# Alertmanager configuration (optional)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093

@@ -1,0 +1,99 @@
+{
+  "id": null,
+  "uid": "rss-provider-lights",
+  "title": "RSS Exporter - Provider Overview",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5m",
+  "tags": [],
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "$__repeat",
+      "datasource": "${Datasource}",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rss_exporter_service_status{service=\"$__repeat\",state=\"service_issue\"} + 2 * rss_exporter_service_status{service=\"$__repeat\",state=\"outage\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {"text": "OK"},
+                "1": {"text": "Issue"},
+                "2": {"text": "Outage"}
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 1},
+              {"color": "red", "value": 2}
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "orientation": "auto"
+      },
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "repeat": "service",
+      "maxPerRow": 6
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "Datasource",
+        "type": "datasource",
+        "label": "Datasource",
+        "query": "prometheus",
+        "refresh": 1,
+        "hide": 0,
+        "current": {
+          "selected": false,
+          "text": "Prometheus",
+          "value": "Prometheus"
+        }
+      },
+      {
+        "name": "provider",
+        "type": "custom",
+        "label": "Provider",
+        "options": [
+          {"text": "aws", "value": "aws"},
+          {"text": "azure", "value": "azure"},
+          {"text": "gcp", "value": "gcp"},
+          {"text": "cloudflare", "value": "cloudflare"},
+          {"text": "openai", "value": "openai"},
+          {"text": "okta", "value": "okta"},
+          {"text": "genesys-cloud", "value": "genesys-cloud"}
+        ],
+        "current": {"text": "aws", "value": "aws"},
+        "includeAll": false,
+        "multi": false,
+        "hide": 0
+      },
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": "${Datasource}",
+        "query": "label_values(rss_exporter_service_status{service=~\"${provider}.*\"}, service)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 1,
+        "hide": 0
+      }
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"}
+}

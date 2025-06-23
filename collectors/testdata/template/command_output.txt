@@ -1,0 +1,27 @@
+Linux webserver01 5.4.0-42-generic #46-Ubuntu SMP Fri Jul 10 00:24:02 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+ 10:30:15 up 7 days,  2:18,  3 users,  load average: 0.15, 0.12, 0.08
+
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.0  0.1 168576 11776 ?        Ss   Jan08   0:12 /sbin/init
+root           2  0.0  0.0      0     0 ?        S    Jan08   0:00 [kthreadd]
+myapp       1234  2.3  5.4 512000 128000 ?       Sl   09:45   0:45 /usr/bin/myapp --config=/etc/myapp/config.yml
+myapp       1235  0.1  2.1 256000  64000 ?       S    09:45   0:05 /usr/bin/myapp-worker --queue=high
+myapp       1236  0.1  2.1 256000  64000 ?       S    09:45   0:05 /usr/bin/myapp-worker --queue=normal
+myapp       1237  0.1  2.1 256000  64000 ?       S    09:45   0:05 /usr/bin/myapp-worker --queue=low
+nginx       5678  0.2  1.8 142000  54000 ?       S    Jan08   2:30 nginx: master process /usr/sbin/nginx
+nginx       5679  0.1  1.2 142000  36000 ?       S    Jan08   1:45 nginx: worker process
+nginx       5680  0.1  1.2 142000  36000 ?       S    Jan08   1:45 nginx: worker process
+
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        50G   22G   26G  46% /
+/dev/sda2       100G   45G   50G  48% /var
+tmpfs           7.8G     0  7.8G   0% /dev/shm
+
+              total        used        free      shared  buff/cache   available
+Mem:           15Gi       8.2Gi       1.5Gi       256Mi       5.8Gi       6.8Gi
+Swap:         2.0Gi       128Mi       1.9Gi
+
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      5678/nginx: master
+tcp        0      0 0.0.0.0:443             0.0.0.0:*               LISTEN      5678/nginx: master
+tcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN      9999/postgres
+tcp        0      0 0.0.0.0:9090            0.0.0.0:*               LISTEN      1234/myapp
