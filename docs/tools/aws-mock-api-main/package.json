@@ -1,0 +1,15 @@
+{
+  "name": "aws-mock-api",
+  "version": "1.0.0",
+  "description": "Mock AWS Connect API for local development",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:simple": "node simple-server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "body-parser": "^2.2.0"
+  }
+}
+
