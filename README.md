@@ -48,7 +48,12 @@ collectors:
 ## Metrics Exposed
 
 - `aws_connect_realtime_queue_contacts_in_queue`
-- `aws_connect_realtime_queue_oldest_contact_age`
+- `aws_connect_realtime_queue_oldest_contact_age_seconds`
+- `aws_connect_realtime_queue_agents_available`
+- `aws_connect_realtime_queue_agents_staffed`
+- `aws_connect_realtime_queue_agents_on_contact`
+- `aws_connect_realtime_queue_agents_after_contact_work`
+- `aws_connect_realtime_queue_agents_error`
 - `aws_connect_agent_status_count`
 - `aws_connect_agent_status_display_order`
 - `aws_connect_agent_status_custom`

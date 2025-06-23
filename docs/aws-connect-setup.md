@@ -140,8 +140,13 @@ CMD ["/aws-connect-exporter", "--config.file=/config.yml"]
 
 | Metric Name | Type | Description | Labels |
 |-------------|------|-------------|---------|
-| `aws_connect_realtime_queue_contacts_in_queue` | Gauge | Number of contacts waiting in queue | `queue_id`, `queue_name`, `queue_type`, `region` |
-| `aws_connect_realtime_queue_oldest_contact_age` | Gauge | Age in seconds of oldest contact in queue | `queue_id`, `queue_name`, `queue_type`, `region` |
+| `aws_connect_realtime_queue_contacts_in_queue` | Gauge | Number of contacts waiting in queue | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_oldest_contact_age_seconds` | Gauge | Age in seconds of oldest contact in queue | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_agents_available` | Gauge | Number of agents available | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_agents_staffed` | Gauge | Number of agents staffed | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_agents_on_contact` | Gauge | Number of agents on contact | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_agents_after_contact_work` | Gauge | Number of agents in after contact work | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_agents_error` | Gauge | Number of agents in error state | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 
 ### Agent Status Metrics
 
@@ -175,7 +180,7 @@ Sample Grafana queries:
 aws_connect_realtime_queue_contacts_in_queue
 
 # Average wait time by queue
-aws_connect_realtime_queue_oldest_contact_age
+aws_connect_realtime_queue_oldest_contact_age_seconds
 
 # Agent status distribution
 sum by (status_name) (aws_connect_agent_status_count)
