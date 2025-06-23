@@ -153,11 +153,12 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 		"collector_version": realtimeQueueCollectorVersion,
 	}).Debug("Processing queue batch")
 
-	input := &connect.GetCurrentMetricDataInput{
-		InstanceId:     &config.AWS.InstanceARN,
-		Filters:        &types.Filters{Queues: queueIDs},
-		CurrentMetrics: currentMetrics,
-	}
+        instanceID := conn.GetInstanceID()
+        input := &connect.GetCurrentMetricDataInput{
+                InstanceId:     &instanceID,
+                Filters:        &types.Filters{Queues: queueIDs},
+                CurrentMetrics: currentMetrics,
+        }
 
 	var data *connect.GetCurrentMetricDataOutput
 	err := retry.Do(
