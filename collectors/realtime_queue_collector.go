@@ -24,7 +24,7 @@ const (
 	metricNamespace     = "aws_connect"
 
 	// AWS API retry configuration
-	defaultRetryAttempts = 3              // Maximum number of retry attempts for failed API calls
+	defaultRetryAttempts = 3               // Maximum number of retry attempts for failed API calls
 	defaultRetryDelay    = 1 * time.Second // Initial delay between retry attempts
 	defaultMaxRetryDelay = 5 * time.Second // Maximum delay between retry attempts
 )
@@ -40,8 +40,13 @@ func NewRealtimeQueueCollector(app *kingpin.Application, config connectors.AWSCo
 			maas.WithTimeout(timeout),
 		)),
 		// Register metrics with descriptions
-		maas.WithDescription(app, "contacts_in_queue", "Number of contacts currently waiting in queue", []string{"queue_id", "queue_name", "queue_type", "region"}),
-		maas.WithDescription(app, "oldest_contact_age", "Age in seconds of the oldest contact in queue", []string{"queue_id", "queue_name", "queue_type", "region"}),
+		maas.WithDescription(app, "contacts_in_queue", "Number of contacts currently waiting in queue", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "oldest_contact_age_seconds", "Age in seconds of the oldest contact in queue", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "agents_available", "Number of agents available", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "agents_staffed", "Number of agents staffed", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "agents_on_contact", "Number of agents on contact", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "agents_after_contact_work", "Number of agents in after contact work", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "agents_error", "Number of agents in error state", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 	)
 }
 
@@ -67,9 +72,9 @@ func (s *RealtimeQueueScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 	config := conn.GetConfig()
 
 	logrus.WithFields(logrus.Fields{
-		"instance_arn":       config.AWS.InstanceARN,
-		"region":             config.AWS.Region,
-		"collector_version":  realtimeQueueCollectorVersion,
+		"instance_arn":      config.AWS.InstanceARN,
+		"region":            config.AWS.Region,
+		"collector_version": realtimeQueueCollectorVersion,
 	}).Debug("Starting realtime queue metrics collection")
 
 	// Get all queues for the instance
@@ -84,8 +89,8 @@ func (s *RealtimeQueueScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"queue_count":        len(queues),
-		"collector_version":  realtimeQueueCollectorVersion,
+		"queue_count":       len(queues),
+		"collector_version": realtimeQueueCollectorVersion,
 	}).Debug("Found queues for metrics collection")
 
 	// Collect metrics from all queues
@@ -100,6 +105,26 @@ func (s *RealtimeQueueScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 		{
 			Name: types.CurrentMetricNameOldestContactAge,
 			Unit: types.UnitSeconds,
+		},
+		{
+			Name: types.CurrentMetricNameAgentsAvailable,
+			Unit: types.UnitCount,
+		},
+		{
+			Name: types.CurrentMetricNameAgentsStaffed,
+			Unit: types.UnitCount,
+		},
+		{
+			Name: types.CurrentMetricNameAgentsOnContact,
+			Unit: types.UnitCount,
+		},
+		{
+			Name: types.CurrentMetricNameAgentsAfterContactWork,
+			Unit: types.UnitCount,
+		},
+		{
+			Name: types.CurrentMetricNameAgentsError,
+			Unit: types.UnitCount,
 		},
 	}
 
@@ -153,12 +178,16 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 		"collector_version": realtimeQueueCollectorVersion,
 	}).Debug("Processing queue batch")
 
-        instanceID := conn.GetInstanceID()
-        input := &connect.GetCurrentMetricDataInput{
-                InstanceId:     &instanceID,
-                Filters:        &types.Filters{Queues: queueIDs},
-                CurrentMetrics: currentMetrics,
-        }
+	instanceID := conn.GetInstanceID()
+	input := &connect.GetCurrentMetricDataInput{
+		InstanceId: &instanceID,
+		Filters: &types.Filters{
+			Queues:   queueIDs,
+			Channels: []types.Channel{types.ChannelVoice, types.ChannelChat, types.ChannelTask},
+		},
+		Groupings:      []types.Grouping{types.GroupingQueue, types.GroupingChannel},
+		CurrentMetrics: currentMetrics,
+	}
 
 	var data *connect.GetCurrentMetricDataOutput
 	err := retry.Do(
@@ -210,11 +239,17 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 			continue
 		}
 
+		channel := ""
+		if result.Dimensions != nil && result.Dimensions.Channel != "" {
+			channel = string(result.Dimensions.Channel)
+		}
+
 		// Create labels for this queue
 		labels := []string{
 			queue.ID,
 			queue.Name,
 			queue.Type,
+			channel,
 			config.AWS.Region,
 		}
 
@@ -233,7 +268,17 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 			case types.CurrentMetricNameContactsInQueue:
 				prometheusMetricName = "contacts_in_queue"
 			case types.CurrentMetricNameOldestContactAge:
-				prometheusMetricName = "oldest_contact_age"
+				prometheusMetricName = "oldest_contact_age_seconds"
+			case types.CurrentMetricNameAgentsAvailable:
+				prometheusMetricName = "agents_available"
+			case types.CurrentMetricNameAgentsStaffed:
+				prometheusMetricName = "agents_staffed"
+			case types.CurrentMetricNameAgentsOnContact:
+				prometheusMetricName = "agents_on_contact"
+			case types.CurrentMetricNameAgentsAfterContactWork:
+				prometheusMetricName = "agents_after_contact_work"
+			case types.CurrentMetricNameAgentsError:
+				prometheusMetricName = "agents_error"
 			default:
 				logrus.WithFields(logrus.Fields{
 					"metric_name":       metricName,

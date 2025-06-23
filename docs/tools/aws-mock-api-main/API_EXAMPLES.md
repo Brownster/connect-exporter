@@ -210,8 +210,8 @@ When the configuration inheritance issue is resolved, the exporter should produc
 
 ### Queue Metrics
 ```prometheus
-contacts_in_queue{queue_id="queue-001",queue_name="Sales Queue",queue_type="STANDARD",region="us-east-1"} 5
-oldest_contact_age{queue_id="queue-001",queue_name="Sales Queue",queue_type="STANDARD",region="us-east-1"} 120
+contacts_in_queue{queue_id="queue-001",queue_name="Sales Queue",queue_type="STANDARD",channel="VOICE",region="us-east-1"} 5
+oldest_contact_age_seconds{queue_id="queue-001",queue_name="Sales Queue",queue_type="STANDARD",channel="VOICE",region="us-east-1"} 120
 ```
 
 ### Agent Status Metrics  
