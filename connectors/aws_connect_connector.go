@@ -160,10 +160,11 @@ func (c *AWSConnectConnector) Connect() error {
 	
 	// Test connection by trying to list queues with a minimal request
 	ctx := context.Background()
-	_, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
-		InstanceId: &c.instanceARN,
-		MaxResults: aws.Int32(1), // Just test with 1 item
-	})
+        instanceID := c.GetInstanceID()
+        _, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
+                InstanceId: &instanceID,
+                MaxResults: aws.Int32(1), // Just test with 1 item
+        })
 	return err
 }
 
@@ -179,10 +180,11 @@ func (c *AWSConnectConnector) ListQueues(ctx context.Context) ([]Queue, error) {
 	var nextToken *string
 
 	for {
-		output, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
-			InstanceId: &c.instanceARN,
-			NextToken:  nextToken,
-		})
+                instanceID := c.GetInstanceID()
+                output, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
+                        InstanceId: &instanceID,
+                        NextToken:  nextToken,
+                })
 		if err != nil {
 			return nil, fmt.Errorf("error listing queues: %w", err)
 		}
@@ -379,12 +381,12 @@ func (c *AWSConnectConnector) GetInstanceID() string {
 }
 
 // CreateCurrentMetricInput creates a GetCurrentMetricDataInput for queue metrics
-func CreateCurrentMetricInput(instanceARN string, queueIDs []string) *connect.GetCurrentMetricDataInput {
-	return &connect.GetCurrentMetricDataInput{
-		InstanceId: &instanceARN,
-		Filters: &types.Filters{
-			Queues: queueIDs,
-		},
+func CreateCurrentMetricInput(instanceID string, queueIDs []string) *connect.GetCurrentMetricDataInput {
+        return &connect.GetCurrentMetricDataInput{
+                InstanceId: &instanceID,
+                Filters: &types.Filters{
+                        Queues: queueIDs,
+                },
 		CurrentMetrics: []types.CurrentMetric{
 			{
 				Name: types.CurrentMetricNameContactsInQueue,

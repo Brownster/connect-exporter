@@ -74,11 +74,12 @@ func (s *AgentStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 
 	for {
 		// Create the input for ListAgentStatuses API call
-		input := &connect.ListAgentStatusesInput{
-			InstanceId: &config.AWS.InstanceARN,
-			MaxResults: aws.Int32(maxAgentsPerRequest),
-			NextToken:  nextToken,
-		}
+                instanceID := conn.GetInstanceID()
+                input := &connect.ListAgentStatusesInput{
+                        InstanceId: &instanceID,
+                        MaxResults: aws.Int32(maxAgentsPerRequest),
+                        NextToken:  nextToken,
+                }
 
 		// Fetch agent statuses
 		data, err := conn.ListAgentStatuses(context.Background(), input)
