@@ -63,15 +63,14 @@ jobs:
           ${{ env.REGISTRY }}/${{ github.repository }}:latest
         labels: |
           org.opencontainers.image.title=${{ github.repository }}
-          org.opencontainers.image.description=TEMPLATE: Your exporter description
+          org.opencontainers.image.description=AWS Connect Exporter image
           org.opencontainers.image.version=${{ github.ref_name }}
           org.opencontainers.image.revision=${{ github.sha }}
           org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
     - name: Build release binaries
       run: |
-        # TEMPLATE: Replace 'my_exporter' with your exporter name
-        BINARY_NAME="my_exporter"
+        BINARY_NAME="aws-connect-exporter"
         VERSION="${GITHUB_REF#refs/tags/}"
         
         # Create release directory
@@ -96,7 +95,7 @@ jobs:
           fi
           
           echo "Building for $os/$arch..."
-          GOOS=$os GOARCH=$arch go build -ldflags "-X main.version=${VERSION}" -o "release/${output_name}" ./cmd/my_exporter
+          GOOS=$os GOARCH=$arch go build -ldflags "-X main.version=${VERSION}" -o "release/${output_name}" ./cmd/connect-exporter_exporter
           
           # Create checksums
           if [ "$os" = "windows" ]; then
@@ -130,7 +129,7 @@ jobs:
         files: release/*
         name: Release ${{ github.ref_name }}
         body: |
-          # TEMPLATE: Your Exporter ${{ github.ref_name }}
+          # AWS Connect Exporter ${{ github.ref_name }}
           
           ${{ steps.changelog.outputs.changelog }}
           
@@ -146,14 +145,14 @@ jobs:
           
           ### Go Install
           ```bash
-          go install github.com/${{ github.repository }}/cmd/my_exporter@${{ github.ref_name }}
+          go install github.com/${{ github.repository }}/cmd/connect-exporter_exporter@${{ github.ref_name }}
           ```
           
           ## Verification
           
           All binaries are provided with SHA256 checksums for verification:
           ```bash
-          sha256sum -c my_exporter-${{ github.ref_name }}-linux-amd64.sha256
+          sha256sum -c aws-connect-exporter-${{ github.ref_name }}-linux-amd64.sha256
           ```
         draft: false
         prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
