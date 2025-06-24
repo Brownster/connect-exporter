@@ -30,6 +30,9 @@ collectors:
   agent_status:
     enabled: true
     interval: 300
+  agent_realtime_status:
+    enabled: true
+    interval: 60
 ```
 
 ## Running
@@ -62,6 +65,7 @@ collectors:
 - `aws_connect_agent_status_count`
 - `aws_connect_agent_status_display_order`
 - `aws_connect_agent_status_custom`
+- `aws_connect_agent_realtime_status_agents`
 
 All queue metrics include a `channel` label. Possible values are
 `VOICE`, `CHAT`, or `TASK`.
@@ -72,4 +76,5 @@ All queue metrics include a `channel` label. Possible values are
 - `connect:GetCurrentMetricData`
 - `connect:GetMetricDataV2`
 - `connect:ListAgentStatuses`
+- `connect:GetCurrentUserData`
 

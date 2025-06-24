@@ -25,6 +25,11 @@ collectors:
     enabled: true
     interval: 60  # Faster collection for development (1 minute)
 
+  # Agent Realtime Status Collector
+  agent_realtime_status:
+    enabled: true
+    interval: 30  # Faster collection for development (30 seconds)
+
   # Historical Queue Metrics Collector
   historical_queue:
     enabled: true

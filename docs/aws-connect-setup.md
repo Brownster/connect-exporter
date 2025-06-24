@@ -22,7 +22,8 @@ The exporter requires the following AWS IAM permissions:
         "connect:ListQueues",
         "connect:GetCurrentMetricData",
         "connect:GetMetricDataV2",
-        "connect:ListAgentStatuses"
+        "connect:ListAgentStatuses",
+        "connect:GetCurrentUserData"
       ],
       "Resource": "arn:aws:connect:*:*:instance/your-instance-id"
     }
@@ -168,6 +169,7 @@ The `channel` label indicates whether a queue handles `VOICE`, `CHAT`, or `TASK`
 | `aws_connect_agent_status_count` | Gauge | Number of agents in each status | `status_id`, `status_name`, `status_type`, `region` |
 | `aws_connect_agent_status_display_order` | Gauge | Display order of status types | `status_id`, `status_name`, `status_type`, `region` |
 | `aws_connect_agent_status_custom` | Gauge | Custom status indicator (1=custom, 0=built-in) | `status_id`, `status_name`, `status_type`, `region` |
+| `aws_connect_agent_realtime_status_agents` | Gauge | Number of agents in each realtime status | `status_id`, `status_name`, `status_type`, `region` |
 
 ## Monitoring
 
@@ -253,6 +255,7 @@ Estimated AWS Connect API costs:
 - **GetCurrentMetricData**: ~$0.0004 per call
 - **GetMetricDataV2**: ~$0.0004 per call
 - **ListAgentStatuses**: ~$0.0004 per call
+- **GetCurrentUserData**: ~$0.0004 per call
 
 For a typical deployment (60-second intervals):
 - Daily cost: ~$0.05-0.15
