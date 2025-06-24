@@ -575,7 +575,7 @@ function shouldError() {
 // Update the paginateResults function
 function paginateResults(items, nextToken) {
     // Parse nextToken as number, default to 0
-    const startIndex = nextToken ? parseInt(nextToken) : 0;
+    const startIndex = nextToken ? parseInt(nextToken, 10) : 0;
     
     // Debug pagination
     console.log(`Pagination request: items.length=${items.length}, nextToken=${nextToken}, startIndex=${startIndex}`);
@@ -642,7 +642,7 @@ app.all('/{*path}', (req, res, next) => {
 
         // Validate nextToken if provided
         const nextToken = req.query.nextToken;
-        if (nextToken && isNaN(parseInt(nextToken))) {
+        if (nextToken && isNaN(parseInt(nextToken, 10))) {
             console.log('Invalid nextToken:', nextToken);
             return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
         }
@@ -884,7 +884,7 @@ app.all('/{*path}', (req, res, next) => {
         }
 
         const nextToken = req.query.nextToken || req.body.NextToken;
-        if (nextToken && isNaN(parseInt(nextToken))) {
+        if (nextToken && isNaN(parseInt(nextToken, 10))) {
             console.log('Invalid nextToken:', nextToken);
             return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
         }
@@ -920,7 +920,7 @@ app.all('/{*path}', (req, res, next) => {
         }
 
         const nextToken = req.query.nextToken || req.body.NextToken;
-        if (nextToken && isNaN(parseInt(nextToken))) {
+        if (nextToken && isNaN(parseInt(nextToken, 10))) {
             console.log('Invalid nextToken:', nextToken);
             return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
         }
