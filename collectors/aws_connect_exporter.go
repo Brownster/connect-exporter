@@ -9,7 +9,7 @@ import (
 // NewAWSConnectExporter constructs a maas exporter with AWS Connect collectors
 func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, error) {
 	app := kingpin.New("aws-connect-exporter", "Prometheus exporter for AWS Connect services").DefaultEnvars()
-	
+
 	// Create a configurable AWS Connect connector
 	awsConnector, err := connectors.NewConfigurableAWSConnectConnector(app)
 	if err != nil {
@@ -19,14 +19,16 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 	// Create collectors with default configuration - they will get the real config during Connect()
 	defaultConfig := connectors.AWSConnectConfig{
 		Collectors: connectors.CollectorsConfig{
-			RealtimeQueue: connectors.RealtimeQueueConfig{Enabled: true, Interval: 30},
-			AgentStatus:   connectors.AgentStatusConfig{Enabled: true, Interval: 60},
+			RealtimeQueue:   connectors.RealtimeQueueConfig{Enabled: true, Interval: 30},
+			AgentStatus:     connectors.AgentStatusConfig{Enabled: true, Interval: 60},
+			HistoricalQueue: connectors.HistoricalQueueConfig{Enabled: true, Interval: 300},
 		},
 	}
-	
+
 	scrapers := []*maas.ScheduledScraper{
 		NewRealtimeQueueCollector(app, defaultConfig),
 		NewAgentStatusCollector(app, defaultConfig),
+		NewHistoricalQueueCollector(app, defaultConfig),
 	}
 
 	// Create the exporter with the connector and collectors

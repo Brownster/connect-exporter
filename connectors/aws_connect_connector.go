@@ -42,7 +42,7 @@ type Queue struct {
 
 // AWSConnectConfig defines the configuration structure for AWS Connect exporter
 type AWSConnectConfig struct {
-	AWS AWSConfig `yaml:"aws"`
+	AWS        AWSConfig        `yaml:"aws"`
 	Collectors CollectorsConfig `yaml:"collectors"`
 }
 
@@ -54,8 +54,9 @@ type AWSConfig struct {
 
 // CollectorsConfig contains collector-specific configuration
 type CollectorsConfig struct {
-	RealtimeQueue RealtimeQueueConfig `yaml:"realtime_queue"`
-	AgentStatus   AgentStatusConfig   `yaml:"agent_status"`
+	RealtimeQueue   RealtimeQueueConfig   `yaml:"realtime_queue"`
+	AgentStatus     AgentStatusConfig     `yaml:"agent_status"`
+	HistoricalQueue HistoricalQueueConfig `yaml:"historical_queue"`
 }
 
 // RealtimeQueueConfig configures the realtime queue collector
@@ -66,6 +67,12 @@ type RealtimeQueueConfig struct {
 
 // AgentStatusConfig configures the agent status collector
 type AgentStatusConfig struct {
+	Enabled  bool `yaml:"enabled"`
+	Interval int  `yaml:"interval"`
+}
+
+// HistoricalQueueConfig configures the historical queue collector
+type HistoricalQueueConfig struct {
 	Enabled  bool `yaml:"enabled"`
 	Interval int  `yaml:"interval"`
 }
@@ -135,6 +142,8 @@ func (c *AWSConnectConnector) Execute(command interface{}) (interface{}, error) 
 		}
 	case *connect.GetCurrentMetricDataInput:
 		return c.GetCurrentMetricData(context.Background(), cmd)
+	case *connect.GetMetricDataV2Input:
+		return c.GetMetricDataV2(context.Background(), cmd)
 	case *connect.ListAgentStatusesInput:
 		return c.ListAgentStatuses(context.Background(), cmd)
 	default:
@@ -157,14 +166,14 @@ func (c *AWSConnectConnector) Connect() error {
 		logrus.Info("Development mode: skipping connection validation")
 		return nil
 	}
-	
+
 	// Test connection by trying to list queues with a minimal request
 	ctx := context.Background()
-        instanceID := c.GetInstanceID()
-        _, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
-                InstanceId: &instanceID,
-                MaxResults: aws.Int32(1), // Just test with 1 item
-        })
+	instanceID := c.GetInstanceID()
+	_, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
+		InstanceId: &instanceID,
+		MaxResults: aws.Int32(1), // Just test with 1 item
+	})
 	return err
 }
 
@@ -180,11 +189,11 @@ func (c *AWSConnectConnector) ListQueues(ctx context.Context) ([]Queue, error) {
 	var nextToken *string
 
 	for {
-                instanceID := c.GetInstanceID()
-                output, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
-                        InstanceId: &instanceID,
-                        NextToken:  nextToken,
-                })
+		instanceID := c.GetInstanceID()
+		output, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
+			InstanceId: &instanceID,
+			NextToken:  nextToken,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("error listing queues: %w", err)
 		}
@@ -223,6 +232,21 @@ func (c *AWSConnectConnector) GetCurrentMetricData(ctx context.Context, input *c
 		"metric_count": len(output.MetricResults),
 		"instance_arn": c.instanceARN,
 	}).Debug("Successfully retrieved current metric data")
+
+	return output, nil
+}
+
+// GetMetricDataV2 retrieves historical metrics using the V2 API
+func (c *AWSConnectConnector) GetMetricDataV2(ctx context.Context, input *connect.GetMetricDataV2Input) (*connect.GetMetricDataV2Output, error) {
+	output, err := c.client.GetMetricDataV2(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("error getting metric data v2: %w", err)
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"metric_count": len(output.MetricResults),
+		"instance_arn": c.instanceARN,
+	}).Debug("Successfully retrieved metric data v2")
 
 	return output, nil
 }
@@ -276,7 +300,7 @@ func (c *AWSConnectConnector) configure() error {
 	// Load configuration from file
 	var cfg AWSConnectConfig
 	configPath := *c.configFileFlag
-	
+
 	if _, err := os.Stat(configPath); err == nil {
 		yamlFile, err := os.ReadFile(configPath)
 		if err != nil {
@@ -305,6 +329,9 @@ func (c *AWSConnectConnector) configure() error {
 	}
 	if cfg.Collectors.AgentStatus.Interval <= 0 {
 		cfg.Collectors.AgentStatus.Interval = 300 // Default 5 minutes
+	}
+	if cfg.Collectors.HistoricalQueue.Interval <= 0 {
+		cfg.Collectors.HistoricalQueue.Interval = 300 // Default 5 minutes
 	}
 
 	// Validate required configuration
@@ -359,6 +386,9 @@ func (c *AWSConnectConnector) configure() error {
 	if cfg.Collectors.AgentStatus.Enabled {
 		logrus.WithField("interval", cfg.Collectors.AgentStatus.Interval).Info("Enabled agent status collector")
 	}
+	if cfg.Collectors.HistoricalQueue.Enabled {
+		logrus.WithField("interval", cfg.Collectors.HistoricalQueue.Interval).Info("Enabled historical queue collector")
+	}
 
 	c.configured = true
 	return nil
@@ -382,11 +412,11 @@ func (c *AWSConnectConnector) GetInstanceID() string {
 
 // CreateCurrentMetricInput creates a GetCurrentMetricDataInput for queue metrics
 func CreateCurrentMetricInput(instanceID string, queueIDs []string) *connect.GetCurrentMetricDataInput {
-        return &connect.GetCurrentMetricDataInput{
-                InstanceId: &instanceID,
-                Filters: &types.Filters{
-                        Queues: queueIDs,
-                },
+	return &connect.GetCurrentMetricDataInput{
+		InstanceId: &instanceID,
+		Filters: &types.Filters{
+			Queues: queueIDs,
+		},
 		CurrentMetrics: []types.CurrentMetric{
 			{
 				Name: types.CurrentMetricNameContactsInQueue,
