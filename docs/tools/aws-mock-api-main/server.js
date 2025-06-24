@@ -322,10 +322,11 @@ const MetricGenerators = {
     AGENTS_STAFFED: (queue, baseValues, def) => {
       // Agents staffed is a random number between queue.StaffingTarget.min and max
       const { min, max } = queue.StaffingTarget;
-      return {
-        value: Math.floor(Math.random() * (max - min)) + min,
-        unit: VALID_METRICS.AGENTS_STAFFED
-      };
+        return {
+          // Use inclusive upper bound so that `max` can be returned
+          value: Math.floor(Math.random() * (max - min + 1)) + min,
+          unit: VALID_METRICS.AGENTS_STAFFED
+        };
     },
     AGENTS_ON_CONTACT: (queue, baseValues, def) => {
       // AGENTS_ON_CONTACT is some fraction of AGENTS_STAFFED,
