@@ -25,6 +25,11 @@ collectors:
     enabled: true
     interval: 60  # Faster collection for development (1 minute)
 
+  # Historical Queue Metrics Collector
+  historical_queue:
+    enabled: true
+    interval: 60  # Faster collection for development (1 minute)
+
 # Global settings
 global:
   # Shorter timeout for development

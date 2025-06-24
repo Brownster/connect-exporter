@@ -21,6 +21,7 @@ The exporter requires the following AWS IAM permissions:
       "Action": [
         "connect:ListQueues",
         "connect:GetCurrentMetricData",
+        "connect:GetMetricDataV2",
         "connect:ListAgentStatuses"
       ],
       "Resource": "arn:aws:connect:*:*:instance/your-instance-id"
@@ -151,8 +152,14 @@ CMD ["/aws-connect-exporter", "--config.file=/config.yml"]
 | `aws_connect_realtime_queue_agents_after_contact_work` | Gauge | Number of agents in after contact work | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 | `aws_connect_realtime_queue_agents_error` | Gauge | Number of agents in error state | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 
-The `channel` label indicates whether a queue handles `VOICE`, `CHAT`, or `TASK`
-contacts.
+The `channel` label indicates whether a queue handles `VOICE`, `CHAT`, or `TASK` contacts. This applies to both realtime and historical queue metrics.
+
+### Historical Queue Metrics
+
+| Metric Name | Type | Description | Labels |
+|-------------|------|-------------|---------|
+| `aws_connect_historical_queue_contacts_queued_today` | Gauge | Number of contacts queued since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_historical_queue_contacts_abandoned_today` | Gauge | Number of contacts abandoned since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 
 ### Agent Status Metrics
 
@@ -244,6 +251,7 @@ Expected resource usage:
 Estimated AWS Connect API costs:
 - **ListQueues**: ~$0.0004 per call
 - **GetCurrentMetricData**: ~$0.0004 per call
+- **GetMetricDataV2**: ~$0.0004 per call
 - **ListAgentStatuses**: ~$0.0004 per call
 
 For a typical deployment (60-second intervals):

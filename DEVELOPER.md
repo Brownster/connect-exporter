@@ -411,6 +411,7 @@ Required AWS permissions:
             "Action": [
                 "connect:ListQueues",
                 "connect:GetCurrentMetricData",
+                "connect:GetMetricDataV2",
                 "connect:ListAgentStatuses"
             ],
             "Resource": "arn:aws:connect:REGION:ACCOUNT:instance/INSTANCE-ID"

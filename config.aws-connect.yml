@@ -26,6 +26,11 @@ collectors:
     enabled: true
     interval: 300  # Collection interval in seconds (5 minutes)
 
+  # Historical Queue Metrics Collector
+  historical_queue:
+    enabled: true
+    interval: 300  # Collection interval in seconds (5 minutes)
+
 # Global settings
 global:
   # Default timeout for all operations
@@ -54,7 +59,8 @@ metrics:
 
 # AWS IAM Permissions Required:
 # - connect:ListQueues
-# - connect:GetCurrentMetricData  
+# - connect:GetCurrentMetricData
+# - connect:GetMetricDataV2
 # - connect:ListAgentStatuses
 #
 # Example IAM Policy:
@@ -66,6 +72,7 @@ metrics:
 #       "Action": [
 #         "connect:ListQueues",
 #         "connect:GetCurrentMetricData",
+#         "connect:GetMetricDataV2",
 #         "connect:ListAgentStatuses"
 #       ],
 #       "Resource": "arn:aws:connect:*:*:instance/your-instance-id"

@@ -57,16 +57,19 @@ collectors:
 - `aws_connect_realtime_queue_agents_on_contact`
 - `aws_connect_realtime_queue_agents_after_contact_work`
 - `aws_connect_realtime_queue_agents_error`
+- `aws_connect_historical_queue_contacts_queued_today`
+- `aws_connect_historical_queue_contacts_abandoned_today`
 - `aws_connect_agent_status_count`
 - `aws_connect_agent_status_display_order`
 - `aws_connect_agent_status_custom`
 
-All realtime queue metrics include a `channel` label. Possible values are
+All queue metrics include a `channel` label. Possible values are
 `VOICE`, `CHAT`, or `TASK`.
 
 ## Required IAM Permissions
 
 - `connect:ListQueues`
 - `connect:GetCurrentMetricData`
+- `connect:GetMetricDataV2`
 - `connect:ListAgentStatuses`
 
