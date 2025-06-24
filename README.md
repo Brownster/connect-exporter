@@ -49,6 +49,9 @@ collectors:
 
 - `aws_connect_realtime_queue_contacts_in_queue`
 - `aws_connect_realtime_queue_oldest_contact_age_seconds`
+- `aws_connect_realtime_queue_agents_non_productive`
+- `aws_connect_realtime_queue_slots_available`
+- `aws_connect_realtime_queue_slots_active`
 - `aws_connect_realtime_queue_agents_available`
 - `aws_connect_realtime_queue_agents_staffed`
 - `aws_connect_realtime_queue_agents_on_contact`
