@@ -37,18 +37,18 @@ app.use((req, res, next) => {
  * CONSTANTS AND CONFIGURATION
  ****************************************************/
 
-// Mock AWS Connect instance and account details
-const INSTANCE_ID = 'f604177c-b2ab-4c76-9033-635d195b2772';  // A mock instance ID
-const ACCOUNT_ID = '123456789012';                          // Typical AWS account ID format
-const REGION = 'eu-west-2';                                 // Example AWS region
+// Mock AWS Connect instance and account details - overridable via environment variables
+const INSTANCE_ID = process.env.MOCK_INSTANCE_ID || 'f604177c-b2ab-4c76-9033-635d195b2772';
+const ACCOUNT_ID  = process.env.MOCK_ACCOUNT_ID  || '123456789012';
+const REGION      = process.env.MOCK_REGION      || 'eu-west-2';
 
-// Error simulation controls
-let errorRate = 0.2;            // The probability (0.0 - 1.0) that an error will occur
+// Error simulation controls (can be overridden via MOCK_ERROR_RATE)
+let errorRate = parseFloat(process.env.MOCK_ERROR_RATE) || 0.2;
 let currentErrors = 0;          // Counter for consecutive errors
 let maxConsecutiveErrors = 2;   // Max consecutive errors to allow before resetting
 
-// Pagination configuration
-const ITEMS_PER_PAGE = 2;       // Number of items returned per page
+// Pagination configuration (can be overridden via ITEMS_PER_PAGE)
+const ITEMS_PER_PAGE = parseInt(process.env.ITEMS_PER_PAGE, 10) || 2;
 
 // Valid metrics and their default units (for AWS Connect-like behavior)
 const VALID_METRICS = {
