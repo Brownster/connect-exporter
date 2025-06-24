@@ -67,6 +67,7 @@ metrics:
 # - connect:GetCurrentMetricData
 # - connect:GetMetricDataV2
 # - connect:ListAgentStatuses
+# - connect:GetCurrentUserData
 #
 # Example IAM Policy:
 # {
@@ -78,7 +79,8 @@ metrics:
 #         "connect:ListQueues",
 #         "connect:GetCurrentMetricData",
 #         "connect:GetMetricDataV2",
-#         "connect:ListAgentStatuses"
+#         "connect:ListAgentStatuses",
+#         "connect:GetCurrentUserData"
 #       ],
 #       "Resource": "arn:aws:connect:*:*:instance/your-instance-id"
 #     }

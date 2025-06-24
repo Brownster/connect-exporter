@@ -64,7 +64,8 @@ const VALID_METRICS = {
   AGENTS_ERROR: 'COUNT',
   CONTACTS_SCHEDULED: 'COUNT',
   CONTACTS_QUEUED: 'COUNT',
-  CONTACTS_ABANDONED: 'COUNT'
+  CONTACTS_ABANDONED: 'COUNT',
+  CONTACTS_HANDLED: 'COUNT'
 };
 
 // Valid channels that this mock service recognizes
@@ -185,6 +186,42 @@ const MOCK_AGENT_STATUSES = [
 ];
 
 /****************************************************
+ * MOCK USERS
+ *
+ * Minimal set of users returned by the GetCurrentUserData API
+ * so that realtime agent status metrics can be collected.
+ ****************************************************/
+const MOCK_USERS = [
+  {
+    Id: 'user-001',
+    Username: 'alice',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-001`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
+      StatusName: 'Available'
+    }
+  },
+  {
+    Id: 'user-002',
+    Username: 'bob',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-002`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
+      StatusName: 'Busy'
+    }
+  },
+  {
+    Id: 'user-003',
+    Username: 'carol',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-003`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-004`,
+      StatusName: 'Custom Break'
+    }
+  }
+];
+
+/****************************************************
  * SOPHISTICATED METRIC GENERATION
  * 
  * We separate metrics into baseMetrics and 
@@ -200,7 +237,7 @@ class MetricGenerator {
     // First generate base metrics
     for (const name of metricNames) {
       if (MetricGenerators.baseMetrics[name]) {
-        this.baseValues[name] = MetricGenerators.baseMetrics[name](this.queue, this.baseValues);
+        this.baseValues[name] = MetricGenerators.baseMetrics[name](this.queue, this.baseValues, {});
       }
     }
 
@@ -211,7 +248,7 @@ class MetricGenerator {
       if (MetricGenerators.baseMetrics[name]) {
         metricValue = this.baseValues[name];
       } else if (MetricGenerators.derivedMetrics[name]) {
-        metricValue = MetricGenerators.derivedMetrics[name](this.queue, this.baseValues);
+        metricValue = MetricGenerators.derivedMetrics[name](this.queue, this.baseValues, {});
       }
 
       if (metricValue) {
@@ -240,37 +277,33 @@ class MetricGenerator {
 }
 
 // Helper for historical metrics (GetMetricDataV2)
-function generateMetricsV2(queue, metricNames) {
+function generateMetricsV2(queue, metricDefs) {
   const baseValues = {};
-  // Precompute base metrics
-  for (const name of metricNames) {
+  for (const def of metricDefs) {
+    const name = def.Name;
     if (MetricGenerators.baseMetrics[name]) {
-      baseValues[name] = MetricGenerators.baseMetrics[name](queue, baseValues);
+      baseValues[name] = MetricGenerators.baseMetrics[name](queue, baseValues, def);
     }
   }
 
   const results = [];
-  for (const name of metricNames) {
+  for (const def of metricDefs) {
+    const name = def.Name;
     let metricValue;
     if (MetricGenerators.baseMetrics[name]) {
       metricValue = baseValues[name];
     } else if (MetricGenerators.derivedMetrics[name]) {
-      metricValue = MetricGenerators.derivedMetrics[name](queue, baseValues);
+      metricValue = MetricGenerators.derivedMetrics[name](queue, baseValues, def);
     }
 
     if (metricValue) {
+      const metric = { Name: name, Unit: metricValue.unit };
+      if (def.MetricFilters) {
+        metric.MetricFilters = def.MetricFilters;
+      }
       results.push({
-        Dimensions: {
-          QUEUE: queue.Id,
-          CHANNEL: queue.Channel
-        },
-        Collections: [{
-          Metric: {
-            Name: name,
-            Unit: metricValue.unit
-          },
-          Value: metricValue.value
-        }]
+        Dimensions: { QUEUE: queue.Id, CHANNEL: queue.Channel },
+        Collections: [{ Metric: metric, Value: metricValue.value }]
       });
     }
   }
@@ -281,12 +314,12 @@ function generateMetricsV2(queue, metricNames) {
 // Metric generators for different metric types
 const MetricGenerators = {
   baseMetrics: {
-    CONTACTS_IN_QUEUE: (queue, baseValues) => ({
+    CONTACTS_IN_QUEUE: (queue, baseValues, def) => ({
       // Random number between 1 and 8
       value: Math.floor(Math.random() * 8) + 1,
       unit: VALID_METRICS.CONTACTS_IN_QUEUE
     }),
-    AGENTS_STAFFED: (queue, baseValues) => {
+    AGENTS_STAFFED: (queue, baseValues, def) => {
       // Agents staffed is a random number between queue.StaffingTarget.min and max
       const { min, max } = queue.StaffingTarget;
       return {
@@ -294,15 +327,20 @@ const MetricGenerators = {
         unit: VALID_METRICS.AGENTS_STAFFED
       };
     },
-    CONTACTS_QUEUED: (queue, baseValues) => ({
+    CONTACTS_QUEUED: (queue, baseValues, def) => ({
       // Number of contacts queued today between 0 and 50
       value: Math.floor(Math.random() * 51),
       unit: VALID_METRICS.CONTACTS_QUEUED
     }),
-    CONTACTS_ABANDONED: (queue, baseValues) => ({
+    CONTACTS_ABANDONED: (queue, baseValues, def) => ({
       // Number of contacts abandoned today between 0 and 10
       value: Math.floor(Math.random() * 11),
       unit: VALID_METRICS.CONTACTS_ABANDONED
+    }),
+    CONTACTS_HANDLED: (queue, baseValues, def) => ({
+      // Number of contacts abandoned today between 0 and 10
+      value: Math.floor(Math.random() * 51),
+      unit: VALID_METRICS.CONTACTS_HANDLED
     })
   },
   
@@ -799,7 +837,7 @@ app.all('/{*path}', (req, res, next) => {
                     console.log(`Generating historical metrics for queue: ${queue.Name} (${queue.Id})`);
                     const metrics = generateMetricsV2(
                         queue,
-                        body.Metrics.map(m => m.Name)
+                        body.Metrics
                     );
                     console.log('Generated metrics:', JSON.stringify(metrics, null, 2));
                     allMetricResults.push(...metrics);
@@ -824,6 +862,42 @@ app.all('/{*path}', (req, res, next) => {
             console.error('\n❌ Internal error:', error);
             return res.status(500).json(AWS_ERRORS.INTERNAL_SERVICE_ERROR);
         }
+    }
+    else if (action === 'GetCurrentUserData' || req.path.includes('/current-user-data/')) {
+        console.log('\n=== Processing Current User Data Request ===');
+
+        let instanceId;
+        if (req.path.includes('/current-user-data/')) {
+            instanceId = req.path.split('/current-user-data/')[1]?.split('?')[0];
+            console.log('📍 Extracted instanceId from path:', instanceId);
+        } else {
+            instanceId = req.body.InstanceId || req.query.InstanceId;
+            console.log('📍 Using instanceId from request:', instanceId);
+        }
+
+        if (!instanceId || instanceId !== INSTANCE_ID) {
+            console.log('❌ Invalid instanceId:', instanceId);
+            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+        }
+
+        const nextToken = req.query.nextToken || req.body.NextToken;
+        if (nextToken && isNaN(parseInt(nextToken))) {
+            console.log('Invalid nextToken:', nextToken);
+            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
+        }
+
+        const error = shouldError();
+        if (error) {
+            console.log('Random error triggered:', error);
+            return res.status(500).json(error);
+        }
+
+        const { items, nextToken: newNextToken } = paginateResults(MOCK_USERS, nextToken);
+        return res.json({
+            UserDataList: items,
+            NextToken: newNextToken,
+            ApproximateTotalCount: MOCK_USERS.length
+        });
     }
     else if (action === 'ListAgentStatuses' || req.path.includes('/agent-status/')) {
         console.log('\n=== Processing Agent Status Request ===');
