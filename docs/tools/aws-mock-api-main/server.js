@@ -959,6 +959,11 @@ app.post('/admin/errorRate', (req, res) => {
   }
 });
 
+// Basic liveness check
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
+
 //OPTIONS handler for CORS preflight requests
 // Express 5.x also rejects `*` here, so use a wildcard parameter
 app.options('/{*path}', (req, res) => {

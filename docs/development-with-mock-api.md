@@ -26,6 +26,11 @@ npm install express body-parser
 node server.js
 ```
 
+Verify the server is running:
+```bash
+curl http://localhost:3000/health
+```
+
 The server starts on `http://localhost:3000` by default.
 
 ### 2. Configure Development Environment
