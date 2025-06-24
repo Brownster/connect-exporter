@@ -327,6 +327,18 @@ const MetricGenerators = {
         unit: VALID_METRICS.AGENTS_STAFFED
       };
     },
+    AGENTS_ON_CONTACT: (queue, baseValues, def) => {
+      // AGENTS_ON_CONTACT is some fraction of AGENTS_STAFFED,
+      // but at least as many as we have contacts in queue
+      const staffed = baseValues.AGENTS_STAFFED ? baseValues.AGENTS_STAFFED.value : 15;
+      const contacts = baseValues.CONTACTS_IN_QUEUE ? baseValues.CONTACTS_IN_QUEUE.value : 3;
+      const maxAgentsForContacts = Math.floor(staffed * 0.7);
+      const minAgentsNeeded = Math.min(contacts, maxAgentsForContacts);
+      return {
+        value: Math.max(minAgentsNeeded, Math.floor(maxAgentsForContacts * 0.6)),
+        unit: VALID_METRICS.AGENTS_ON_CONTACT
+      };
+    },
     CONTACTS_QUEUED: (queue, baseValues, def) => ({
       // Number of contacts queued today between 0 and 50
       value: Math.floor(Math.random() * 51),
@@ -373,16 +385,6 @@ const MetricGenerators = {
       return {
         value: available,
         unit: VALID_METRICS.SLOTS_AVAILABLE
-      };
-    },
-    AGENTS_ON_CONTACT: (queue, baseValues) => {
-      // AGENTS_ON_CONTACT is some fraction of AGENTS_STAFFED,
-      // but at least as many as we have contacts in queue
-      const maxAgentsForContacts = Math.floor(baseValues.AGENTS_STAFFED.value * 0.7);
-      const minAgentsNeeded = Math.min(baseValues.CONTACTS_IN_QUEUE.value, maxAgentsForContacts);
-      return {
-        value: Math.max(minAgentsNeeded, Math.floor(maxAgentsForContacts * 0.6)),
-        unit: VALID_METRICS.AGENTS_ON_CONTACT
       };
     },
     AGENTS_AVAILABLE: (queue, baseValues) => {
