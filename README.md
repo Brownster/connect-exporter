@@ -62,6 +62,7 @@ collectors:
 - `aws_connect_realtime_queue_agents_error`
 - `aws_connect_historical_queue_contacts_queued_today`
 - `aws_connect_historical_queue_contacts_abandoned_today`
+- `aws_connect_historical_queue_contacts_handled_today`
 - `aws_connect_agent_status_count`
 - `aws_connect_agent_status_display_order`
 - `aws_connect_agent_status_custom`
