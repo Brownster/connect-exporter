@@ -54,6 +54,9 @@ const ITEMS_PER_PAGE = 2;       // Number of items returned per page
 const VALID_METRICS = {
   CONTACTS_IN_QUEUE: 'COUNT',
   OLDEST_CONTACT_AGE: 'SECONDS',
+  AGENTS_NON_PRODUCTIVE: 'COUNT',
+  SLOTS_AVAILABLE: 'COUNT',
+  SLOTS_ACTIVE: 'COUNT',
   AGENTS_ON_CONTACT: 'COUNT',
   AGENTS_AVAILABLE: 'COUNT',
   AGENTS_STAFFED: 'COUNT',
@@ -259,6 +262,30 @@ const MetricGenerators = {
       value: baseValues.CONTACTS_IN_QUEUE.value * (Math.floor(Math.random() * 20) + 10),
       unit: VALID_METRICS.OLDEST_CONTACT_AGE
     }),
+    AGENTS_NON_PRODUCTIVE: (queue, baseValues) => ({
+      // Around 10% of agents might be in NPT
+      value: Math.floor(baseValues.AGENTS_STAFFED.value * 0.1),
+      unit: VALID_METRICS.AGENTS_NON_PRODUCTIVE
+    }),
+    SLOTS_ACTIVE: (queue, baseValues) => {
+      const concurrency = queue.Channel === 'VOICE' ? 1 : queue.Channel === 'CHAT' ? 3 : 5;
+      const totalSlots = baseValues.AGENTS_STAFFED.value * concurrency;
+      const active = Math.min(totalSlots, baseValues.CONTACTS_IN_QUEUE.value + Math.floor(baseValues.AGENTS_STAFFED.value * 0.6));
+      return {
+        value: active,
+        unit: VALID_METRICS.SLOTS_ACTIVE
+      };
+    },
+    SLOTS_AVAILABLE: (queue, baseValues) => {
+      const concurrency = queue.Channel === 'VOICE' ? 1 : queue.Channel === 'CHAT' ? 3 : 5;
+      const totalSlots = baseValues.AGENTS_STAFFED.value * concurrency;
+      const active = Math.min(totalSlots, baseValues.CONTACTS_IN_QUEUE.value + Math.floor(baseValues.AGENTS_STAFFED.value * 0.6));
+      const available = Math.max(0, totalSlots - active);
+      return {
+        value: available,
+        unit: VALID_METRICS.SLOTS_AVAILABLE
+      };
+    },
     AGENTS_ON_CONTACT: (queue, baseValues) => {
       // AGENTS_ON_CONTACT is some fraction of AGENTS_STAFFED,
       // but at least as many as we have contacts in queue
