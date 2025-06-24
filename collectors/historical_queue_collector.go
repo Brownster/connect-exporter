@@ -29,6 +29,7 @@ func NewHistoricalQueueCollector(app *kingpin.Application, config connectors.AWS
 		)),
 		maas.WithDescription(app, "contacts_queued_today", "Number of contacts queued since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 		maas.WithDescription(app, "contacts_abandoned_today", "Number of contacts abandoned since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "contacts_handled_today", "Number of contacts handled since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "channel", "direction", "region"}),
 	)
 }
 
@@ -59,6 +60,24 @@ func (s *HistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 	metricsToFetch := []types.MetricV2{
 		{Name: aws.String("CONTACTS_QUEUED")},
 		{Name: aws.String("CONTACTS_ABANDONED")},
+		{
+			Name: aws.String("CONTACTS_HANDLED"),
+			MetricFilters: []types.MetricFilterV2{
+				{
+					MetricFilterKey:    aws.String("INITIATION_METHOD"),
+					MetricFilterValues: []string{"INBOUND"},
+				},
+			},
+		},
+		{
+			Name: aws.String("CONTACTS_HANDLED"),
+			MetricFilters: []types.MetricFilterV2{
+				{
+					MetricFilterKey:    aws.String("INITIATION_METHOD"),
+					MetricFilterValues: []string{"OUTBOUND", "CALLBACK", "API"},
+				},
+			},
+		},
 	}
 
 	now := time.Now().UTC()
@@ -117,23 +136,41 @@ func (s *HistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 				continue
 			}
 
-			labels := []string{queue.ID, queue.Name, queue.Type, channel, config.AWS.Region}
+			labels := []string{queue.ID, queue.Name, queue.Type, channel}
 
 			for _, md := range result.Collections {
 				if md.Metric == nil || md.Value == nil {
 					continue
 				}
 				var promName string
+				extraLabels := labels
 				switch *md.Metric.Name {
 				case "CONTACTS_QUEUED":
 					promName = "contacts_queued_today"
 				case "CONTACTS_ABANDONED":
 					promName = "contacts_abandoned_today"
+				case "CONTACTS_HANDLED":
+					promName = "contacts_handled_today"
+					// Determine direction from metric filters
+					direction := "unknown"
+					if md.Metric.MetricFilters != nil {
+						for _, f := range md.Metric.MetricFilters {
+							if f.MetricFilterKey != nil && aws.ToString(f.MetricFilterKey) == "INITIATION_METHOD" && len(f.MetricFilterValues) > 0 {
+								if len(f.MetricFilterValues) == 1 && f.MetricFilterValues[0] == "INBOUND" {
+									direction = "inbound"
+								} else {
+									direction = "outbound"
+								}
+							}
+						}
+					}
+					extraLabels = append(extraLabels, direction)
 				default:
 					continue
 				}
 
-				allMetrics = append(allMetrics, maas.NewMetric(promName, prometheus.GaugeValue, *md.Value, labels))
+				extraLabels = append(extraLabels, config.AWS.Region)
+				allMetrics = append(allMetrics, maas.NewMetric(promName, prometheus.GaugeValue, *md.Value, extraLabels))
 			}
 		}
 	}

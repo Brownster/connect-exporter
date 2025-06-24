@@ -54,9 +54,10 @@ type AWSConfig struct {
 
 // CollectorsConfig contains collector-specific configuration
 type CollectorsConfig struct {
-	RealtimeQueue   RealtimeQueueConfig   `yaml:"realtime_queue"`
-	AgentStatus     AgentStatusConfig     `yaml:"agent_status"`
-	HistoricalQueue HistoricalQueueConfig `yaml:"historical_queue"`
+	RealtimeQueue       RealtimeQueueConfig       `yaml:"realtime_queue"`
+	AgentStatus         AgentStatusConfig         `yaml:"agent_status"`
+	AgentRealtimeStatus AgentRealtimeStatusConfig `yaml:"agent_realtime_status"`
+	HistoricalQueue     HistoricalQueueConfig     `yaml:"historical_queue"`
 }
 
 // RealtimeQueueConfig configures the realtime queue collector
@@ -67,6 +68,12 @@ type RealtimeQueueConfig struct {
 
 // AgentStatusConfig configures the agent status collector
 type AgentStatusConfig struct {
+	Enabled  bool `yaml:"enabled"`
+	Interval int  `yaml:"interval"`
+}
+
+// AgentRealtimeStatusConfig configures the agent realtime status collector
+type AgentRealtimeStatusConfig struct {
 	Enabled  bool `yaml:"enabled"`
 	Interval int  `yaml:"interval"`
 }
@@ -146,6 +153,8 @@ func (c *AWSConnectConnector) Execute(command interface{}) (interface{}, error) 
 		return c.GetMetricDataV2(context.Background(), cmd)
 	case *connect.ListAgentStatusesInput:
 		return c.ListAgentStatuses(context.Background(), cmd)
+	case *connect.GetCurrentUserDataInput:
+		return c.GetCurrentUserData(context.Background(), cmd)
 	default:
 		return nil, fmt.Errorf("unsupported command type: %T", command)
 	}
@@ -251,6 +260,21 @@ func (c *AWSConnectConnector) GetMetricDataV2(ctx context.Context, input *connec
 	return output, nil
 }
 
+// GetCurrentUserData retrieves current user data including agent status
+func (c *AWSConnectConnector) GetCurrentUserData(ctx context.Context, input *connect.GetCurrentUserDataInput) (*connect.GetCurrentUserDataOutput, error) {
+	output, err := c.client.GetCurrentUserData(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("error getting current user data: %w", err)
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"user_count":   len(output.UserDataList),
+		"instance_arn": c.instanceARN,
+	}).Debug("Successfully retrieved current user data")
+
+	return output, nil
+}
+
 // ListAgentStatuses retrieves agent status information
 func (c *AWSConnectConnector) ListAgentStatuses(ctx context.Context, input *connect.ListAgentStatusesInput) (*connect.ListAgentStatusesOutput, error) {
 	output, err := c.client.ListAgentStatuses(ctx, input)
@@ -330,6 +354,9 @@ func (c *AWSConnectConnector) configure() error {
 	if cfg.Collectors.AgentStatus.Interval <= 0 {
 		cfg.Collectors.AgentStatus.Interval = 300 // Default 5 minutes
 	}
+	if cfg.Collectors.AgentRealtimeStatus.Interval <= 0 {
+		cfg.Collectors.AgentRealtimeStatus.Interval = 60 // Default 1 minute
+	}
 	if cfg.Collectors.HistoricalQueue.Interval <= 0 {
 		cfg.Collectors.HistoricalQueue.Interval = 300 // Default 5 minutes
 	}
@@ -385,6 +412,9 @@ func (c *AWSConnectConnector) configure() error {
 	}
 	if cfg.Collectors.AgentStatus.Enabled {
 		logrus.WithField("interval", cfg.Collectors.AgentStatus.Interval).Info("Enabled agent status collector")
+	}
+	if cfg.Collectors.AgentRealtimeStatus.Enabled {
+		logrus.WithField("interval", cfg.Collectors.AgentRealtimeStatus.Interval).Info("Enabled agent realtime status collector")
 	}
 	if cfg.Collectors.HistoricalQueue.Enabled {
 		logrus.WithField("interval", cfg.Collectors.HistoricalQueue.Interval).Info("Enabled historical queue collector")
