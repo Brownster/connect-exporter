@@ -62,7 +62,9 @@ const VALID_METRICS = {
   AGENTS_STAFFED: 'COUNT',
   AGENTS_AFTER_CONTACT_WORK: 'COUNT',
   AGENTS_ERROR: 'COUNT',
-  CONTACTS_SCHEDULED: 'COUNT'
+  CONTACTS_SCHEDULED: 'COUNT',
+  CONTACTS_QUEUED: 'COUNT',
+  CONTACTS_ABANDONED: 'COUNT'
 };
 
 // Valid channels that this mock service recognizes
@@ -237,6 +239,45 @@ class MetricGenerator {
   }
 }
 
+// Helper for historical metrics (GetMetricDataV2)
+function generateMetricsV2(queue, metricNames) {
+  const baseValues = {};
+  // Precompute base metrics
+  for (const name of metricNames) {
+    if (MetricGenerators.baseMetrics[name]) {
+      baseValues[name] = MetricGenerators.baseMetrics[name](queue, baseValues);
+    }
+  }
+
+  const results = [];
+  for (const name of metricNames) {
+    let metricValue;
+    if (MetricGenerators.baseMetrics[name]) {
+      metricValue = baseValues[name];
+    } else if (MetricGenerators.derivedMetrics[name]) {
+      metricValue = MetricGenerators.derivedMetrics[name](queue, baseValues);
+    }
+
+    if (metricValue) {
+      results.push({
+        Dimensions: {
+          QUEUE: queue.Id,
+          CHANNEL: queue.Channel
+        },
+        Collections: [{
+          Metric: {
+            Name: name,
+            Unit: metricValue.unit
+          },
+          Value: metricValue.value
+        }]
+      });
+    }
+  }
+
+  return results;
+}
+
 // Metric generators for different metric types
 const MetricGenerators = {
   baseMetrics: {
@@ -252,7 +293,17 @@ const MetricGenerators = {
         value: Math.floor(Math.random() * (max - min)) + min,
         unit: VALID_METRICS.AGENTS_STAFFED
       };
-    }
+    },
+    CONTACTS_QUEUED: (queue, baseValues) => ({
+      // Number of contacts queued today between 0 and 50
+      value: Math.floor(Math.random() * 51),
+      unit: VALID_METRICS.CONTACTS_QUEUED
+    }),
+    CONTACTS_ABANDONED: (queue, baseValues) => ({
+      // Number of contacts abandoned today between 0 and 10
+      value: Math.floor(Math.random() * 11),
+      unit: VALID_METRICS.CONTACTS_ABANDONED
+    })
   },
   
   // Derived metric generators use base metrics to calculate further values
@@ -666,6 +717,100 @@ app.all('/{*path}', (req, res, next) => {
             );
 
             // 8. Send response
+            const response = {
+                MetricResults: items,
+                NextToken: newNextToken,
+                DataSnapshotTime: Date.now()
+            };
+
+            console.log('\n✅ Sending response:', JSON.stringify(response, null, 2));
+            return res.json(response);
+
+        } catch (error) {
+            console.error('\n❌ Internal error:', error);
+            return res.status(500).json(AWS_ERRORS.INTERNAL_SERVICE_ERROR);
+        }
+    }
+    else if (action === 'GetMetricDataV2' || req.path.includes('/metrics/historical/')) {
+        console.log('\n=== Processing Historical Metrics Request ===');
+
+        let resourceArn;
+        if (req.path.includes('/metrics/historical/')) {
+            const instanceId = req.path.split('/metrics/historical/')[1]?.split('?')[0];
+            console.log('📍 Extracted instanceId from path:', instanceId);
+            resourceArn = `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${instanceId}`;
+        } else {
+            resourceArn = req.body.ResourceArn;
+            console.log('📍 Using resourceArn from body:', resourceArn);
+        }
+
+        if (!resourceArn || !resourceArn.includes(INSTANCE_ID)) {
+            console.log('❌ Invalid resourceArn:', resourceArn);
+            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+        }
+
+        try {
+            const body = req.body;
+            console.log('\n📦 Request body:', JSON.stringify(body, null, 2));
+
+            if (!body.Filters || !body.Metrics) {
+                console.log('❌ Missing Filters or Metrics field');
+                return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
+            }
+
+            console.log('\n🔍 Validating metrics...');
+            const metricsValid = validateMetrics(body.Metrics);
+            if (!metricsValid) {
+                console.log('❌ Metric validation failed');
+                return res.status(400).json(AWS_ERRORS.VALIDATION_EXCEPTION);
+            }
+
+            console.log('\n🔍 Validating filters...');
+            const filtersValid = validateFilters(body.Filters);
+            if (!filtersValid) {
+                console.log('❌ Filter validation failed');
+                return res.status(400).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+            }
+
+            const error = shouldError();
+            if (error) {
+                console.log('⚠️ Random error triggered:', error);
+                return res.status(500).json(error);
+            }
+
+            const allMetricResults = [];
+            const queueIds = body.Filters.Queues;
+
+            const channelFilters = [];
+            if (body.Filters.Channel) {
+                channelFilters.push(body.Filters.Channel);
+            }
+            if (Array.isArray(body.Filters.Channels)) {
+                channelFilters.push(...body.Filters.Channels);
+            }
+
+            queueIds.forEach(queueId => {
+                const queue = Object.values(MOCK_QUEUES).find(q => q.Id === queueId);
+                if (queue) {
+                    if (channelFilters.length > 0 && !channelFilters.includes(queue.Channel)) {
+                        console.log(`Skipping queue ${queue.Id} due to channel filter`);
+                        return;
+                    }
+                    console.log(`Generating historical metrics for queue: ${queue.Name} (${queue.Id})`);
+                    const metrics = generateMetricsV2(
+                        queue,
+                        body.Metrics.map(m => m.Name)
+                    );
+                    console.log('Generated metrics:', JSON.stringify(metrics, null, 2));
+                    allMetricResults.push(...metrics);
+                }
+            });
+
+            const { items, nextToken: newNextToken } = paginateResults(
+                allMetricResults,
+                body.NextToken
+            );
+
             const response = {
                 MetricResults: items,
                 NextToken: newNextToken,

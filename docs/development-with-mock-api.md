@@ -52,6 +52,7 @@ The mock API provides the following AWS Connect endpoints:
 #### Queue Operations
 - **ListQueues**: Returns paginated list of 4 predefined queues
 - **GetCurrentMetricData**: Provides realistic metrics for queue monitoring
+- **GetMetricDataV2**: Simulates historical metric queries grouped by queue and channel
 
 #### Agent Status Operations  
 - **ListAgentStatuses**: Returns paginated agent status information
