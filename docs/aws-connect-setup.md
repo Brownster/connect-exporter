@@ -271,6 +271,8 @@ Use the included mock API server for development:
 cd docs/tools/aws-mock-api-main
 node server.js
 
+curl http://localhost:3000/health  # should return OK
+
 # Set development mode
 export ENV=development
 ./aws-connect-exporter --config.file=config.development.yml

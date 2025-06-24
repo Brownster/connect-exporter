@@ -94,9 +94,13 @@ For testing and development, you can use the included mock AWS Connect API serve
    ```bash
    cd docs/tools/aws-mock-api-main
    npm install
-   npm start
-   ```
+npm start
+```
    The mock server will start on `http://localhost:3000` and simulate AWS Connect API endpoints.
+   Verify it is running:
+   ```bash
+   curl http://localhost:3000/health
+   ```
 
 2. **Configure the Exporter for Mock API**
    Create a test configuration file `config.test.yml`:
@@ -153,6 +157,7 @@ The mock API server provides:
 - **Error Simulation**: Configurable error rate for testing error handling
 - **Pagination**: Supports AWS-style pagination with NextToken
 - **Multiple Channels**: VOICE, CHAT, and TASK channel support
+- **Health Check**: `GET /health` returns `OK` when the mock server is running
 
 ### Adjusting Mock API Behavior
 
