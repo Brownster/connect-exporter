@@ -40,6 +40,9 @@ func NewRealtimeQueueCollector(app *kingpin.Application, config connectors.AWSCo
 			maas.WithTimeout(timeout),
 		)),
 		// Register metrics with descriptions
+		maas.WithDescription(app, "agents_non_productive", "Number of agents in Non-Productive Time (NPT)", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "slots_available", "Number of contact slots available", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "slots_active", "Number of contact slots currently active", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 		maas.WithDescription(app, "contacts_in_queue", "Number of contacts currently waiting in queue", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 		maas.WithDescription(app, "oldest_contact_age_seconds", "Age in seconds of the oldest contact in queue", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 		maas.WithDescription(app, "agents_available", "Number of agents available", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
@@ -98,6 +101,18 @@ func (s *RealtimeQueueScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 
 	// Define the current metrics we want to collect
 	currentMetrics := []types.CurrentMetric{
+		{
+			Name: types.CurrentMetricNameAgentsNonProductive,
+			Unit: types.UnitCount,
+		},
+		{
+			Name: types.CurrentMetricNameSlotsAvailable,
+			Unit: types.UnitCount,
+		},
+		{
+			Name: types.CurrentMetricNameSlotsActive,
+			Unit: types.UnitCount,
+		},
 		{
 			Name: types.CurrentMetricNameContactsInQueue,
 			Unit: types.UnitCount,
@@ -265,6 +280,12 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 			// Map AWS Connect metric names to our Prometheus metric names
 			var prometheusMetricName string
 			switch collection.Metric.Name {
+			case types.CurrentMetricNameAgentsNonProductive:
+				prometheusMetricName = "agents_non_productive"
+			case types.CurrentMetricNameSlotsAvailable:
+				prometheusMetricName = "slots_available"
+			case types.CurrentMetricNameSlotsActive:
+				prometheusMetricName = "slots_active"
 			case types.CurrentMetricNameContactsInQueue:
 				prometheusMetricName = "contacts_in_queue"
 			case types.CurrentMetricNameOldestContactAge:

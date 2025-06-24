@@ -142,6 +142,9 @@ CMD ["/aws-connect-exporter", "--config.file=/config.yml"]
 |-------------|------|-------------|---------|
 | `aws_connect_realtime_queue_contacts_in_queue` | Gauge | Number of contacts waiting in queue | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 | `aws_connect_realtime_queue_oldest_contact_age_seconds` | Gauge | Age in seconds of oldest contact in queue | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_agents_non_productive` | Gauge | Number of agents in Non-Productive Time (NPT) | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_slots_available` | Gauge | Number of contact slots available | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_slots_active` | Gauge | Number of contact slots currently active | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 | `aws_connect_realtime_queue_agents_available` | Gauge | Number of agents available | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 | `aws_connect_realtime_queue_agents_staffed` | Gauge | Number of agents staffed | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 | `aws_connect_realtime_queue_agents_on_contact` | Gauge | Number of agents on contact | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
