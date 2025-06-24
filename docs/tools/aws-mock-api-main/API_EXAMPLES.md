@@ -47,6 +47,9 @@ The mock API provides:
 For each queue, the mock API generates random values for:
 - **CONTACTS_IN_QUEUE**: 0-19 contacts (random)
 - **OLDEST_CONTACT_AGE**: 0-600 seconds (random)
+- **AGENTS_NON_PRODUCTIVE**: ~10% of agents (random)
+- **SLOTS_AVAILABLE**: Calculated per channel
+- **SLOTS_ACTIVE**: Calculated per channel
 
 ## AWS Connect Exporter with Mock API
 
