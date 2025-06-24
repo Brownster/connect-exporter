@@ -132,7 +132,7 @@ npm start
 
 4. **Run the Exporter with Mock API**
    ```bash
-   ./connect-exporter \
+   ENV=development ./connect-exporter \
      --web.listen-port=9091 \
      --labels.fqdn=localhost \
      --labels.location=test \
@@ -141,6 +141,7 @@ npm start
      --config.file=config.test.yml \
      --no-advertise
    ```
+   Note: The `ENV=development` environment variable is required to enable mock API mode.
 
 5. **Verify Metrics Collection**
    Open another terminal and check that metrics are being collected:

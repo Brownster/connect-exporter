@@ -43,12 +43,29 @@ const ACCOUNT_ID  = process.env.MOCK_ACCOUNT_ID  || '123456789012';
 const REGION      = process.env.MOCK_REGION      || 'eu-west-2';
 
 // Error simulation controls (can be overridden via MOCK_ERROR_RATE)
-let errorRate = parseFloat(process.env.MOCK_ERROR_RATE) || 0.2;
+let errorRate = 0.2;
+if (process.env.MOCK_ERROR_RATE) {
+    const envErrorRate = parseFloat(process.env.MOCK_ERROR_RATE);
+    if (!isNaN(envErrorRate) && envErrorRate >= 0 && envErrorRate <= 1) {
+        errorRate = envErrorRate;
+    } else {
+        console.warn(`Invalid MOCK_ERROR_RATE: ${process.env.MOCK_ERROR_RATE}. Using default: ${errorRate}`);
+    }
+}
 let currentErrors = 0;          // Counter for consecutive errors
 let maxConsecutiveErrors = 2;   // Max consecutive errors to allow before resetting
 
 // Pagination configuration (can be overridden via ITEMS_PER_PAGE)
-const ITEMS_PER_PAGE = parseInt(process.env.ITEMS_PER_PAGE, 10) || 2;
+let itemsPerPage = 2;
+if (process.env.ITEMS_PER_PAGE) {
+    const envItemsPerPage = parseInt(process.env.ITEMS_PER_PAGE, 10);
+    if (!isNaN(envItemsPerPage) && envItemsPerPage > 0) {
+        itemsPerPage = envItemsPerPage;
+    } else {
+        console.warn(`Invalid ITEMS_PER_PAGE: ${process.env.ITEMS_PER_PAGE}. Using default: ${itemsPerPage}`);
+    }
+}
+const ITEMS_PER_PAGE = itemsPerPage;
 
 // Valid metrics and their default units (for AWS Connect-like behavior)
 const VALID_METRICS = {
@@ -883,7 +900,7 @@ app.all('/{*path}', (req, res, next) => {
             return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
         }
 
-        const nextToken = req.query.nextToken || req.body.NextToken;
+        const nextToken = req.query.nextToken || (req.body && req.body.NextToken);
         if (nextToken && isNaN(parseInt(nextToken, 10))) {
             console.log('Invalid nextToken:', nextToken);
             return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
@@ -919,7 +936,7 @@ app.all('/{*path}', (req, res, next) => {
             return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
         }
 
-        const nextToken = req.query.nextToken || req.body.NextToken;
+        const nextToken = req.query.nextToken || (req.body && req.body.NextToken);
         if (nextToken && isNaN(parseInt(nextToken, 10))) {
             console.log('Invalid nextToken:', nextToken);
             return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
