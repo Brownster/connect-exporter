@@ -28,7 +28,7 @@ aws_connect_exporter_agent_status_agent_status_count{region="eu-west-2",status_i
 
 **Coverage:** 📊 **100% - All agent status definitions working**
 
-#### **2. Agent Realtime Status Collector - ✅ WORKING**
+#### **3. Agent Realtime Status Collector - ✅ WORKING**
 ```prometheus
 # Successfully collecting from mock API:
 aws_connect_exporter_agent_realtime_status_agent_realtime_status_agents{region="eu-west-2",status_id="status-001",status_name="Available",status_type="unknown"} 2
@@ -36,7 +36,7 @@ aws_connect_exporter_agent_realtime_status_agent_realtime_status_agents{region="
 
 **Coverage:** 📊 **100% - Live agent status distribution working**
 
-#### **3. Historical Queue Collector - ✅ WORKING**  
+#### **4. Historical Queue Collector - ✅ WORKING**  
 ```prometheus
 # Successfully collecting from mock API:
 aws_connect_exporter_historical_queue_contacts_abandoned_today{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 6
@@ -57,49 +57,23 @@ aws_connect_exporter_historical_queue_contacts_queued_today{channel="VOICE",queu
 - ✅ Fixed resource ARN validation  
 - ✅ Complete metrics generation for historical data
 
-## 🔧 **Specific Mock API Gaps**
+## 🔧 **Technical Implementation Details**
 
-### **Missing Endpoint 1: GetCurrentUserData**
+### **Enhanced Mock API Architecture**
 
-**What Collector Needs:**
-```json
-{
-  "UserDataList": [
-    {
-      "Id": "user-001",
-      "Status": {
-        "StatusArn": "arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772/agent-state/status-001",
-        "StatusName": "Available"  
-      }
-    }
-  ]
-}
-```
+The enhanced mock API now provides complete AWS Connect API compatibility:
 
-**Current Mock API:** Has user data but wrong endpoint path
-**Fix Needed:** Add `/current-user-data/` endpoint or `GetCurrentUserData` target
+#### **GetCurrentUserData Endpoint**
+- ✅ **Endpoint Paths:** `/current-user-data/` and `/metrics/userdata/`
+- ✅ **11 Realistic Users:** Distributed across Available (5), Busy (3), After Contact Work (2), Custom Break (1)
+- ✅ **Proper Response Format:** Complete UserDataList with status information
+- ✅ **Pagination Support:** AWS-style NextToken pagination
 
-### **Missing Endpoint 2: GetMetricDataV2**
-
-**What Collector Needs:**
-```json
-{
-  "MetricResults": [
-    {
-      "Dimensions": {"QUEUE": "queue-001", "CHANNEL": "VOICE"},
-      "Collections": [
-        {
-          "Metric": {"Name": "CONTACTS_HANDLED", "MetricFilters": [{"MetricFilterKey": "INITIATION_METHOD", "MetricFilterValues": ["INBOUND"]}]},
-          "Value": 127
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Current Mock API:** Has logic but wrong endpoint path
-**Fix Needed:** Add `/metrics/historical/` endpoint or `GetMetricDataV2` target
+#### **GetMetricDataV2 Endpoint**  
+- ✅ **Endpoint Paths:** `/metrics/historical/` and `/metrics/data`
+- ✅ **FilterV2 Structure:** Proper handling of FilterKey/FilterValues arrays
+- ✅ **Resource ARN Validation:** Correct instance ID matching
+- ✅ **Dynamic Metrics:** Time-varying realistic data for dashboard testing
 
 ## 📊 **Final Coverage Assessment**
 
@@ -123,49 +97,34 @@ aws_connect_exporter_historical_queue_contacts_queued_today{channel="VOICE",queu
 - **Inbound vs outbound split** - Direction-specific contact handling
 - **Multi-channel support** - VOICE, CHAT, and TASK metrics
 
-## 🔧 **Quick Fixes for Mock API**
+## 🚀 **Usage Instructions**
 
-### **Fix 1: Add GetCurrentUserData Endpoint**
-```javascript
-// In server.js, add this route:
-else if (action === 'GetCurrentUserData' || req.path.includes('/current-user-data/')) {
-    const { items, nextToken: newNextToken } = paginateResults(MOCK_USERS, nextToken);
-    return res.json({
-        UserDataList: items,
-        NextToken: newNextToken,
-        ApproximateTotalCount: MOCK_USERS.length
-    });
-}
+### **Starting the Enhanced Mock API**
+```bash
+cd docs/tools/aws-mock-api-main
+MOCK_ERROR_RATE=0.0 node server.js
 ```
 
-### **Fix 2: Add GetMetricDataV2 Endpoint**
-```javascript
-// In server.js, add this route:  
-else if (action === 'GetMetricDataV2' || req.path.includes('/metrics/historical/')) {
-    // Use existing generateMetricsV2 function
-    const results = generateMetricsV2(queue, body.Metrics);
-    return res.json({
-        MetricResults: results,
-        NextToken: null
-    });
-}
+### **Running Exporter with Mock API**
+```bash
+ENV=development ./connect-exporter \
+  --region=eu-west-2 \
+  --web.listen-port=8080 \
+  --config.file=config.kensington-test.yml \
+  --no-advertise
 ```
 
-## 🚀 **Recommendation**
+### **Verifying Complete Coverage**
+```bash
+# Check all collectors are generating metrics
+curl -s http://localhost:8080/metrics | grep aws_connect_exporter
 
-### **Option 1: Fix Mock API (2 hours work)**
-- Add the 2 missing endpoints
-- Get 100% collector coverage for development
-
-### **Option 2: Use Real AWS for Complete Testing**
-- Mock API covers 60% of functionality 
-- Real AWS covers 100% 
-- Best for production validation
-
-### **Option 3: Hybrid Approach**
-- Use mock API for rapid development iteration
-- Use real AWS for final integration testing
-- Document which scenarios each environment tests
+# Should show metrics from all 4 collectors:
+# - realtime_queue_*
+# - agent_status_*  
+# - agent_realtime_status_*
+# - historical_queue_*
+```
 
 ## 💡 **Bottom Line**
 
