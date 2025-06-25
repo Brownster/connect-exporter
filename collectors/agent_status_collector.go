@@ -34,7 +34,7 @@ func NewAgentStatusCollector(app *kingpin.Application, config connectors.AWSConn
 		)),
 		// Register metrics with descriptions
 		maas.WithDescription(app, "agent_status_count", "Number of agents in each status", []string{"status_id", "status_name", "status_type", "region"}),
-		maas.WithDescription(app, "agent_status_custom", "Indicator for custom agent statuses (1=custom, 0=built-in)", []string{"status_id", "status_name", "status_type", "region"}),
+		// REMOVED: agent_status_custom - Not operationally valuable (just indicates custom vs built-in)
 	)
 }
 
@@ -112,17 +112,8 @@ func (s *AgentStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 			// Note: DisplayOrder field is not available in current AWS SDK version
 			// If needed, this could be retrieved via a separate DescribeAgentStatus call
 
-			// Add custom status indicator
-			customValue := 0.0
-			if agentStatus.Type == "CUSTOM" {
-				customValue = 1.0
-			}
-			metrics = append(metrics, maas.NewMetric(
-				"agent_status_custom",
-				prometheus.GaugeValue,
-				customValue,
-				labels,
-			))
+			// REMOVED: Custom status indicator metric - not operationally valuable
+			// Just indicates if status is custom (1) or built-in (0), provides no actionable data
 
 			logrus.WithFields(logrus.Fields{
 				"status_id":          *agentStatus.Id,

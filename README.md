@@ -150,15 +150,58 @@ npm start
    ```
    You should see AWS Connect metrics with mock data.
 
-### Mock API Features
+### Enhanced Mock API Features
 
-The mock API server provides:
-- **Mock Queues**: Sales, Support, and Monitoring queues with different channels (VOICE, CHAT, TASK)
-- **Realistic Metrics**: Random but correlated metric values that simulate real AWS Connect data
-- **Error Simulation**: Configurable error rate for testing error handling
-- **Pagination**: Supports AWS-style pagination with NextToken
-- **Multiple Channels**: VOICE, CHAT, and TASK channel support
-- **Health Check**: `GET /health` returns `OK` when the mock server is running
+The mock API server now provides **complete coverage** for all collectors, enabling full dashboard development without production AWS access:
+
+#### **✅ Complete Collector Coverage**
+- **Realtime Queue Collector**: ✅ 100% Working - Queue performance, wait times, agent availability
+- **Agent Status Collector**: ✅ 100% Working - Status definitions and categorization
+- **Agent Realtime Status Collector**: ✅ 100% Working - Live agent status distribution  
+- **Historical Queue Collector**: ✅ 100% Working - Daily call volumes, abandonment rates
+
+#### **🎯 Dashboard-Ready Data**
+- **11 Realistic Users**: Distributed across different statuses (5 Available, 3 Busy, 2 After Contact Work, 1 Custom Break)
+- **5 Mock Queues**: Sales, Support, and Monitoring queues with VOICE, CHAT, and TASK channels
+- **Dynamic Metrics**: Time-based values that change realistically for testing dashboards
+- **Operational Metrics**: All key Kensington metrics supported:
+  - Queue wait times and caller counts
+  - Agent status distribution by queue/channel  
+  - Daily call volumes (inbound/outbound split)
+  - Abandonment rates and contact handling
+
+#### **🔧 Technical Features**
+- **AWS API Compatibility**: Handles both GetCurrentMetricData and GetMetricDataV2 structures
+- **Error Simulation**: Configurable error rate for testing resilience
+- **Pagination Support**: AWS-style pagination with NextToken
+- **Realistic Data Generation**: Correlated metrics that simulate real contact center behavior
+- **Health Monitoring**: `GET /health` endpoint for service verification
+
+### Complete Metrics Output Example
+
+With the enhanced mock API, you'll see all operational metrics needed for dashboard building:
+
+```bash
+curl http://localhost:9091/metrics | grep aws_connect_exporter
+```
+
+**Sample Output:**
+```
+# Real-time Queue Performance
+aws_connect_exporter_realtime_queue_agents_non_productive{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 2
+aws_connect_exporter_realtime_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 4
+
+# Agent Status Distribution  
+aws_connect_exporter_agent_realtime_status_agent_realtime_status_agents{region="eu-west-2",status_id="status-001",status_name="Available",status_type="unknown"} 2
+
+# Daily Performance Metrics
+aws_connect_exporter_historical_queue_contacts_abandoned_today{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 6
+aws_connect_exporter_historical_queue_contacts_queued_today{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 40
+
+# Agent Status Definitions
+aws_connect_exporter_agent_status_agent_status_count{region="eu-west-2",status_id="status-001",status_name="Available",status_type="ROUTABLE"} 1
+aws_connect_exporter_agent_status_agent_status_count{region="eu-west-2",status_id="status-002",status_name="Busy",status_type="ROUTABLE"} 1
+```
 
 ### Adjusting Mock API Behavior
 
@@ -174,6 +217,33 @@ curl -X POST http://localhost:3000/admin/errorRate \
   -H 'Content-Type: application/json' \
   -d '{"rate": 0.0}'
 ```
+
+### Coverage Analysis
+
+For detailed technical analysis of mock API coverage and collector testing, see:
+- **[MOCK_API_GAPS.md](MOCK_API_GAPS.md)** - Complete coverage analysis and testing results
+
+## 📊 Grafana Dashboards
+
+Two comprehensive dashboards are provided for operational monitoring:
+
+### 🚀 **Real-time Operations Dashboard**
+- **Purpose:** Live operational monitoring (30s refresh)
+- **Key Metrics:** Queue availability, agent status distribution, operational alerts
+- **Use Case:** NOC monitoring, immediate response to issues
+
+### 📈 **Daily Performance Analytics Dashboard**  
+- **Purpose:** Strategic performance analysis (5m refresh)
+- **Key Metrics:** Daily volumes, abandonment rates, trend analysis
+- **Use Case:** Management reporting, performance optimization
+
+### Quick Dashboard Setup
+```bash
+cd dashboards
+./import-dashboards.sh
+```
+
+For detailed dashboard documentation, see **[dashboards/README.md](dashboards/README.md)**
 
 ### Running Tests
 

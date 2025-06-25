@@ -208,10 +208,12 @@ const MOCK_AGENT_STATUSES = [
  * Minimal set of users returned by the GetCurrentUserData API
  * so that realtime agent status metrics can be collected.
  ****************************************************/
+// Enhanced mock users for realistic dashboard testing
 const MOCK_USERS = [
+  // Available agents (5 users)
   {
     Id: 'user-001',
-    Username: 'alice',
+    Username: 'alice.smith',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-001`,
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
@@ -220,17 +222,92 @@ const MOCK_USERS = [
   },
   {
     Id: 'user-002',
-    Username: 'bob',
+    Username: 'bob.jones',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-002`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
+      StatusName: 'Available'
+    }
+  },
+  {
+    Id: 'user-003',
+    Username: 'carol.davis',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-003`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
+      StatusName: 'Available'
+    }
+  },
+  {
+    Id: 'user-004',
+    Username: 'david.wilson',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-004`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
+      StatusName: 'Available'
+    }
+  },
+  {
+    Id: 'user-005',
+    Username: 'emma.brown',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-005`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
+      StatusName: 'Available'
+    }
+  },
+  // Agents on contact (3 users)
+  {
+    Id: 'user-006',
+    Username: 'frank.taylor',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-006`,
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
       StatusName: 'Busy'
     }
   },
   {
-    Id: 'user-003',
-    Username: 'carol',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-003`,
+    Id: 'user-007',
+    Username: 'grace.anderson',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-007`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
+      StatusName: 'Busy'
+    }
+  },
+  {
+    Id: 'user-008',
+    Username: 'henry.martinez',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-008`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
+      StatusName: 'Busy'
+    }
+  },
+  // Agents in after contact work (2 users)
+  {
+    Id: 'user-009',
+    Username: 'iris.garcia',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-009`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-003`,
+      StatusName: 'After Contact Work'
+    }
+  },
+  {
+    Id: 'user-010',
+    Username: 'jack.rodriguez',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-010`,
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-003`,
+      StatusName: 'After Contact Work'
+    }
+  },
+  // Agents on break (1 user)
+  {
+    Id: 'user-011',
+    Username: 'kelly.lopez',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-011`,
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-004`,
       StatusName: 'Custom Break'
@@ -474,8 +551,76 @@ function validateMetrics(metrics) {
  * @param {Array} filters - Array of filter objects
  * @return {boolean} true if valid, false otherwise
  */
+// Validate filters for GetMetricDataV2 (FilterV2 structure)
+function validateFiltersV2(filters) {
+    console.log('\n=== Starting FilterV2 Validation ===');
+    console.log('Validating filters:', JSON.stringify(filters, null, 2));
+
+    // 1. Basic structure validation
+    if (!Array.isArray(filters)) {
+        console.log('❌ Invalid filters - should be an array:', typeof filters);
+        return false;
+    }
+
+    // 2. Find QUEUE filter and validate
+    const queueFilter = filters.find(f => f.FilterKey === "QUEUE");
+    if (!queueFilter || !Array.isArray(queueFilter.FilterValues) || queueFilter.FilterValues.length === 0) {
+        console.log('❌ Invalid or missing QUEUE filter:', queueFilter);
+        return false;
+    }
+
+    console.log('\n📋 Available Queues:');
+    Object.values(MOCK_QUEUES).forEach(q => {
+        console.log(`  - ID: ${q.Id}, Name: ${q.Name}`);
+    });
+
+    // 3. Validate each Queue ID
+    const validQueues = queueFilter.FilterValues.every(queueId => {
+        console.log(`\n🔍 Validating Queue ID: ${queueId}`);
+        
+        const queue = Object.values(MOCK_QUEUES).find(q => q.Id === queueId);
+        const found = !!queue;
+
+        if (found) {
+            console.log('✅ Found matching queue:', {
+                Id: queue.Id,
+                Name: queue.Name,
+                Type: queue.QueueType,
+                Channel: queue.Channel
+            });
+        } else {
+            console.log('❌ No matching queue found for ID:', queueId);
+            console.log('Available Queue IDs:', Object.values(MOCK_QUEUES).map(q => q.Id));
+        }
+
+        return found;
+    });
+
+    let channelsValid = true;
+
+    // 4. Validate CHANNEL filter if present
+    const channelFilter = filters.find(f => f.FilterKey === "CHANNEL");
+    if (channelFilter) {
+        console.log('\n📡 Validating Channel filter:', channelFilter.FilterValues);
+        channelsValid = channelFilter.FilterValues.every(ch => VALID_CHANNELS.includes(ch));
+        if (!channelsValid) {
+            console.log('❌ Invalid channels. Valid channels are:', VALID_CHANNELS);
+            return false;
+        }
+        console.log('✅ Channel validation passed');
+    }
+
+    // 5. Final result
+    console.log('\n=== FilterV2 Validation Result ===');
+    const result = validQueues && channelsValid;
+    console.log(result ? '✅ All validations passed' : '❌ Validation failed');
+
+    return result;
+}
+
+// Validate filters for GetCurrentMetricData (legacy structure)
 function validateFilters(filters) {
-    console.log('\n=== Starting Filter Validation ===');
+    console.log('\n=== Starting Legacy Filter Validation ===');
     console.log('Validating filters:', JSON.stringify(filters, null, 2));
 
     // 1. Basic structure validation
@@ -542,7 +687,7 @@ function validateFilters(filters) {
     }
 
     // 5. Final result
-    console.log('\n=== Filter Validation Result ===');
+    console.log('\n=== Legacy Filter Validation Result ===');
     const result = validQueues && channelsValid;
     console.log(result ? '✅ All validations passed' : '❌ Validation failed');
 
@@ -789,14 +934,18 @@ app.all('/{*path}', (req, res, next) => {
             return res.status(500).json(AWS_ERRORS.INTERNAL_SERVICE_ERROR);
         }
     }
-    else if (action === 'GetMetricDataV2' || req.path.includes('/metrics/historical/')) {
+    else if (action === 'GetMetricDataV2' || req.path.includes('/metrics/historical/') || req.path.includes('/metrics/data')) {
         console.log('\n=== Processing Historical Metrics Request ===');
 
         let resourceArn;
         if (req.path.includes('/metrics/historical/')) {
             const instanceId = req.path.split('/metrics/historical/')[1]?.split('?')[0];
-            console.log('📍 Extracted instanceId from path:', instanceId);
+            console.log('📍 Extracted instanceId from historical path:', instanceId);
             resourceArn = `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${instanceId}`;
+        } else if (req.path.includes('/metrics/data')) {
+            // Extract from request body since /metrics/data is typically POST
+            resourceArn = req.body.ResourceArn;
+            console.log('📍 Using resourceArn from body for /metrics/data:', resourceArn);
         } else {
             resourceArn = req.body.ResourceArn;
             console.log('📍 Using resourceArn from body:', resourceArn);
@@ -824,7 +973,7 @@ app.all('/{*path}', (req, res, next) => {
             }
 
             console.log('\n🔍 Validating filters...');
-            const filtersValid = validateFilters(body.Filters);
+            const filtersValid = validateFiltersV2(body.Filters);
             if (!filtersValid) {
                 console.log('❌ Filter validation failed');
                 return res.status(400).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
@@ -837,15 +986,14 @@ app.all('/{*path}', (req, res, next) => {
             }
 
             const allMetricResults = [];
-            const queueIds = body.Filters.Queues;
+            
+            // Extract queue IDs from FilterV2 structure
+            const queueFilter = body.Filters.find(f => f.FilterKey === "QUEUE");
+            const queueIds = queueFilter ? queueFilter.FilterValues : [];
 
-            const channelFilters = [];
-            if (body.Filters.Channel) {
-                channelFilters.push(body.Filters.Channel);
-            }
-            if (Array.isArray(body.Filters.Channels)) {
-                channelFilters.push(...body.Filters.Channels);
-            }
+            // Extract channel filters from FilterV2 structure
+            const channelFilter = body.Filters.find(f => f.FilterKey === "CHANNEL");
+            const channelFilters = channelFilter ? channelFilter.FilterValues : [];
 
             queueIds.forEach(queueId => {
                 const queue = Object.values(MOCK_QUEUES).find(q => q.Id === queueId);
@@ -883,13 +1031,16 @@ app.all('/{*path}', (req, res, next) => {
             return res.status(500).json(AWS_ERRORS.INTERNAL_SERVICE_ERROR);
         }
     }
-    else if (action === 'GetCurrentUserData' || req.path.includes('/current-user-data/')) {
+    else if (action === 'GetCurrentUserData' || req.path.includes('/current-user-data/') || req.path.includes('/metrics/userdata/')) {
         console.log('\n=== Processing Current User Data Request ===');
 
         let instanceId;
         if (req.path.includes('/current-user-data/')) {
             instanceId = req.path.split('/current-user-data/')[1]?.split('?')[0];
             console.log('📍 Extracted instanceId from path:', instanceId);
+        } else if (req.path.includes('/metrics/userdata/')) {
+            instanceId = req.path.split('/metrics/userdata/')[1]?.split('?')[0];
+            console.log('📍 Extracted instanceId from userdata path:', instanceId);
         } else {
             instanceId = req.body.InstanceId || req.query.InstanceId;
             console.log('📍 Using instanceId from request:', instanceId);

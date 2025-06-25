@@ -1,0 +1,35 @@
+# AWS Connect Exporter - Kensington Test Configuration with Mock API
+# Optimized for operational monitoring with essential metrics only
+
+listen_address: 127.0.0.1
+listen_port: 9091
+
+aws:
+  region: "eu-west-2"
+  # Mock API instance for testing
+  instance_arn: "arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772"
+
+collectors:
+  # ✅ ESSENTIAL: Real-time queue performance metrics
+  # Provides: caller counts, wait times, agent availability by queue/channel
+  realtime_queue:
+    enabled: true
+    interval: 30  # 30 seconds for real-time visibility
+    
+  # ✅ ESSENTIAL: Current agent status distribution  
+  # Shows how many agents are in each state (Available, On Contact, etc.)
+  agent_realtime_status:
+    enabled: true
+    interval: 60  # 1 minute for agent state changes
+    
+  # ✅ VALUABLE: Daily call volumes and outcomes
+  # Provides: calls handled today (inbound/outbound), abandoned calls
+  historical_queue:
+    enabled: true
+    interval: 300  # 5 minutes for historical data
+    
+  # ❌ DISABLED: Agent status definitions (not operationally useful)
+  # This only shows status definitions (always=1) and custom indicators (0/1)
+  # Does NOT show actual agent counts in those statuses
+  agent_status:
+    enabled: false
