@@ -35,7 +35,7 @@ This directory contains two comprehensive Grafana dashboards designed specifical
 ```prometheus
 # Queue availability and agent productivity
 aws_connect_exporter_realtime_queue_slots_available
-aws_connect_exporter_realtime_queue_agent_state_agents{state="NonProductive"}
+aws_connect_exporter_agent_state_agents{state="NonProductive"}
 
 # Live agent status distribution
 aws_connect_exporter_agent_realtime_status_agent_state

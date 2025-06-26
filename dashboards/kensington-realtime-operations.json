@@ -23,7 +23,7 @@
             "refId": "A"
           },
           {
-            "expr": "sum(aws_connect_exporter_realtime_queue_agent_state_agents{state=\"NonProductive\"})",
+            "expr": "sum(aws_connect_exporter_agent_state_agents{state=\"NonProductive\"})",
             "legendFormat": "Non-Productive Agents",
             "refId": "B"
           }
@@ -107,14 +107,14 @@
         "targets": [
           {
             "expr": "aws_connect_exporter_realtime_queue_slots_available",
-            "legendFormat": "{{queue_name}} ({{channel}})",
+            "legendFormat": "{{queue}} ({{channel}})",
             "refId": "A",
             "format": "table",
             "instant": true
           },
           {
-            "expr": "aws_connect_exporter_realtime_queue_agent_state_agents{state=\"NonProductive\"}",
-            "legendFormat": "{{queue_name}} ({{channel}})",
+            "expr": "aws_connect_exporter_agent_state_agents{state=\"NonProductive\"}",
+            "legendFormat": "{{queue}} ({{channel}})",
             "refId": "B",
             "format": "table",
             "instant": true
@@ -137,7 +137,7 @@
           },
           "overrides": [
             {
-              "matcher": {"id": "byName", "options": "queue_name"},
+              "matcher": {"id": "byName", "options": "queue"},
               "properties": [
                 {"id": "displayName", "value": "Queue"},
                 {"id": "custom.width", "value": 150}
@@ -184,12 +184,12 @@
         "targets": [
           {
             "expr": "aws_connect_exporter_realtime_queue_slots_available",
-            "legendFormat": "{{queue_name}} - Available Slots",
+            "legendFormat": "{{queue}} - Available Slots",
             "refId": "A"
           },
           {
-            "expr": "aws_connect_exporter_realtime_queue_agent_state_agents{state=\"NonProductive\"}",
-            "legendFormat": "{{queue_name}} - Non-Productive",
+            "expr": "aws_connect_exporter_agent_state_agents{state=\"NonProductive\"}",
+            "legendFormat": "{{queue}} - Non-Productive",
             "refId": "B"
           }
         ],
@@ -242,7 +242,7 @@
             "refId": "A"
           },
           {
-            "expr": "sum(aws_connect_exporter_realtime_queue_agent_state_agents{state=\"NonProductive\"}) > 5",
+            "expr": "sum(aws_connect_exporter_agent_state_agents{state=\"NonProductive\"}) > 5",
             "legendFormat": "High Non-Productive",
             "refId": "B"
           }

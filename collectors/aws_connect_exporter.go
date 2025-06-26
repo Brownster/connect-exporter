@@ -22,10 +22,12 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 	defaultConfig := connectors.AWSConnectConfig{
 		Collectors: connectors.CollectorsConfig{
 			RealtimeQueue: connectors.RealtimeQueueConfig{
-				Enabled:         true,
-				Interval:        30,
-				MetricsCacheTTL: 15 * time.Second,
-				QueueCacheTTL:   5 * time.Minute,
+				Enabled:              true,
+				Interval:             30,
+				MetricsCacheTTL:      15 * time.Second,
+				QueueCacheTTL:        5 * time.Minute,
+				QueueRefreshInterval: 5 * time.Minute,
+				QueuesIncludeRegex:   "",
 			},
 			AgentStatus:         connectors.AgentStatusConfig{Enabled: true, Interval: 60},
 			AgentRealtimeStatus: connectors.AgentRealtimeStatusConfig{Enabled: true, Interval: 60},
@@ -36,6 +38,7 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 	scrapers := []*maas.ScheduledScraper{
 		NewRealtimeQueueCollector(app, defaultConfig),
 		NewAgentStatusCollector(app, defaultConfig),
+		NewAgentStateCollector(app, defaultConfig),
 		NewAgentRealtimeStatusCollector(app, defaultConfig),
 		NewHistoricalQueueCollector(app, defaultConfig),
 	}

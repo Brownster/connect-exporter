@@ -32,6 +32,8 @@ type AWSConnectConnector struct {
 	configured bool
 	// Store the full configuration for collectors to access
 	config AWSConnectConfig
+	// Queue manager for shared queue discovery
+	queueManager *QueueManager
 }
 
 // Queue represents queue metadata
@@ -63,10 +65,12 @@ type CollectorsConfig struct {
 
 // RealtimeQueueConfig configures the realtime queue collector
 type RealtimeQueueConfig struct {
-	Enabled         bool          `yaml:"enabled"`
-	Interval        int           `yaml:"interval"`
-	MetricsCacheTTL time.Duration `yaml:"metrics_cache_ttl"`
-	QueueCacheTTL   time.Duration `yaml:"queue_cache_ttl"`
+	Enabled              bool          `yaml:"enabled"`
+	Interval             int           `yaml:"interval"`
+	MetricsCacheTTL      time.Duration `yaml:"metrics_cache_ttl"`
+	QueueCacheTTL        time.Duration `yaml:"queue_cache_ttl"`
+	QueueRefreshInterval time.Duration `yaml:"queue_refresh_interval"`
+	QueuesIncludeRegex   string        `yaml:"queues_include_regex"`
 }
 
 // AgentStatusConfig configures the agent status collector
@@ -178,17 +182,28 @@ func (c *AWSConnectConnector) Connect() error {
 	// In development mode, skip connection validation since mock API might not be running
 	if c.developmentMode {
 		logrus.Info("Development mode: skipping connection validation")
-		return nil
+	} else {
+		// Test connection by trying to list queues with a minimal request
+		ctx := context.Background()
+		instanceID := c.GetInstanceID()
+		_, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
+			InstanceId: &instanceID,
+			MaxResults: aws.Int32(1), // Just test with 1 item
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	// Test connection by trying to list queues with a minimal request
-	ctx := context.Background()
-	instanceID := c.GetInstanceID()
-	_, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
-		InstanceId: &instanceID,
-		MaxResults: aws.Int32(1), // Just test with 1 item
-	})
-	return err
+	if c.queueManager == nil {
+		qm, err := NewQueueManager(c, c.config.Collectors.RealtimeQueue.QueueRefreshInterval, c.config.Collectors.RealtimeQueue.QueuesIncludeRegex)
+		if err != nil {
+			return err
+		}
+		c.queueManager = qm
+		qm.Start()
+	}
+	return nil
 }
 
 // Flags implements the maas.Connector interface
@@ -392,6 +407,9 @@ func (c *AWSConnectConnector) configure() error {
 	if cfg.Collectors.RealtimeQueue.QueueCacheTTL <= 0 {
 		cfg.Collectors.RealtimeQueue.QueueCacheTTL = 5 * time.Minute // Default 5m
 	}
+	if cfg.Collectors.RealtimeQueue.QueueRefreshInterval <= 0 {
+		cfg.Collectors.RealtimeQueue.QueueRefreshInterval = 5 * time.Minute
+	}
 	if cfg.Collectors.AgentStatus.Interval <= 0 {
 		cfg.Collectors.AgentStatus.Interval = 300 // Default 5 minutes
 	}
@@ -471,6 +489,11 @@ func (c *AWSConnectConnector) configure() error {
 // GetConfig returns the full configuration for collectors to access
 func (c *AWSConnectConnector) GetConfig() AWSConnectConfig {
 	return c.config
+}
+
+// GetQueueManager exposes the shared QueueManager
+func (c *AWSConnectConnector) GetQueueManager() *QueueManager {
+	return c.queueManager
 }
 
 // GetInstanceID extracts the instance ID from the ARN
