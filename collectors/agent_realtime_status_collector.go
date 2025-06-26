@@ -49,13 +49,29 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 	cfg := conn.GetConfig()
 	instanceID := conn.GetInstanceID()
 
-	// Retrieve current user data for all agents
+	// AWS requires at least one filter parameter. Try using Queues filter instead since we can get those
+	queues, err := conn.ListQueues(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to list queues for filter: %w", err)
+	}
+	
+	if len(queues) == 0 {
+		return []maas.Metric{}, nil
+	}
+	
+	// Use the first queue ID as a filter - this should return all agents assigned to any queue
+	queueIDs := make([]string, 0, len(queues))
+	for _, queue := range queues {
+		queueIDs = append(queueIDs, queue.ID)
+	}
+	
+	// Retrieve current user data using queue filter
 	input := &connect.GetCurrentUserDataInput{
 		InstanceId: &instanceID,
 		Filters:    &types.UserDataFilters{
-			// Empty filters fetch data for all agents
+			Queues: queueIDs, // Use queue IDs to get agents assigned to these queues
 		},
-		MaxResults: aws.Int32(1000),
+		MaxResults: aws.Int32(100),
 	}
 
 	data, err := conn.GetCurrentUserData(context.Background(), input)

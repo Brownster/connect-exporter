@@ -155,6 +155,8 @@ func (c *AWSConnectConnector) Execute(command interface{}) (interface{}, error) 
 		return c.ListAgentStatuses(context.Background(), cmd)
 	case *connect.GetCurrentUserDataInput:
 		return c.GetCurrentUserData(context.Background(), cmd)
+	case *connect.ListUsersInput:
+		return c.ListUsers(context.Background(), cmd)
 	default:
 		return nil, fmt.Errorf("unsupported command type: %T", command)
 	}
@@ -286,6 +288,21 @@ func (c *AWSConnectConnector) ListAgentStatuses(ctx context.Context, input *conn
 		"status_count": len(output.AgentStatusSummaryList),
 		"instance_arn": c.instanceARN,
 	}).Debug("Successfully listed agent statuses")
+
+	return output, nil
+}
+
+// ListUsers retrieves user information
+func (c *AWSConnectConnector) ListUsers(ctx context.Context, input *connect.ListUsersInput) (*connect.ListUsersOutput, error) {
+	output, err := c.client.ListUsers(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("error listing users: %w", err)
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"user_count":   len(output.UserSummaryList),
+		"instance_arn": c.instanceARN,
+	}).Debug("Successfully listed users")
 
 	return output, nil
 }
