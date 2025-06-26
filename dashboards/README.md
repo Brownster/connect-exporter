@@ -44,11 +44,11 @@ aws_connect_exporter_agent_realtime_status_agent_state
 ### Daily Performance Dashboard Metrics:
 ```prometheus
 # Daily contact volumes and outcomes
-aws_connect_exporter_historical_queue_contacts_queued_today
-aws_connect_exporter_historical_queue_contacts_abandoned_today
+aws_connect_exporter_historical_calls_connect_calls_handled_total
+aws_connect_exporter_historical_calls_connect_calls_abandoned_total
 
 # Calculated KPIs
-abandonment_rate = abandoned_today / queued_today * 100
+abandonment_rate = abandoned_total / (handled_total + abandoned_total) * 100
 ```
 
 ## 🚀 Installation Instructions

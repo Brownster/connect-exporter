@@ -27,7 +27,6 @@ func NewHistoricalQueueCollector(app *kingpin.Application, config connectors.AWS
 			maas.WithFrequency(interval),
 			maas.WithTimeout(timeout),
 		)),
-		maas.WithDescription(app, "contacts_queued_today", "Number of contacts queued since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 		maas.WithDescription(app, "contacts_abandoned_today", "Number of contacts abandoned since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 		maas.WithDescription(app, "contacts_handled_today", "Number of contacts handled since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "channel", "direction", "region"}),
 	)
@@ -55,7 +54,6 @@ func (s *HistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 	}
 
 	metricsToFetch := []types.MetricV2{
-		{Name: aws.String("CONTACTS_QUEUED")},
 		{Name: aws.String("CONTACTS_ABANDONED")},
 		{
 			Name: aws.String("CONTACTS_HANDLED"),
@@ -142,8 +140,6 @@ func (s *HistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 				var promName string
 				extraLabels := labels
 				switch *md.Metric.Name {
-				case "CONTACTS_QUEUED":
-					promName = "contacts_queued_today"
 				case "CONTACTS_ABANDONED":
 					promName = "contacts_abandoned_today"
 				case "CONTACTS_HANDLED":
