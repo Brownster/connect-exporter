@@ -59,7 +59,8 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 		return []maas.Metric{}, nil
 	}
 
-	// Use the first queue ID as a filter - this should return all agents assigned to any queue
+	// Use all queue IDs as filters to retrieve agent data
+	// for agents assigned to any queue
 	queueIDs := make([]string, 0, len(queues))
 	for _, queue := range queues {
 		queueIDs = append(queueIDs, queue.ID)
