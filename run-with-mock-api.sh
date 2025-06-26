@@ -15,6 +15,22 @@ export AWS_REGION=eu-west-2
 # Optional: Set mock endpoint explicitly (though default should work)
 export AWS_CONNECT_MOCK_ENDPOINT=http://localhost:3000
 
+# Find the exporter binary
+EXPORTER_PATH=""
+if [ -f "./connect-exporter-optimized" ]; then
+    EXPORTER_PATH="./connect-exporter-optimized"
+elif [ -f "./connect-exporter" ]; then
+    EXPORTER_PATH="./connect-exporter"
+elif [ -f "/home/mbrown/connect-exporter/connect-exporter-optimized" ]; then
+    EXPORTER_PATH="/home/mbrown/connect-exporter/connect-exporter-optimized"
+elif [ -f "/home/mbrown/connect-exporter/connect-exporter" ]; then
+    EXPORTER_PATH="/home/mbrown/connect-exporter/connect-exporter"
+else
+    echo "❌ Could not find exporter binary! Please build it first:"
+    echo "   go build -o connect-exporter ./cmd/connect-exporter_exporter"
+    exit 1
+fi
+
 echo "📡 Testing mock API connection..."
 if curl -s http://localhost:3000/health >/dev/null; then
     echo "✅ Mock API is running at http://localhost:3000"
@@ -33,9 +49,26 @@ echo "  AWS_SECRET_ACCESS_KEY=[HIDDEN]"
 echo "  AWS_CONNECT_MOCK_ENDPOINT=$AWS_CONNECT_MOCK_ENDPOINT"
 echo ""
 
+# Check for config file
+CONFIG_FILE=""
+if [ -f "./config.kensington-test.yml" ]; then
+    CONFIG_FILE="./config.kensington-test.yml"
+elif [ -f "/home/mbrown/connect-exporter/config.kensington-test.yml" ]; then
+    CONFIG_FILE="/home/mbrown/connect-exporter/config.kensington-test.yml"
+else
+    echo "❌ Could not find config.kensington-test.yml!"
+    exit 1
+fi
+
 echo "🚀 Starting exporter..."
-/home/mbrown/connect-exporter/connect-exporter-optimized \
-  --config.file=/home/mbrown/connect-exporter/config.kensington-test.yml \
+echo "📁 Using exporter: $EXPORTER_PATH"
+echo "📄 Using config: $CONFIG_FILE"
+echo ""
+
+# CRITICAL: Must specify --region=eu-west-2 to override the us-east-1 default!
+$EXPORTER_PATH \
+  --config.file=$CONFIG_FILE \
+  --region=eu-west-2 \
   --log.level=debug \
   --no-advertise \
   --web.listen-port=8542 \
