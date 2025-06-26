@@ -28,7 +28,7 @@ func NewHistoricalQueueCollector(app *kingpin.Application, config connectors.AWS
 			maas.WithTimeout(timeout),
 		)),
 		maas.WithDescription(app, "contacts_abandoned_today", "Number of contacts abandoned since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
-		maas.WithDescription(app, "contacts_handled_today", "Number of contacts handled since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "channel", "direction", "region"}),
+		maas.WithDescription(app, "connect_historical_handled_total", "A counter of contacts handled, partitioned by queue, channel, and direction.", []string{"queue_name", "channel", "direction"}),
 	)
 }
 
@@ -131,20 +131,17 @@ func (s *HistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 				continue
 			}
 
-			labels := []string{queue.ID, queue.Name, queue.Type, channel}
+			abandonedLabels := []string{queue.ID, queue.Name, queue.Type, channel, config.AWS.Region}
+			handledBase := []string{queue.Name, channel}
 
 			for _, md := range result.Collections {
 				if md.Metric == nil || md.Value == nil {
 					continue
 				}
-				var promName string
-				extraLabels := labels
 				switch *md.Metric.Name {
 				case "CONTACTS_ABANDONED":
-					promName = "contacts_abandoned_today"
+					allMetrics = append(allMetrics, maas.NewMetric("contacts_abandoned_today", prometheus.GaugeValue, *md.Value, abandonedLabels))
 				case "CONTACTS_HANDLED":
-					promName = "contacts_handled_today"
-					// Determine direction from metric filters
 					direction := "unknown"
 					if md.Metric.MetricFilters != nil {
 						for _, f := range md.Metric.MetricFilters {
@@ -157,13 +154,11 @@ func (s *HistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 							}
 						}
 					}
-					extraLabels = append(extraLabels, direction)
+					labels := append(handledBase, direction)
+					allMetrics = append(allMetrics, maas.NewMetric("connect_historical_handled_total", prometheus.CounterValue, *md.Value, labels))
 				default:
 					continue
 				}
-
-				extraLabels = append(extraLabels, config.AWS.Region)
-				allMetrics = append(allMetrics, maas.NewMetric(promName, prometheus.GaugeValue, *md.Value, extraLabels))
 			}
 		}
 	}

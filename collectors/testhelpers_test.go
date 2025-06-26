@@ -19,3 +19,9 @@ func metricLabels(m maas.Metric) []string {
 	f := v.FieldByName("labels")
 	return *(*[]string)(unsafe.Pointer(f.UnsafeAddr()))
 }
+
+func metricName(m maas.Metric) string {
+	v := reflect.ValueOf(&m).Elem()
+	f := v.FieldByName("name")
+	return *(*string)(unsafe.Pointer(f.UnsafeAddr()))
+}
