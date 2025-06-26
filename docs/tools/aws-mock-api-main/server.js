@@ -304,9 +304,9 @@ setInterval(simulateRosterChanges, 15000);      // roster changes every 15s
 const MOCK_USERS = [
   // Available agents (5 users)
   {
-    Id: 'user-001',
+    Id: '6aed748d-3a99-410c-9e3a-afe3fda0af82',
     Username: 'alice.smith',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-001`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/6aed748d-3a99-410c-9e3a-afe3fda0af82`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-sales'].Arn,
       Id: 'rp-sales'
@@ -317,9 +317,9 @@ const MOCK_USERS = [
     }
   },
   {
-    Id: 'user-002',
+    Id: '762903b8-0d23-4076-8b5f-8d8f633161fe',
     Username: 'bob.jones',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-002`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/762903b8-0d23-4076-8b5f-8d8f633161fe`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-sales'].Arn,
       Id: 'rp-sales'
@@ -330,9 +330,9 @@ const MOCK_USERS = [
     }
   },
   {
-    Id: 'user-003',
+    Id: 'a3c6108c-07de-4c1b-86c4-8f54970e3ae8',
     Username: 'carol.davis',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-003`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/a3c6108c-07de-4c1b-86c4-8f54970e3ae8`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-sales'].Arn,
       Id: 'rp-sales'
@@ -343,9 +343,9 @@ const MOCK_USERS = [
     }
   },
   {
-    Id: 'user-004',
+    Id: 'beb7cc01-cb59-44ec-abf5-4092c7eb6375',
     Username: 'david.wilson',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-004`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/beb7cc01-cb59-44ec-abf5-4092c7eb6375`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-sales'].Arn,
       Id: 'rp-sales'
@@ -356,9 +356,9 @@ const MOCK_USERS = [
     }
   },
   {
-    Id: 'user-005',
+    Id: 'ad6c7251-66ef-4ab0-8b3b-23383cf6af3d',
     Username: 'emma.brown',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-005`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/ad6c7251-66ef-4ab0-8b3b-23383cf6af3d`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-sales'].Arn,
       Id: 'rp-sales'
@@ -370,9 +370,9 @@ const MOCK_USERS = [
   },
   // Agents on contact (3 users)
   {
-    Id: 'user-006',
+    Id: '15d897b4-ce68-4cb8-aa5b-4e34baeca3dc',
     Username: 'frank.taylor',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-006`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/15d897b4-ce68-4cb8-aa5b-4e34baeca3dc`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-support'].Arn,
       Id: 'rp-support'
@@ -383,9 +383,9 @@ const MOCK_USERS = [
     }
   },
   {
-    Id: 'user-007',
+    Id: '55a65983-30c8-4492-bb07-708a9c30d729',
     Username: 'grace.anderson',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-007`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/55a65983-30c8-4492-bb07-708a9c30d729`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-support'].Arn,
       Id: 'rp-support'
@@ -396,9 +396,9 @@ const MOCK_USERS = [
     }
   },
   {
-    Id: 'user-008',
+    Id: '47a61b5c-093d-4e16-ad5a-29a9fd686578',
     Username: 'henry.martinez',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-008`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/47a61b5c-093d-4e16-ad5a-29a9fd686578`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-support'].Arn,
       Id: 'rp-support'
@@ -410,9 +410,9 @@ const MOCK_USERS = [
   },
   // Agents in after contact work (2 users)
   {
-    Id: 'user-009',
+    Id: '9e0a4a18-5a7c-46e8-a724-40647f359f67',
     Username: 'iris.garcia',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-009`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/9e0a4a18-5a7c-46e8-a724-40647f359f67`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['tf-support'].Arn,
       Id: 'tf-support'
@@ -423,9 +423,9 @@ const MOCK_USERS = [
     }
   },
   {
-    Id: 'user-010',
+    Id: 'e4a4da2c-743d-429d-86de-22a7ff19b0c7',
     Username: 'jack.rodriguez',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-010`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/e4a4da2c-743d-429d-86de-22a7ff19b0c7`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['tf-support'].Arn,
       Id: 'tf-support'
@@ -437,9 +437,9 @@ const MOCK_USERS = [
   },
   // Agents on break (1 user)
   {
-    Id: 'user-011',
+    Id: '4ebb98ea-bb7a-4a80-aaaf-e99f176ab802',
     Username: 'kelly.lopez',
-    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-011`,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/4ebb98ea-bb7a-4a80-aaaf-e99f176ab802`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['tf-support'].Arn,
       Id: 'tf-support'

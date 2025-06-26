@@ -226,7 +226,7 @@ aws_connect_exporter_realtime_queue_connect_queue_agents{channel="VOICE",queue_i
 aws_connect_exporter_realtime_queue_connect_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 4
 
 # Agent Status Distribution
-aws_connect_exporter_agent_realtime_status_connect_agent_status_state{agent_id="user-001",username="alice.smith",routing_profile_id="rp-sales",queue_id="queue-sales-01",status_id="status-001",status_name="Available",status_type="unknown",region="eu-west-2"} 1
+aws_connect_exporter_agent_realtime_status_connect_agent_status_state{agent_id="6aed748d-3a99-410c-9e3a-afe3fda0af82",username="alice.smith",routing_profile_id="rp-sales",queue_id="queue-sales-01",status_id="status-001",status_name="Available",status_type="unknown",region="eu-west-2"} 1
 
 # Daily Performance Metrics
 aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 6
