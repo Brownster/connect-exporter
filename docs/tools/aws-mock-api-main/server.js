@@ -82,6 +82,7 @@ const VALID_METRICS = {
   CONTACTS_SCHEDULED: 'COUNT',
   CONTACTS_QUEUED: 'COUNT',
   CONTACTS_ABANDONED: 'COUNT',
+  CONTACTS_HANDLED_OUTBOUND: 'COUNT',
   CONTACTS_HANDLED: 'COUNT'
 };
 
@@ -456,6 +457,11 @@ const MetricGenerators = {
       // Number of contacts abandoned today between 0 and 10
       value: Math.floor(Math.random() * 51),
       unit: VALID_METRICS.CONTACTS_HANDLED
+    }),
+    CONTACTS_HANDLED_OUTBOUND: (queue, baseValues, def) => ({
+      // Number of outbound contacts handled today between 0 and 20
+      value: Math.floor(Math.random() * 21),
+      unit: VALID_METRICS.CONTACTS_HANDLED_OUTBOUND
     })
   },
   
