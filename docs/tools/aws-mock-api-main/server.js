@@ -43,7 +43,7 @@ const ACCOUNT_ID  = process.env.MOCK_ACCOUNT_ID  || '123456789012';
 const REGION      = process.env.MOCK_REGION      || 'eu-west-2';
 
 // Error simulation controls (can be overridden via MOCK_ERROR_RATE)
-let errorRate = 0.2;
+let errorRate = 0.0; // default to no errors for stable tests
 if (process.env.MOCK_ERROR_RATE) {
     const envErrorRate = parseFloat(process.env.MOCK_ERROR_RATE);
     if (!isNaN(envErrorRate) && envErrorRate >= 0 && envErrorRate <= 1) {
@@ -126,6 +126,14 @@ const AWS_ERRORS = {
  * This object simulates various queue configurations
  * as if they were in an AWS Connect instance.
  ****************************************************/
+// Minimal queue summary list returned by the ListQueues endpoint
+// to facilitate queue discovery in tests.
+const MOCK_QUEUE_SUMMARIES = [
+  { Id: 'q-1', Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/q-1`, Name: 'Sales_Queue_VOICE' },
+  { Id: 'q-2', Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/q-2`, Name: 'Support_Queue_CHAT' },
+  { Id: 'q-3', Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/q-3`, Name: 'Test_Queue_TASK' }
+];
+
 const MOCK_QUEUES = {
   'sales': {
     Id: 'queue-sales-01',
@@ -787,8 +795,8 @@ app.all('/{*path}', (req, res, next) => {
             instanceId = req.path.split('/queues-summary/')[1]?.split('?')[0];
             console.log('Extracted instanceId from path:', instanceId);
         } else {
-            instanceId = req.query.InstanceId;
-            console.log('Using instanceId from query:', instanceId);
+            instanceId = req.body.InstanceId || req.query.InstanceId;
+            console.log('Using instanceId from request:', instanceId);
         }
         
         // Validate instanceId
@@ -933,6 +941,29 @@ app.all('/{*path}', (req, res, next) => {
             console.error('\n❌ Internal error:', error);
             return res.status(500).json(AWS_ERRORS.INTERNAL_SERVICE_ERROR);
         }
+    }
+    else if (action === 'GetMetricData') {
+        // Simple historical metrics endpoint used by unit tests
+        const groupings = req.body.Groupings || [];
+        let response;
+        if (groupings.includes('QUEUE') && groupings.includes('CHANNEL')) {
+            response = {
+                MetricResults: [{
+                    Dimensions: { QUEUE: 'Sales_Queue_VOICE', CHANNEL: 'VOICE' },
+                    Collections: [{ Metric: { Name: 'CONTACTS_HANDLED' }, Value: 150.0 }]
+                }]
+            };
+        } else if (groupings.includes('QUEUE')) {
+            response = {
+                MetricResults: [{
+                    Dimensions: { QUEUE: 'Sales_Queue_VOICE' },
+                    Collections: [{ Metric: { Name: 'CONTACTS_HANDLED' }, Value: 250.0 }]
+                }]
+            };
+        } else {
+            response = { MetricResults: [] };
+        }
+        return res.json(response);
     }
     else if (action === 'GetMetricDataV2' || req.path.includes('/metrics/historical/') || req.path.includes('/metrics/data')) {
         console.log('\n=== Processing Historical Metrics Request ===');
