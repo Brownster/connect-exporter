@@ -110,7 +110,7 @@ func TestExporterWithMockAPI(t *testing.T) {
 	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_contacts_abandoned_today") {
 		t.Errorf("missing historical queue abandoned metric")
 	}
-	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_contacts_handled_today") {
+	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_connect_historical_handled_total") {
 		t.Errorf("missing historical queue handled metric")
 	}
 

@@ -81,8 +81,15 @@ func TestHistoricalQueueCollector(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, metrics)
 	assert.Equal(t, []string{"QUEUE", "CHANNEL"}, ms.groupings)
-	assert.Equal(t, prometheus.GaugeValue, metricValueType(metrics[0]))
-	assert.GreaterOrEqual(t, len(metricLabels(metrics[0])), 5)
+	found := false
+	for _, m := range metrics {
+		if metricName(m) == "connect_historical_handled_total" {
+			assert.Equal(t, prometheus.CounterValue, metricValueType(m))
+			assert.Len(t, metricLabels(m), 3)
+			found = true
+		}
+	}
+	assert.True(t, found)
 }
 
 func TestHistoricalQueueCollectorError(t *testing.T) {

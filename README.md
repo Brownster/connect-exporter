@@ -57,7 +57,7 @@ collectors:
 - `aws_connect_realtime_queue_agent_state_agents` (label: `state`)
 - `aws_connect_agent_state_agents` (labels: `queue`, `state`)
 - `aws_connect_historical_queue_contacts_abandoned_today`
-- `aws_connect_historical_queue_contacts_handled_today`
+- `aws_connect_historical_queue_connect_historical_handled_total`
 - `aws_connect_historical_calls_connect_calls_handled_total`
 - `aws_connect_historical_calls_connect_calls_abandoned_total`
 - `aws_connect_agent_status_count`
