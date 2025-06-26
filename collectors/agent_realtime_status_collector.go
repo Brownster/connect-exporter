@@ -16,7 +16,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const agentRealtimeStatusCollectorVersion = "1.0.0"
 
 // NewAgentRealtimeStatusCollector creates a scheduled scraper for agent realtime status metrics
 func NewAgentRealtimeStatusCollector(app *kingpin.Application, config connectors.AWSConnectConfig) *maas.ScheduledScraper {

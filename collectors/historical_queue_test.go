@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/http/httptest"
-	"os"
-	"strings"
+       "net/http/httptest"
+       "strings"
 	"testing"
 
 	"github.com/alecthomas/kingpin/v2"
@@ -18,9 +17,8 @@ import (
 )
 
 type mockServer struct {
-	t         *testing.T
-	groupings []string
-	returnErr bool
+       groupings []string
+       returnErr bool
 }
 
 func (m *mockServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -28,29 +26,29 @@ func (m *mockServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "fail", http.StatusInternalServerError)
 		return
 	}
-	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/queues-summary/") {
-		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"QueueSummaryList":[{"Id":"q-1","Name":"Sales_Queue_VOICE","QueueType":"STANDARD"}]}`)
-		return
-	}
-	if r.Method == http.MethodPost && r.URL.Path == "/metrics/data" {
-		body, _ := io.ReadAll(r.Body)
-		var req struct{ Groupings []string }
-		json.Unmarshal(body, &req)
-		m.groupings = req.Groupings
-		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"MetricResults":[{"Dimensions":{"QUEUE":"q-1","CHANNEL":"VOICE"},"Collections":[{"Metric":{"Name":"CONTACTS_HANDLED"},"Value":150.0}]}]}`)
-		return
-	}
+       if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/queues-summary/") {
+               w.Header().Set("Content-Type", "application/json")
+               io.WriteString(w, `{"QueueSummaryList":[{"Id":"q-1","Name":"Sales_Queue_VOICE","QueueType":"STANDARD"}]}`) //nolint:errcheck
+               return
+       }
+       if r.Method == http.MethodPost && r.URL.Path == "/metrics/data" {
+               body, _ := io.ReadAll(r.Body)
+               var req struct{ Groupings []string }
+               json.Unmarshal(body, &req) //nolint:errcheck
+               m.groupings = req.Groupings
+               w.Header().Set("Content-Type", "application/json")
+               io.WriteString(w, `{"MetricResults":[{"Dimensions":{"QUEUE":"q-1","CHANNEL":"VOICE"},"Collections":[{"Metric":{"Name":"CONTACTS_HANDLED"},"Value":150.0}]}]}`) //nolint:errcheck
+               return
+       }
 	http.NotFound(w, r)
 }
 
 func setupConnector(t *testing.T, srv *httptest.Server) *connectors.AWSConnectConnector {
-	os.Setenv("ENV", "development")
-	os.Setenv("AWS_CONNECT_MOCK_ENDPOINT", srv.URL)
-	os.Setenv("AWS_ACCESS_KEY_ID", "dummy")
-	os.Setenv("AWS_SECRET_ACCESS_KEY", "dummy")
-	os.Setenv("AWS_REGION", "eu-west-2")
+       t.Setenv("ENV", "development")
+       t.Setenv("AWS_CONNECT_MOCK_ENDPOINT", srv.URL)
+       t.Setenv("AWS_ACCESS_KEY_ID", "dummy")
+       t.Setenv("AWS_SECRET_ACCESS_KEY", "dummy")
+       t.Setenv("AWS_REGION", "eu-west-2")
 
 	app := kingpin.New("app", "test")
 	conn, err := connectors.NewConfigurableAWSConnectConnector(app)
