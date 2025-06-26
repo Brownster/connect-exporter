@@ -204,12 +204,76 @@ const MOCK_QUEUES = {
  * These entries simulate agent status objects returned
  * by the AWS Connect ListAgentStatuses API.
  ****************************************************/
-const MOCK_AGENT_STATUSES = [
-  { Id: 'status-001', Name: 'Available', Type: 'ROUTABLE' },
-  { Id: 'status-002', Name: 'Busy', Type: 'ROUTABLE' },
-  { Id: 'status-003', Name: 'After Contact Work', Type: 'ROUTABLE' },
-  { Id: 'status-004', Name: 'Custom Break', Type: 'CUSTOM' }
+// List of all possible agent statuses. This mimics the static configuration in
+// a real Connect instance where admins define available states.
+const agentStatuses = [
+  { Id: 'available-status-id', Name: 'Available', Type: 'ROUTABLE' },
+  { Id: 'acw-status-id', Name: 'After Contact Work', Type: 'NOT_ROUTABLE' },
+  { Id: 'oncall-status-id', Name: 'On Call', Type: 'NOT_ROUTABLE' },
+  { Id: 'lunch-status-id', Name: 'Lunch Break', Type: 'CUSTOM' },
+  { Id: 'error-status-id', Name: 'Error', Type: 'NOT_ROUTABLE' }
 ];
+
+// Dynamic roster of agents. Each agent references one of the statuses above via
+// `currentStatusId`. This array will be mutated by the simulation logic below.
+let agentRoster = [
+  { id: 'agent-1', username: 'jdoe', currentStatusId: 'available-status-id' },
+  { id: 'agent-2', username: 'psmith', currentStatusId: 'available-status-id' },
+  { id: 'agent-3', username: 'rroe', currentStatusId: 'lunch-status-id' },
+  { id: 'agent-4', username: 'mday', currentStatusId: 'available-status-id' }
+];
+
+// Internal counter for generating unique agent IDs when new agents log in.
+let nextAgentId = 5;
+
+// ----------------------------------------------------------
+// Simulation Helpers
+// ----------------------------------------------------------
+
+// Randomly update agent statuses to simulate activity.
+function simulateAgentStateChanges() {
+  agentRoster.forEach(agent => {
+    // 30% chance an agent changes state each interval
+    if (Math.random() < 0.3) {
+      const currentIndex = agentStatuses.findIndex(s => s.Id === agent.currentStatusId);
+      let newIndex;
+      do {
+        newIndex = Math.floor(Math.random() * agentStatuses.length);
+      } while (newIndex === currentIndex);
+
+      const newStatus = agentStatuses[newIndex];
+      console.log(`SIMULATOR: Agent ${agent.username} changed state to ${newStatus.Name}`);
+      agent.currentStatusId = newStatus.Id;
+    }
+  });
+}
+
+// Periodically adjust the agent roster: agents logging in and out.
+function simulateRosterChanges() {
+  // 10% chance an agent logs out (keep at least two)
+  if (Math.random() < 0.1 && agentRoster.length > 2) {
+    const index = Math.floor(Math.random() * agentRoster.length);
+    const leaving = agentRoster[index];
+    console.log(`SIMULATOR: Agent ${leaving.username} has logged out.`);
+    agentRoster.splice(index, 1);
+  }
+
+  // 15% chance a new agent logs in (cap at 10 agents)
+  if (Math.random() < 0.15 && agentRoster.length < 10) {
+    const newAgent = {
+      id: `agent-${nextAgentId}`,
+      username: `newuser${nextAgentId}`,
+      currentStatusId: 'available-status-id'
+    };
+    console.log(`SIMULATOR: Agent ${newAgent.username} has logged in.`);
+    agentRoster.push(newAgent);
+    nextAgentId++;
+  }
+}
+
+// Kick off the simulations
+setInterval(simulateAgentStateChanges, 5000);   // status changes every 5s
+setInterval(simulateRosterChanges, 15000);      // roster changes every 15s
 
 /****************************************************
  * MOCK USERS
@@ -1141,7 +1205,18 @@ app.all('/{*path}', (req, res, next) => {
             return res.status(500).json(error);
         }
 
-        const { items, nextToken: newNextToken } = paginateResults(MOCK_AGENT_STATUSES, nextToken);
+        // Build dynamic status objects for each agent in the roster
+        const statusList = agentRoster.map(agent => {
+            const status = agentStatuses.find(s => s.Id === agent.currentStatusId) || {};
+            return {
+                Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/${agent.id}`,
+                Id: agent.id,
+                Name: status.Name,
+                Type: status.Type
+            };
+        });
+
+        const { items, nextToken: newNextToken } = paginateResults(statusList, nextToken);
         return res.json({
             AgentStatusSummaryList: items,
             NextToken: newNextToken
