@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -62,8 +63,10 @@ type CollectorsConfig struct {
 
 // RealtimeQueueConfig configures the realtime queue collector
 type RealtimeQueueConfig struct {
-	Enabled  bool `yaml:"enabled"`
-	Interval int  `yaml:"interval"`
+	Enabled         bool          `yaml:"enabled"`
+	Interval        int           `yaml:"interval"`
+	MetricsCacheTTL time.Duration `yaml:"metrics_cache_ttl"`
+	QueueCacheTTL   time.Duration `yaml:"queue_cache_ttl"`
 }
 
 // AgentStatusConfig configures the agent status collector
@@ -382,6 +385,12 @@ func (c *AWSConnectConnector) configure() error {
 	}
 	if cfg.Collectors.RealtimeQueue.Interval <= 0 {
 		cfg.Collectors.RealtimeQueue.Interval = 60 // Default 1 minute
+	}
+	if cfg.Collectors.RealtimeQueue.MetricsCacheTTL <= 0 {
+		cfg.Collectors.RealtimeQueue.MetricsCacheTTL = 15 * time.Second // Default 15s
+	}
+	if cfg.Collectors.RealtimeQueue.QueueCacheTTL <= 0 {
+		cfg.Collectors.RealtimeQueue.QueueCacheTTL = 5 * time.Minute // Default 5m
 	}
 	if cfg.Collectors.AgentStatus.Interval <= 0 {
 		cfg.Collectors.AgentStatus.Interval = 300 // Default 5 minutes

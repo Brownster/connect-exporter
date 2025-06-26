@@ -3,6 +3,7 @@ package collectors
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
@@ -50,12 +51,25 @@ func NewRealtimeQueueCollector(app *kingpin.Application, config connectors.AWSCo
 
 // RealtimeQueueScraper collects real-time metrics from AWS Connect queues
 type RealtimeQueueScraper struct {
-	// No longer store config - get it from connector during scrape
+	metricsCache struct {
+		metrics   []maas.Metric
+		timestamp time.Time
+	}
+	queueCache struct {
+		queues    []connectors.Queue
+		timestamp time.Time
+	}
+	metricsTTL time.Duration
+	queueTTL   time.Duration
+	mu         sync.Mutex
 }
 
 // NewRealtimeQueueScraper creates a new scraper instance
 func NewRealtimeQueueScraper(app *kingpin.Application, config connectors.AWSConnectConfig) *RealtimeQueueScraper {
-	return &RealtimeQueueScraper{}
+	return &RealtimeQueueScraper{
+		metricsTTL: config.Collectors.RealtimeQueue.MetricsCacheTTL,
+		queueTTL:   config.Collectors.RealtimeQueue.QueueCacheTTL,
+	}
 }
 
 // Scrape performs the actual data collection
@@ -75,15 +89,37 @@ func (s *RealtimeQueueScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 		"collector_version": realtimeQueueCollectorVersion,
 	}).Debug("Starting realtime queue metrics collection")
 
-	// Get all queues for the instance
-	queues, err := conn.ListQueues(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to list queues: %w", err)
+	now := time.Now()
+
+	s.mu.Lock()
+	if now.Sub(s.metricsCache.timestamp) < s.metricsTTL && len(s.metricsCache.metrics) > 0 {
+		cached := s.metricsCache.metrics
+		s.mu.Unlock()
+		logrus.WithField("collector_version", realtimeQueueCollectorVersion).Debug("Returning cached metrics")
+		return cached, nil
 	}
 
-	if len(queues) == 0 {
-		logrus.WithField("instance_arn", config.AWS.InstanceARN).Warn("No queues found for instance")
-		return []maas.Metric{}, nil
+	var queues []connectors.Queue
+	if now.Sub(s.queueCache.timestamp) < s.queueTTL && len(s.queueCache.queues) > 0 {
+		queues = s.queueCache.queues
+		s.mu.Unlock()
+		logrus.WithField("collector_version", realtimeQueueCollectorVersion).Debug("Using cached queue list")
+	} else {
+		s.mu.Unlock()
+		// Fetch queues from AWS
+		var err error
+		queues, err = conn.ListQueues(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("failed to list queues: %w", err)
+		}
+		if len(queues) == 0 {
+			logrus.WithField("instance_arn", config.AWS.InstanceARN).Warn("No queues found for instance")
+			return []maas.Metric{}, nil
+		}
+		s.mu.Lock()
+		s.queueCache.queues = queues
+		s.queueCache.timestamp = now
+		s.mu.Unlock()
 	}
 
 	logrus.WithFields(logrus.Fields{
@@ -166,6 +202,11 @@ func (s *RealtimeQueueScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 		"queue_count":       len(queues),
 		"collector_version": realtimeQueueCollectorVersion,
 	}).Debug("Completed realtime queue metrics collection")
+
+	s.mu.Lock()
+	s.metricsCache.metrics = allMetrics
+	s.metricsCache.timestamp = time.Now()
+	s.mu.Unlock()
 
 	return allMetrics, nil
 }

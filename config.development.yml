@@ -19,6 +19,8 @@ collectors:
   realtime_queue:
     enabled: true
     interval: 30  # Faster collection for development (30 seconds)
+    metrics_cache_ttl: 15s
+    queue_cache_ttl: 5m
     
   # Agent Status Collector  
   agent_status:
