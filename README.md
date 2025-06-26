@@ -66,7 +66,7 @@ collectors:
 - `aws_connect_agent_status_count`
 - `aws_connect_agent_status_display_order`
 - `aws_connect_agent_status_custom`
-- `aws_connect_agent_realtime_status_agents`
+- `aws_connect_agent_realtime_status_agent_state`
 
 All queue metrics include a `channel` label. Possible values are
 `VOICE`, `CHAT`, or `TASK`.
@@ -192,7 +192,7 @@ aws_connect_exporter_realtime_queue_agents_non_productive{channel="VOICE",queue_
 aws_connect_exporter_realtime_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 4
 
 # Agent Status Distribution  
-aws_connect_exporter_agent_realtime_status_agent_realtime_status_agents{region="eu-west-2",status_id="status-001",status_name="Available",status_type="unknown"} 2
+aws_connect_exporter_agent_realtime_status_agent_state{agent_id="user-001",username="alice.smith",routing_profile_id="",queue_id="",status_id="status-001",status_name="Available",status_type="unknown",region="eu-west-2"} 1
 
 # Daily Performance Metrics
 aws_connect_exporter_historical_queue_contacts_abandoned_today{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 6

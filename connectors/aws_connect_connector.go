@@ -307,6 +307,21 @@ func (c *AWSConnectConnector) ListUsers(ctx context.Context, input *connect.List
 	return output, nil
 }
 
+// ListRoutingProfileQueues retrieves queue IDs associated with a routing profile
+func (c *AWSConnectConnector) ListRoutingProfileQueues(ctx context.Context, input *connect.ListRoutingProfileQueuesInput) (*connect.ListRoutingProfileQueuesOutput, error) {
+	output, err := c.client.ListRoutingProfileQueues(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("error listing routing profile queues: %w", err)
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"queue_count":  len(output.RoutingProfileQueueConfigSummaryList),
+		"instance_arn": c.instanceARN,
+	}).Debug("Successfully listed routing profile queues")
+
+	return output, nil
+}
+
 // Helper functions for development mode detection
 
 // isDevelopmentMode checks if we should use the mock API

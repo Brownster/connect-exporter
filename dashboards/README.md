@@ -38,7 +38,7 @@ aws_connect_exporter_realtime_queue_slots_available
 aws_connect_exporter_realtime_queue_agents_non_productive
 
 # Live agent status distribution
-aws_connect_exporter_agent_realtime_status_agent_realtime_status_agents
+aws_connect_exporter_agent_realtime_status_agent_state
 ```
 
 ### Daily Performance Dashboard Metrics:
