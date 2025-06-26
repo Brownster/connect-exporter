@@ -135,6 +135,25 @@ const MOCK_QUEUE_SUMMARIES = [
   { Id: 'q-3', Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/q-3`, Name: 'Test_Queue_TASK' }
 ];
 
+// Simplified routing profile definitions for queue lookups
+const ROUTING_PROFILES = {
+  'rp-sales': {
+    Id: 'rp-sales',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-sales`,
+    Queues: ['queue-sales-01']
+  },
+  'rp-support': {
+    Id: 'rp-support',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-support`,
+    Queues: ['queue-support-01']
+  },
+  'tf-support': {
+    Id: 'tf-support',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/tf-support`,
+    Queues: ['queue-support-999', 'queue-chat-999', 'queue-task-999']
+  }
+};
+
 const MOCK_QUEUES = {
   'sales': {
     Id: 'queue-sales-01',
@@ -288,6 +307,10 @@ const MOCK_USERS = [
     Id: 'user-001',
     Username: 'alice.smith',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-001`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['rp-sales'].Arn,
+      Id: 'rp-sales'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
       StatusName: 'Available'
@@ -297,6 +320,10 @@ const MOCK_USERS = [
     Id: 'user-002',
     Username: 'bob.jones',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-002`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['rp-sales'].Arn,
+      Id: 'rp-sales'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
       StatusName: 'Available'
@@ -306,6 +333,10 @@ const MOCK_USERS = [
     Id: 'user-003',
     Username: 'carol.davis',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-003`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['rp-sales'].Arn,
+      Id: 'rp-sales'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
       StatusName: 'Available'
@@ -315,6 +346,10 @@ const MOCK_USERS = [
     Id: 'user-004',
     Username: 'david.wilson',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-004`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['rp-sales'].Arn,
+      Id: 'rp-sales'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
       StatusName: 'Available'
@@ -324,6 +359,10 @@ const MOCK_USERS = [
     Id: 'user-005',
     Username: 'emma.brown',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-005`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['rp-sales'].Arn,
+      Id: 'rp-sales'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
       StatusName: 'Available'
@@ -334,6 +373,10 @@ const MOCK_USERS = [
     Id: 'user-006',
     Username: 'frank.taylor',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-006`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['rp-support'].Arn,
+      Id: 'rp-support'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
       StatusName: 'Busy'
@@ -343,6 +386,10 @@ const MOCK_USERS = [
     Id: 'user-007',
     Username: 'grace.anderson',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-007`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['rp-support'].Arn,
+      Id: 'rp-support'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
       StatusName: 'Busy'
@@ -352,6 +399,10 @@ const MOCK_USERS = [
     Id: 'user-008',
     Username: 'henry.martinez',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-008`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['rp-support'].Arn,
+      Id: 'rp-support'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
       StatusName: 'Busy'
@@ -362,6 +413,10 @@ const MOCK_USERS = [
     Id: 'user-009',
     Username: 'iris.garcia',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-009`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['tf-support'].Arn,
+      Id: 'tf-support'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-003`,
       StatusName: 'After Contact Work'
@@ -371,6 +426,10 @@ const MOCK_USERS = [
     Id: 'user-010',
     Username: 'jack.rodriguez',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-010`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['tf-support'].Arn,
+      Id: 'tf-support'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-003`,
       StatusName: 'After Contact Work'
@@ -381,6 +440,10 @@ const MOCK_USERS = [
     Id: 'user-011',
     Username: 'kelly.lopez',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/user-011`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['tf-support'].Arn,
+      Id: 'tf-support'
+    },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-004`,
       StatusName: 'Custom Break'
@@ -1168,12 +1231,67 @@ app.all('/{*path}', (req, res, next) => {
         const formatted = items.map(u => ({
             User: { Id: u.Id, Arn: u.Arn, Username: u.Username },
             Status: u.Status,
-            // add RoutingProfile if desired
+            RoutingProfile: u.RoutingProfile
         }));
         return res.json({
             UserDataList: formatted,
             NextToken: newNextToken,
             ApproximateTotalCount: MOCK_USERS.length
+        });
+    }
+    else if (action === 'ListRoutingProfileQueues' || req.path.includes('/routing-profile-queues/')) {
+        console.log('\n=== Processing Routing Profile Queues Request ===');
+
+        let instanceId, rpId;
+        if (req.path.includes('/routing-profile-queues/')) {
+            const parts = req.path.split('/routing-profile-queues/')[1]?.split('/') || [];
+            instanceId = parts[0];
+            rpId = parts[1]?.split('?')[0];
+            console.log('📍 Extracted instanceId and rpId from path:', instanceId, rpId);
+        } else {
+            instanceId = req.body.InstanceId || req.query.InstanceId;
+            rpId = req.body.RoutingProfileId || req.query.RoutingProfileId;
+            console.log('📍 Using instanceId/rpId from request:', instanceId, rpId);
+        }
+
+        if (!instanceId || instanceId !== INSTANCE_ID) {
+            console.log('❌ Invalid instanceId:', instanceId);
+            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+        }
+        if (!rpId || !ROUTING_PROFILES[rpId]) {
+            console.log('❌ Invalid routingProfileId:', rpId);
+            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+        }
+
+        const nextToken = req.query.nextToken || (req.body && req.body.NextToken);
+        if (nextToken && isNaN(parseInt(nextToken, 10))) {
+            console.log('Invalid nextToken:', nextToken);
+            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
+        }
+
+        const error = shouldError();
+        if (error) {
+            console.log('Random error triggered:', error);
+            return res.status(500).json(error);
+        }
+
+        const queues = ROUTING_PROFILES[rpId].Queues.map(qid => {
+            const q = Object.values(MOCK_QUEUES).find(q => q.Id === qid);
+            if (!q) return null;
+            return {
+                QueueArn: q.Arn,
+                QueueId: q.Id,
+                QueueName: q.Name,
+                Channel: q.Channel,
+                Priority: q.Priority,
+                Delay: 0
+            };
+        }).filter(Boolean);
+
+        const { items, nextToken: newNextToken } = paginateResults(queues, nextToken);
+        return res.json({
+            RoutingProfileQueueConfigSummaryList: items,
+            NextToken: newNextToken
         });
     }
     else if (action === 'ListAgentStatuses' || req.path.includes('/agent-status/')) {
