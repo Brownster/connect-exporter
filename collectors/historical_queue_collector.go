@@ -15,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const historicalQueueCollectorVersion = "1.0.0"
 
 // NewHistoricalQueueCollector creates a scheduled scraper for historical queue metrics
 func NewHistoricalQueueCollector(app *kingpin.Application, config connectors.AWSConnectConfig) *maas.ScheduledScraper {

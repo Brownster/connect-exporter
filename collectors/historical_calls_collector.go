@@ -15,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const historicalCallsCollectorVersion = "1.0.0"
 
 // NewHistoricalCallsCollector creates a scheduled scraper for historical call metrics
 func NewHistoricalCallsCollector(app *kingpin.Application, config connectors.AWSConnectConfig) *maas.ScheduledScraper {

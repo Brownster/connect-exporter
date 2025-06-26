@@ -25,12 +25,12 @@ func waitForURL(url string, timeout time.Duration) error {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(url)
 		if err == nil && resp.StatusCode == http.StatusOK {
-			resp.Body.Close()
+               _ = resp.Body.Close()
 			return nil
 		}
 		if resp != nil {
-			io.Copy(io.Discard, resp.Body)
-			resp.Body.Close()
+                       _, _ = io.Copy(io.Discard, resp.Body)
+                       _ = resp.Body.Close()
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
@@ -51,7 +51,7 @@ func TestExporterWithMockAPI(t *testing.T) {
 	if err := mockCmd.Start(); err != nil {
 		t.Fatalf("failed to start mock API: %v", err)
 	}
-	defer mockCmd.Process.Kill()
+       defer func() { _ = mockCmd.Process.Kill() }()
 
 	// Wait a moment for the mock API to start
 	time.Sleep(2 * time.Second)
@@ -79,7 +79,7 @@ func TestExporterWithMockAPI(t *testing.T) {
 	if err := exporterCmd.Start(); err != nil {
 		t.Fatalf("failed to start exporter: %v", err)
 	}
-	defer exporterCmd.Process.Kill()
+       defer func() { _ = exporterCmd.Process.Kill() }()
 
 	if err := waitForURL("http://localhost:9100/metrics", 20*time.Second); err != nil {
 		t.Fatalf("exporter not ready: %v\nOutput:%s", err, out.String())
@@ -89,8 +89,8 @@ func TestExporterWithMockAPI(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to fetch metrics: %v", err)
 	}
-	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+       body, _ := io.ReadAll(resp.Body)
+       _ = resp.Body.Close()
 	metrics := string(body)
 
 	// Debug: Print some metrics to see what's available
