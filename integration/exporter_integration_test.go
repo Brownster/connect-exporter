@@ -105,4 +105,23 @@ func TestExporterWithMockAPI(t *testing.T) {
 		t.Logf("Metrics preview: %s", metrics[:min(500, len(metrics))])
 		t.Errorf("expected agent metric for user-001")
 	}
+
+	// Verify historical queue metrics are exposed
+	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_contacts_queued_today") {
+		t.Errorf("missing historical queue queued metric")
+	}
+	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_contacts_abandoned_today") {
+		t.Errorf("missing historical queue abandoned metric")
+	}
+	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_contacts_handled_today") {
+		t.Errorf("missing historical queue handled metric")
+	}
+
+	// Verify queue discovery found expected queues
+	if !strings.Contains(metrics, "queue_id=\"queue-sales-01\"") || !strings.Contains(metrics, "queue_name=\"Sales Queue\"") {
+		t.Errorf("Sales Queue metrics not found, queue discovery may have failed")
+	}
+	if !strings.Contains(metrics, "queue_id=\"queue-support-01\"") || !strings.Contains(metrics, "queue_name=\"Support Queue\"") {
+		t.Errorf("Support Queue metrics not found, queue discovery may have failed")
+	}
 }
