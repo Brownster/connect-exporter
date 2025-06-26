@@ -39,6 +39,10 @@ collectors:
     enabled: true
     interval: 60  # Faster collection for development (1 minute)
 
+  historical_calls:
+    enabled: false
+    interval: 60
+
 # Global settings
 global:
   # Shorter timeout for development

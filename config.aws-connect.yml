@@ -40,6 +40,10 @@ collectors:
     enabled: true
     interval: 300  # Collection interval in seconds (5 minutes)
 
+  historical_calls:
+    enabled: true
+    interval: 300
+
 # Global settings
 global:
   # Default timeout for all operations
