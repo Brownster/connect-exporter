@@ -18,12 +18,12 @@
         "gridPos": {"h": 6, "w": 24, "x": 0, "y": 0},
         "targets": [
           {
-            "expr": "sum(aws_connect_exporter_realtime_queue_slots_available)",
+            "expr": "sum(aws_connect_exporter_realtime_queue_connect_queue_slots_available)",
             "legendFormat": "Available Slots",
             "refId": "A"
           },
           {
-            "expr": "sum(aws_connect_exporter_agent_state_agents{state=\"NonProductive\"})",
+            "expr": "sum(aws_connect_exporter_realtime_queue_connect_queue_agents{state=\"NonProductive\"})",
             "legendFormat": "Non-Productive Agents",
             "refId": "B"
           }
@@ -106,14 +106,14 @@
         "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
         "targets": [
           {
-            "expr": "aws_connect_exporter_realtime_queue_slots_available",
+            "expr": "aws_connect_exporter_realtime_queue_connect_queue_slots_available",
             "legendFormat": "{{queue}} ({{channel}})",
             "refId": "A",
             "format": "table",
             "instant": true
           },
           {
-            "expr": "aws_connect_exporter_agent_state_agents{state=\"NonProductive\"}",
+            "expr": "aws_connect_exporter_realtime_queue_connect_queue_agents{state=\"NonProductive\"}",
             "legendFormat": "{{queue}} ({{channel}})",
             "refId": "B",
             "format": "table",
@@ -183,12 +183,12 @@
         "gridPos": {"h": 8, "w": 24, "x": 0, "y": 14},
         "targets": [
           {
-            "expr": "aws_connect_exporter_realtime_queue_slots_available",
+            "expr": "aws_connect_exporter_realtime_queue_connect_queue_slots_available",
             "legendFormat": "{{queue}} - Available Slots",
             "refId": "A"
           },
           {
-            "expr": "aws_connect_exporter_agent_state_agents{state=\"NonProductive\"}",
+            "expr": "aws_connect_exporter_realtime_queue_connect_queue_agents{state=\"NonProductive\"}",
             "legendFormat": "{{queue}} - Non-Productive",
             "refId": "B"
           }
@@ -237,12 +237,12 @@
         "gridPos": {"h": 4, "w": 24, "x": 0, "y": 22},
         "targets": [
           {
-            "expr": "sum(aws_connect_exporter_realtime_queue_slots_available) < 3",
+            "expr": "sum(aws_connect_exporter_realtime_queue_connect_queue_slots_available) < 3",
             "legendFormat": "Low Available Slots",
             "refId": "A"
           },
           {
-            "expr": "sum(aws_connect_exporter_agent_state_agents{state=\"NonProductive\"}) > 5",
+            "expr": "sum(aws_connect_exporter_realtime_queue_connect_queue_agents{state=\"NonProductive\"}) > 5",
             "legendFormat": "High Non-Productive",
             "refId": "B"
           }

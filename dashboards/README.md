@@ -34,18 +34,18 @@ This directory contains two comprehensive Grafana dashboards designed specifical
 ### Real-time Dashboard Metrics:
 ```prometheus
 # Queue availability and agent productivity
-aws_connect_exporter_realtime_queue_slots_available
-aws_connect_exporter_agent_state_agents{state="NonProductive"}
+aws_connect_exporter_realtime_queue_connect_queue_slots_available
+aws_connect_exporter_realtime_queue_connect_queue_agents{state="NonProductive"}
 
 # Live agent status distribution
-aws_connect_exporter_agent_realtime_status_agent_state
+aws_connect_exporter_agent_realtime_status_connect_agent_status_state
 ```
 
 ### Daily Performance Dashboard Metrics:
 ```prometheus
 # Daily contact volumes and outcomes
-aws_connect_exporter_historical_calls_connect_calls_handled_total
-aws_connect_exporter_historical_calls_connect_calls_abandoned_total
+aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total
+aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total
 
 # Calculated KPIs
 abandonment_rate = abandoned_total / (handled_total + abandoned_total) * 100

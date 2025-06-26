@@ -38,11 +38,10 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 
 	scrapers := []*maas.ScheduledScraper{
 		NewRealtimeQueueCollector(app, defaultConfig),
-		NewAgentStatusCollector(app, defaultConfig),
-		NewAgentStateCollector(app, defaultConfig),
-		NewAgentRealtimeStatusCollector(app, defaultConfig),
-		NewHistoricalQueueCollector(app, defaultConfig),
-		NewHistoricalCallsCollector(app, defaultConfig),
+               NewAgentStatusCollector(app, defaultConfig),
+               NewAgentRealtimeStatusCollector(app, defaultConfig),
+               NewHistoricalQueueCollector(app, defaultConfig),
+               NewHistoricalCallsCollector(app, defaultConfig),
 	}
 
 	// Create the exporter with the connector and collectors

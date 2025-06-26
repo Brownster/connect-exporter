@@ -33,7 +33,7 @@ func NewAgentStatusCollector(app *kingpin.Application, config connectors.AWSConn
 			maas.WithTimeout(timeout),
 		)),
 		// Register metrics with descriptions
-		maas.WithDescription(app, "agent_status_count", "Number of agents in each status", []string{"status_id", "status_name", "status_type", "region"}),
+               maas.WithDescription(app, "connect_agent_statuses_total", "Number of agents in each status", []string{"status_id", "status_name", "status_type", "region"}),
 		// REMOVED: agent_status_custom - Not operationally valuable (just indicates custom vs built-in)
 	)
 }
@@ -102,12 +102,12 @@ func (s *AgentStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 			}
 
 			// Create metric for agent status count (always 1 per status type)
-			metrics = append(metrics, maas.NewMetric(
-				"agent_status_count",
-				prometheus.GaugeValue,
-				1, // Count of this status type
-				labels,
-			))
+                        metrics = append(metrics, maas.NewMetric(
+                                "connect_agent_statuses_total",
+                                prometheus.GaugeValue,
+                                1, // Count of this status type
+                                labels,
+                        ))
 
 			// Note: DisplayOrder field is not available in current AWS SDK version
 			// If needed, this could be retrieved via a separate DescribeAgentStatus call

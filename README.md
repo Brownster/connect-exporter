@@ -50,20 +50,19 @@ collectors:
 
 ## Metrics Exposed
 
-- `aws_connect_realtime_queue_contacts_in_queue`
-- `aws_connect_realtime_queue_oldest_contact_age_seconds`
-- `aws_connect_realtime_queue_slots_available`
-- `aws_connect_realtime_queue_slots_active`
-- `aws_connect_realtime_queue_agent_state_agents` (label: `state`)
-- `aws_connect_agent_state_agents` (labels: `queue`, `state`)
-- `aws_connect_historical_queue_contacts_abandoned_today`
-- `aws_connect_historical_queue_connect_historical_handled_total`
-- `aws_connect_historical_calls_connect_calls_handled_total`
-- `aws_connect_historical_calls_connect_calls_abandoned_total`
-- `aws_connect_agent_status_count`
+- `aws_connect_realtime_queue_connect_queue_contacts_in_queue`
+- `aws_connect_realtime_queue_connect_queue_oldest_contact_age_seconds`
+- `aws_connect_realtime_queue_connect_queue_slots_available`
+- `aws_connect_realtime_queue_connect_queue_slots_active`
+- `aws_connect_realtime_queue_connect_queue_agents` (label: `state`)
+- `aws_connect_historical_queue_connect_historical_contacts_abandoned_total`
+- `aws_connect_historical_queue_connect_historical_contacts_handled_total`
+- `aws_connect_historical_calls_connect_historical_contacts_handled_total`
+- `aws_connect_historical_calls_connect_historical_contacts_abandoned_total`
+- `aws_connect_agent_statuses_total`
 - `aws_connect_agent_status_display_order`
 - `aws_connect_agent_status_custom`
-- `aws_connect_agent_realtime_status_agent_state`
+- `aws_connect_agent_realtime_status_connect_agent_status_state`
 
 
 All queue metrics include a `channel` label. Possible values are
@@ -75,12 +74,12 @@ This exporter provides real-time and historical metrics from the Amazon Connect 
 
 | Business Metric / Stakeholder Term | Prometheus Metric & Query | AWS API Metric | Description |
 | ---------------------------------- | ------------------------- | -------------- | ----------- |
-| **Callers in Queue** | `aws_connect_realtime_queue_contacts_in_queue{...}` | `CONTACTS_IN_QUEUE` | The number of contacts currently waiting in a specific queue. |
-| **Longest Wait Time** | `aws_connect_realtime_queue_oldest_contact_age_seconds{...}` | `OLDEST_CONTACT_AGE` | The age, in seconds, of the longest-waiting contact in a queue. |
-| **Agent Status per Queue** | `aws_connect_realtime_queue_agent_state_agents{state="..."}` | `AGENTS_AVAILABLE`, etc. | The number of agents in a specific state (`Available`, `OnContact`). |
-| **Total Concurrent Calls** | `sum(aws_connect_agent_state_agents{state="OnContact"})` | `AGENTS_ON_CONTACT` | **Calculated Total:** The number of agents handling any contact (voice, chat, task). |
-| **Total Calls Today (Inbound)** | `increase(aws_connect_historical_calls_connect_calls_handled_total{direction="inbound"}[1d])` | `CONTACTS_HANDLED` | **Calculated Total:** The number of inbound contacts handled today. |
-| **Total Calls Today (Outbound)** | `increase(aws_connect_historical_calls_connect_calls_handled_total{direction="outbound"}[1d])` | `CONTACTS_HANDLED_OUTBOUND` | **Calculated Total:** The number of outbound contacts handled today. |
+| **Callers in Queue** | `aws_connect_realtime_queue_connect_queue_contacts_in_queue{...}` | `CONTACTS_IN_QUEUE` | The number of contacts currently waiting in a specific queue. |
+| **Longest Wait Time** | `aws_connect_realtime_queue_connect_queue_oldest_contact_age_seconds{...}` | `OLDEST_CONTACT_AGE` | The age, in seconds, of the longest-waiting contact in a queue. |
+| **Agent Status per Queue** | `aws_connect_realtime_queue_connect_queue_agents{state="..."}` | `AGENTS_AVAILABLE`, etc. | The number of agents in a specific state (`Available`, `OnContact`). |
+| **Total Concurrent Calls** | `sum(aws_connect_realtime_queue_connect_queue_agents{state="OnContact"})` | `AGENTS_ON_CONTACT` | **Calculated Total:** The number of agents handling any contact (voice, chat, task). |
+| **Total Calls Today (Inbound)** | `increase(aws_connect_historical_calls_connect_historical_contacts_handled_total{direction="inbound"}[1d])` | `CONTACTS_HANDLED` | **Calculated Total:** The number of inbound contacts handled today. |
+| **Total Calls Today (Outbound)** | `increase(aws_connect_historical_calls_connect_historical_contacts_handled_total{direction="outbound"}[1d])` | `CONTACTS_HANDLED_OUTBOUND` | **Calculated Total:** The number of outbound contacts handled today. |
 
 ### Understanding the Historical Collectors
 
@@ -95,7 +94,7 @@ The exporter ships with two complementary collectors for historical metrics:
 **historical_calls Collector (The Dashboard Builder's Tool)**
 
 - **Purpose:** High-level, business-facing dashboarding and trend analysis.
-- **Use Case:** Answering common questions like, "Show me a graph of our total inbound call rate today," which is a simple `rate(aws_connect_historical_calls_connect_calls_handled_total[5m])` query. Or, "How many calls did we handle yesterday?" using `increase(aws_connect_historical_calls_connect_calls_handled_total[1d])`.
+- **Use Case:** Answering common questions like, "Show me a graph of our total inbound call rate today," which is a simple `rate(aws_connect_historical_calls_connect_historical_contacts_handled_total[5m])` query. Or, "How many calls did we handle yesterday?" using `increase(aws_connect_historical_calls_connect_historical_contacts_handled_total[1d])`.
 - **Provides:** Convenience and compatibility with standard PromQL functions.
 
 ## Required IAM Permissions
@@ -215,19 +214,18 @@ curl http://localhost:9091/metrics | grep aws_connect_exporter
 **Sample Output:**
 ```
 # Real-time Queue Performance
-aws_connect_exporter_realtime_queue_agent_state_agents{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",state="NonProductive",region="eu-west-2"} 2
-aws_connect_exporter_realtime_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 4
-aws_connect_exporter_agent_state_agents{queue="Sales Queue",state="Available"} 5
+aws_connect_exporter_realtime_queue_connect_queue_agents{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",state="NonProductive",region="eu-west-2"} 2
+aws_connect_exporter_realtime_queue_connect_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 4
 
 # Agent Status Distribution  
-aws_connect_exporter_agent_realtime_status_agent_state{agent_id="user-001",username="alice.smith",routing_profile_id="",queue_id="",status_id="status-001",status_name="Available",status_type="unknown",region="eu-west-2"} 1
+aws_connect_exporter_agent_realtime_status_connect_agent_status_state{agent_id="user-001",username="alice.smith",routing_profile_id="",queue_id="",status_id="status-001",status_name="Available",status_type="unknown",region="eu-west-2"} 1
 
 # Daily Performance Metrics
-aws_connect_exporter_historical_queue_contacts_abandoned_today{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 6
+aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 6
 
 # Agent Status Definitions
-aws_connect_exporter_agent_status_agent_status_count{region="eu-west-2",status_id="status-001",status_name="Available",status_type="ROUTABLE"} 1
-aws_connect_exporter_agent_status_agent_status_count{region="eu-west-2",status_id="status-002",status_name="Busy",status_type="ROUTABLE"} 1
+aws_connect_exporter_agent_status_connect_agent_statuses_total{region="eu-west-2",status_id="status-001",status_name="Available",status_type="ROUTABLE"} 1
+aws_connect_exporter_agent_status_connect_agent_statuses_total{region="eu-west-2",status_id="status-002",status_name="Busy",status_type="ROUTABLE"} 1
 ```
 
 ### Adjusting Mock API Behavior

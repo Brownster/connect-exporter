@@ -26,8 +26,8 @@ func NewHistoricalQueueCollector(app *kingpin.Application, config connectors.AWS
 			maas.WithFrequency(interval),
 			maas.WithTimeout(timeout),
 		)),
-		maas.WithDescription(app, "contacts_abandoned_today", "Number of contacts abandoned since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
-		maas.WithDescription(app, "connect_historical_handled_total", "A counter of contacts handled, partitioned by queue, channel, and direction.", []string{"queue_name", "channel", "direction"}),
+               maas.WithDescription(app, "connect_historical_contacts_abandoned_total", "Number of contacts abandoned since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+               maas.WithDescription(app, "connect_historical_contacts_handled_total", "A counter of contacts handled, partitioned by queue, channel, and direction.", []string{"queue_name", "channel", "direction"}),
 	)
 }
 
@@ -138,8 +138,8 @@ func (s *HistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 					continue
 				}
 				switch *md.Metric.Name {
-				case "CONTACTS_ABANDONED":
-					allMetrics = append(allMetrics, maas.NewMetric("contacts_abandoned_today", prometheus.GaugeValue, *md.Value, abandonedLabels))
+                                case "CONTACTS_ABANDONED":
+                                        allMetrics = append(allMetrics, maas.NewMetric("connect_historical_contacts_abandoned_total", prometheus.CounterValue, *md.Value, abandonedLabels))
 				case "CONTACTS_HANDLED":
 					direction := "unknown"
 					if md.Metric.MetricFilters != nil {
@@ -153,8 +153,8 @@ func (s *HistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 							}
 						}
 					}
-					labels := append(handledBase, direction)
-					allMetrics = append(allMetrics, maas.NewMetric("connect_historical_handled_total", prometheus.CounterValue, *md.Value, labels))
+                                        labels := append(handledBase, direction)
+                                        allMetrics = append(allMetrics, maas.NewMetric("connect_historical_contacts_handled_total", prometheus.CounterValue, *md.Value, labels))
 				default:
 					continue
 				}

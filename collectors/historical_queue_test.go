@@ -81,7 +81,7 @@ func TestHistoricalQueueCollector(t *testing.T) {
 	assert.Equal(t, []string{"QUEUE", "CHANNEL"}, ms.groupings)
 	found := false
 	for _, m := range metrics {
-		if metricName(m) == "connect_historical_handled_total" {
+               if metricName(m) == "connect_historical_contacts_handled_total" {
 			assert.Equal(t, prometheus.CounterValue, metricValueType(m))
 			assert.Len(t, metricLabels(m), 3)
 			found = true

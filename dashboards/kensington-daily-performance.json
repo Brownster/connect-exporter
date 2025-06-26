@@ -18,17 +18,17 @@
         "gridPos": {"h": 6, "w": 24, "x": 0, "y": 0},
         "targets": [
           {
-            "expr": "sum(aws_connect_exporter_historical_calls_connect_calls_handled_total)",
+            "expr": "sum(aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total)",
             "legendFormat": "Total Calls Today",
             "refId": "A"
           },
           {
-            "expr": "sum(aws_connect_exporter_historical_calls_connect_calls_abandoned_total)",
+            "expr": "sum(aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total)",
             "legendFormat": "Abandoned Today",
             "refId": "B"
           },
           {
-            "expr": "sum(aws_connect_exporter_historical_calls_connect_calls_abandoned_total) / (sum(aws_connect_exporter_historical_calls_connect_calls_handled_total) + sum(aws_connect_exporter_historical_calls_connect_calls_abandoned_total)) * 100",
+            "expr": "sum(aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total) / (sum(aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total) + sum(aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total)) * 100",
             "legendFormat": "Abandonment Rate %",
             "refId": "C"
           }
@@ -82,12 +82,12 @@
         "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
         "targets": [
           {
-            "expr": "aws_connect_exporter_historical_calls_connect_calls_handled_total",
+            "expr": "aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total",
             "legendFormat": "{{queue_name}} - Handled",
             "refId": "A"
           },
           {
-            "expr": "aws_connect_exporter_historical_calls_connect_calls_abandoned_total",
+            "expr": "aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total",
             "legendFormat": "{{queue_name}} - Abandoned",
             "refId": "B"
           }
@@ -136,7 +136,7 @@
         "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
         "targets": [
           {
-            "expr": "aws_connect_exporter_historical_calls_connect_calls_abandoned_total / (aws_connect_exporter_historical_calls_connect_calls_handled_total + aws_connect_exporter_historical_calls_connect_calls_abandoned_total) * 100",
+            "expr": "aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total / (aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total + aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total) * 100",
             "legendFormat": "{{queue_name}} Abandonment Rate",
             "refId": "A"
           }
@@ -179,14 +179,14 @@
         "gridPos": {"h": 8, "w": 24, "x": 0, "y": 14},
         "targets": [
           {
-            "expr": "aws_connect_exporter_historical_calls_connect_calls_handled_total",
+            "expr": "aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total",
             "legendFormat": "{{queue_name}} (handled)",
             "refId": "A",
             "format": "table",
             "instant": true
           },
           {
-            "expr": "aws_connect_exporter_historical_calls_connect_calls_abandoned_total",
+            "expr": "aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total",
             "legendFormat": "{{queue_name}} (abandoned)",
             "refId": "B",
             "format": "table",
@@ -307,7 +307,7 @@
         "gridPos": {"h": 6, "w": 12, "x": 0, "y": 22},
         "targets": [
           {
-            "expr": "sum by (channel) (aws_connect_exporter_historical_calls_connect_calls_handled_total + aws_connect_exporter_historical_calls_connect_calls_abandoned_total)",
+            "expr": "sum by (channel) (aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total + aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total)",
             "legendFormat": "{{channel}} Channel",
             "refId": "A"
           }
@@ -348,12 +348,12 @@
         "gridPos": {"h": 6, "w": 12, "x": 12, "y": 22},
         "targets": [
           {
-            "expr": "avg(aws_connect_exporter_historical_calls_connect_calls_abandoned_total / (aws_connect_exporter_historical_calls_connect_calls_handled_total + aws_connect_exporter_historical_calls_connect_calls_abandoned_total) * 100)",
+            "expr": "avg(aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total / (aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total + aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total) * 100)",
             "legendFormat": "Avg Abandonment Rate",
             "refId": "A"
           },
           {
-            "expr": "sum(aws_connect_exporter_historical_calls_connect_calls_handled_total)",
+            "expr": "sum(aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total)",
             "legendFormat": "Total Volume Today",
             "refId": "B"
           }
