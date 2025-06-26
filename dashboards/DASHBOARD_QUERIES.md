@@ -10,7 +10,7 @@ This document provides the key PromQL queries used in the Kensington dashboards 
 sum(aws_connect_exporter_realtime_queue_slots_available)
 
 # Total non-productive agents
-sum(aws_connect_exporter_realtime_queue_agents_non_productive)
+sum(aws_connect_exporter_realtime_queue_agent_state_agents{state="NonProductive"})
 ```
 
 ### Agent Status Distribution (Pie Chart)
@@ -25,7 +25,7 @@ count by(status_name) (aws_connect_exporter_agent_realtime_status_agent_state)
 aws_connect_exporter_realtime_queue_slots_available
 
 # Non-productive agents by queue
-aws_connect_exporter_realtime_queue_agents_non_productive
+aws_connect_exporter_realtime_queue_agent_state_agents{state="NonProductive"}
 ```
 
 ### Operational Alerts
@@ -34,7 +34,7 @@ aws_connect_exporter_realtime_queue_agents_non_productive
 sum(aws_connect_exporter_realtime_queue_slots_available) < 3
 
 # Alert when non-productive agents are high (> 5)
-sum(aws_connect_exporter_realtime_queue_agents_non_productive) > 5
+sum(aws_connect_exporter_realtime_queue_agent_state_agents{state="NonProductive"}) > 5
 ```
 
 ## 📈 Daily Performance Analytics Dashboard Queries
@@ -87,8 +87,8 @@ sum(aws_connect_exporter_historical_queue_contacts_queued_today)
 ### Agent Utilization (when more agent metrics are available)
 ```promql
 # Agent utilization percentage
-(sum(aws_connect_exporter_realtime_queue_agents_on_contact) / 
- sum(aws_connect_exporter_realtime_queue_agents_staffed)) * 100
+(sum(aws_connect_exporter_realtime_queue_agent_state_agents{state="OnContact"}) /
+ sum(aws_connect_exporter_realtime_queue_agent_state_agents{state="Staffed"})) * 100
 ```
 
 ### Queue Efficiency Score
@@ -105,7 +105,7 @@ Based on the enhanced mock API, here's what typical query results look like:
 ### Real-time Metrics
 ```
 aws_connect_exporter_realtime_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 3
-aws_connect_exporter_realtime_queue_agents_non_productive{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 1
+aws_connect_exporter_realtime_queue_agent_state_agents{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",state="NonProductive",region="eu-west-2"} 1
 aws_connect_exporter_agent_realtime_status_agent_state{agent_id="user-001",username="alice.smith",routing_profile_id="",queue_id="",status_id="status-001",status_name="Available",status_type="unknown",region="eu-west-2"} 1
 ```
 

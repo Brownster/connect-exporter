@@ -11,7 +11,7 @@ The enhanced mock API now provides complete coverage for all collectors, enablin
 #### **1. Realtime Queue Collector - ✅ WORKING**
 ```prometheus
 # Successfully collecting from mock API:
-aws_connect_exporter_realtime_queue_agents_non_productive{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 2
+aws_connect_exporter_realtime_queue_agent_state_agents{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",state="NonProductive",region="eu-west-2"} 2
 aws_connect_exporter_realtime_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 5
 ```
 

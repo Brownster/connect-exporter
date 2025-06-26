@@ -40,16 +40,11 @@ func NewRealtimeQueueCollector(app *kingpin.Application, config connectors.AWSCo
 			maas.WithTimeout(timeout),
 		)),
 		// Register metrics with descriptions
-		maas.WithDescription(app, "agents_non_productive", "Number of agents in Non-Productive Time (NPT)", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "agent_state_agents", "Number of agents in each state", []string{"queue_id", "queue_name", "queue_type", "channel", "state", "region"}),
 		maas.WithDescription(app, "slots_available", "Number of contact slots available", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 		maas.WithDescription(app, "slots_active", "Number of contact slots currently active", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 		maas.WithDescription(app, "contacts_in_queue", "Number of contacts currently waiting in queue", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 		maas.WithDescription(app, "oldest_contact_age_seconds", "Age in seconds of the oldest contact in queue", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
-		maas.WithDescription(app, "agents_available", "Number of agents available", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
-		maas.WithDescription(app, "agents_staffed", "Number of agents staffed", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
-		maas.WithDescription(app, "agents_on_contact", "Number of agents on contact", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
-		maas.WithDescription(app, "agents_after_contact_work", "Number of agents in after contact work", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
-		maas.WithDescription(app, "agents_error", "Number of agents in error state", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 	)
 }
 
@@ -259,13 +254,12 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 			channel = string(result.Dimensions.Channel)
 		}
 
-		// Create labels for this queue
-		labels := []string{
+		// Base labels for this queue
+		baseLabels := []string{
 			queue.ID,
 			queue.Name,
 			queue.Type,
 			channel,
-			config.AWS.Region,
 		}
 
 		// Process each metric collection
@@ -278,10 +272,14 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 			metricValue := *collection.Value
 
 			// Map AWS Connect metric names to our Prometheus metric names
-			var prometheusMetricName string
+			var (
+				prometheusMetricName string
+				stateLabel           string
+			)
 			switch collection.Metric.Name {
 			case types.CurrentMetricNameAgentsNonProductive:
-				prometheusMetricName = "agents_non_productive"
+				prometheusMetricName = "agent_state_agents"
+				stateLabel = "NonProductive"
 			case types.CurrentMetricNameSlotsAvailable:
 				prometheusMetricName = "slots_available"
 			case types.CurrentMetricNameSlotsActive:
@@ -291,21 +289,34 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 			case types.CurrentMetricNameOldestContactAge:
 				prometheusMetricName = "oldest_contact_age_seconds"
 			case types.CurrentMetricNameAgentsAvailable:
-				prometheusMetricName = "agents_available"
+				prometheusMetricName = "agent_state_agents"
+				stateLabel = "Available"
 			case types.CurrentMetricNameAgentsStaffed:
-				prometheusMetricName = "agents_staffed"
+				prometheusMetricName = "agent_state_agents"
+				stateLabel = "Staffed"
 			case types.CurrentMetricNameAgentsOnContact:
-				prometheusMetricName = "agents_on_contact"
+				prometheusMetricName = "agent_state_agents"
+				stateLabel = "OnContact"
 			case types.CurrentMetricNameAgentsAfterContactWork:
-				prometheusMetricName = "agents_after_contact_work"
+				prometheusMetricName = "agent_state_agents"
+				stateLabel = "AfterContactWork"
 			case types.CurrentMetricNameAgentsError:
-				prometheusMetricName = "agents_error"
+				prometheusMetricName = "agent_state_agents"
+				stateLabel = "Error"
 			default:
 				logrus.WithFields(logrus.Fields{
 					"metric_name":       metricName,
 					"collector_version": realtimeQueueCollectorVersion,
 				}).Debug("Unknown metric name, skipping")
 				continue
+			}
+
+			// Construct labels for this metric
+			labels := baseLabels
+			if prometheusMetricName == "agent_state_agents" {
+				labels = append(labels, stateLabel, config.AWS.Region)
+			} else {
+				labels = append(labels, config.AWS.Region)
 			}
 
 			// Create the metric
