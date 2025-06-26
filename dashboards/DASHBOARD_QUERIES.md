@@ -41,38 +41,46 @@ sum(aws_connect_exporter_agent_state_agents{state="NonProductive"}) > 5
 
 ### Daily Overview Panel
 ```promql
-# Total contacts queued today
-sum(aws_connect_exporter_historical_queue_contacts_queued_today)
+# Total calls handled today
+sum(aws_connect_exporter_historical_calls_connect_calls_handled_total)
 
 # Total contacts abandoned today
 sum(aws_connect_exporter_historical_queue_contacts_abandoned_today)
 
 # Overall abandonment rate percentage
-sum(aws_connect_exporter_historical_queue_contacts_abandoned_today) / 
-sum(aws_connect_exporter_historical_queue_contacts_queued_today) * 100
+sum(aws_connect_exporter_historical_queue_contacts_abandoned_today) /
+(
+    sum(aws_connect_exporter_historical_calls_connect_calls_handled_total) +
+    sum(aws_connect_exporter_historical_calls_connect_calls_abandoned_total)
+) * 100
 ```
 
 ### Queue Performance Analysis (Bar Gauge)
 ```promql
 # Abandonment rate by queue
-aws_connect_exporter_historical_queue_contacts_abandoned_today / 
-aws_connect_exporter_historical_queue_contacts_queued_today * 100
+aws_connect_exporter_historical_queue_contacts_abandoned_today /
+(aws_connect_exporter_historical_calls_connect_calls_handled_total +
+ aws_connect_exporter_historical_calls_connect_calls_abandoned_total) * 100
 ```
 
 ### Channel Distribution (Pie Chart)
 ```promql
 # Contact volume by channel
-sum by (channel) (aws_connect_exporter_historical_queue_contacts_queued_today)
+sum by (channel) (
+    aws_connect_exporter_historical_calls_connect_calls_handled_total +
+    aws_connect_exporter_historical_calls_connect_calls_abandoned_total
+)
 ```
 
 ### Performance KPIs
 ```promql
 # Average abandonment rate across all queues
-avg(aws_connect_exporter_historical_queue_contacts_abandoned_today / 
-    aws_connect_exporter_historical_queue_contacts_queued_today * 100)
+avg(aws_connect_exporter_historical_queue_contacts_abandoned_today /
+    (aws_connect_exporter_historical_calls_connect_calls_handled_total +
+     aws_connect_exporter_historical_calls_connect_calls_abandoned_total) * 100)
 
 # Total daily volume
-sum(aws_connect_exporter_historical_queue_contacts_queued_today)
+sum(aws_connect_exporter_historical_calls_connect_calls_handled_total)
 ```
 
 ## 🔧 Advanced Custom Queries
@@ -80,8 +88,9 @@ sum(aws_connect_exporter_historical_queue_contacts_queued_today)
 ### Service Level Calculation (if handled metrics become available)
 ```promql
 # Service level percentage (when handled metrics are added)
-(sum(aws_connect_exporter_historical_queue_contacts_handled_today) / 
- sum(aws_connect_exporter_historical_queue_contacts_queued_today)) * 100
+(sum(aws_connect_exporter_historical_calls_connect_calls_handled_total) /
+ (sum(aws_connect_exporter_historical_calls_connect_calls_handled_total) +
+  sum(aws_connect_exporter_historical_calls_connect_calls_abandoned_total))) * 100
 ```
 
 ### Agent Utilization (when more agent metrics are available)
@@ -94,8 +103,9 @@ sum(aws_connect_exporter_historical_queue_contacts_queued_today)
 ### Queue Efficiency Score
 ```promql
 # Custom efficiency score (lower abandonment = higher efficiency)
-100 - (aws_connect_exporter_historical_queue_contacts_abandoned_today / 
-       aws_connect_exporter_historical_queue_contacts_queued_today * 100)
+100 - (aws_connect_exporter_historical_calls_connect_calls_abandoned_total /
+       (aws_connect_exporter_historical_calls_connect_calls_handled_total +
+        aws_connect_exporter_historical_calls_connect_calls_abandoned_total) * 100)
 ```
 
 ## 📊 Sample Data from Mock API
@@ -111,8 +121,8 @@ aws_connect_exporter_agent_realtime_status_agent_state{agent_id="user-001",usern
 
 ### Daily Performance Metrics
 ```
-aws_connect_exporter_historical_queue_contacts_queued_today{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 43
-aws_connect_exporter_historical_queue_contacts_abandoned_today{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 3
+aws_connect_exporter_historical_calls_connect_calls_handled_total{queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",direction="inbound",region="eu-west-2"} 40
+aws_connect_exporter_historical_calls_connect_calls_abandoned_total{queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 3
 ```
 
 ## 🎯 Dashboard Thresholds
@@ -153,11 +163,12 @@ groups:
   - name: kensington_contact_center
     rules:
       - record: kensington:abandonment_rate
-        expr: aws_connect_exporter_historical_queue_contacts_abandoned_today / 
-              aws_connect_exporter_historical_queue_contacts_queued_today * 100
+        expr: aws_connect_exporter_historical_calls_connect_calls_abandoned_total /
+              (aws_connect_exporter_historical_calls_connect_calls_handled_total +
+               aws_connect_exporter_historical_calls_connect_calls_abandoned_total) * 100
       
       - record: kensington:total_volume_today
-        expr: sum(aws_connect_exporter_historical_queue_contacts_queued_today)
+        expr: sum(aws_connect_exporter_historical_calls_connect_calls_handled_total)
 ```
 
 This reference enables teams to customize dashboards, create alerts, and build additional monitoring based on Kensington's specific operational requirements.

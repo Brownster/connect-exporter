@@ -155,7 +155,6 @@ The `channel` label indicates whether a queue handles `VOICE`, `CHAT`, or `TASK`
 
 | Metric Name | Type | Description | Labels |
 |-------------|------|-------------|---------|
-| `aws_connect_historical_queue_contacts_queued_today` | Gauge | Number of contacts queued since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 | `aws_connect_historical_queue_contacts_abandoned_today` | Gauge | Number of contacts abandoned since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 | `aws_connect_historical_queue_contacts_handled_today` | Gauge | Number of contacts handled since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `channel`, `direction`, `region` |
 | `aws_connect_historical_calls_connect_calls_handled_total` | Counter | Total calls handled since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `direction`, `region` |

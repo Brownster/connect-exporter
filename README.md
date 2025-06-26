@@ -56,7 +56,6 @@ collectors:
 - `aws_connect_realtime_queue_slots_active`
 - `aws_connect_realtime_queue_agent_state_agents` (label: `state`)
 - `aws_connect_agent_state_agents` (labels: `queue`, `state`)
-- `aws_connect_historical_queue_contacts_queued_today`
 - `aws_connect_historical_queue_contacts_abandoned_today`
 - `aws_connect_historical_queue_contacts_handled_today`
 - `aws_connect_historical_calls_connect_calls_handled_total`
@@ -225,7 +224,6 @@ aws_connect_exporter_agent_realtime_status_agent_state{agent_id="user-001",usern
 
 # Daily Performance Metrics
 aws_connect_exporter_historical_queue_contacts_abandoned_today{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 6
-aws_connect_exporter_historical_queue_contacts_queued_today{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 40
 
 # Agent Status Definitions
 aws_connect_exporter_agent_status_agent_status_count{region="eu-west-2",status_id="status-001",status_name="Available",status_type="ROUTABLE"} 1
