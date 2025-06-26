@@ -398,9 +398,12 @@ func (c *AWSConnectConnector) configure() error {
 
 	// Create Connect client
 	if c.developmentMode {
-		// Configure client to use mock endpoint
+		// Configure client to use mock endpoint with HTTP (not HTTPS)
 		c.client = connect.NewFromConfig(awsCfg, func(o *connect.Options) {
 			o.BaseEndpoint = aws.String(c.mockEndpoint)
+			// Force HTTP for development mode to work with mock API
+			o.EndpointOptions.UseFIPSEndpoint = aws.FIPSEndpointStateDisabled
+			o.EndpointOptions.UseDualStackEndpoint = aws.DualStackEndpointStateDisabled
 		})
 	} else {
 		c.client = connect.NewFromConfig(awsCfg)

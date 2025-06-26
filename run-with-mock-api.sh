@@ -12,6 +12,10 @@ export AWS_SECRET_ACCESS_KEY=mock-secret-access-key
 export AWS_SESSION_TOKEN=mock-session-token
 export AWS_REGION=eu-west-2
 
+# Force AWS SDK to use HTTP instead of HTTPS for mock API
+export AWS_USE_SSL=false
+export AWS_ENDPOINT_URL_CONNECT=http://localhost:3000
+
 # Optional: Set mock endpoint explicitly (though default should work)
 export AWS_CONNECT_MOCK_ENDPOINT=http://localhost:3000
 
