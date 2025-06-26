@@ -61,6 +61,7 @@ type CollectorsConfig struct {
 	AgentStatus         AgentStatusConfig         `yaml:"agent_status"`
 	AgentRealtimeStatus AgentRealtimeStatusConfig `yaml:"agent_realtime_status"`
 	HistoricalQueue     HistoricalQueueConfig     `yaml:"historical_queue"`
+	HistoricalCalls     HistoricalCallsConfig     `yaml:"historical_calls"`
 }
 
 // RealtimeQueueConfig configures the realtime queue collector
@@ -87,6 +88,12 @@ type AgentRealtimeStatusConfig struct {
 
 // HistoricalQueueConfig configures the historical queue collector
 type HistoricalQueueConfig struct {
+	Enabled  bool `yaml:"enabled"`
+	Interval int  `yaml:"interval"`
+}
+
+// HistoricalCallsConfig configures the historical calls collector
+type HistoricalCallsConfig struct {
 	Enabled  bool `yaml:"enabled"`
 	Interval int  `yaml:"interval"`
 }
@@ -419,6 +426,9 @@ func (c *AWSConnectConnector) configure() error {
 	if cfg.Collectors.HistoricalQueue.Interval <= 0 {
 		cfg.Collectors.HistoricalQueue.Interval = 300 // Default 5 minutes
 	}
+	if cfg.Collectors.HistoricalCalls.Interval <= 0 {
+		cfg.Collectors.HistoricalCalls.Interval = 300 // Default 5 minutes
+	}
 
 	// Validate required configuration
 	if cfg.AWS.InstanceARN == "" {
@@ -480,6 +490,9 @@ func (c *AWSConnectConnector) configure() error {
 	}
 	if cfg.Collectors.HistoricalQueue.Enabled {
 		logrus.WithField("interval", cfg.Collectors.HistoricalQueue.Interval).Info("Enabled historical queue collector")
+	}
+	if cfg.Collectors.HistoricalCalls.Enabled {
+		logrus.WithField("interval", cfg.Collectors.HistoricalCalls.Interval).Info("Enabled historical calls collector")
 	}
 
 	c.configured = true

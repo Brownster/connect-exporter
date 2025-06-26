@@ -61,6 +61,7 @@ func TestExporterWithMockAPI(t *testing.T) {
 		"--web.listen-port=9100",
 		"--config.file=../config.development.yml",
 		"--no-advertise",
+		"--no-historical_calls.enabled",
 		"--labels.fqdn=localhost",
 		"--labels.location=test",
 		"--labels.country=US",
