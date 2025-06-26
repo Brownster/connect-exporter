@@ -52,14 +52,9 @@ collectors:
 
 - `aws_connect_realtime_queue_contacts_in_queue`
 - `aws_connect_realtime_queue_oldest_contact_age_seconds`
-- `aws_connect_realtime_queue_agents_non_productive`
 - `aws_connect_realtime_queue_slots_available`
 - `aws_connect_realtime_queue_slots_active`
-- `aws_connect_realtime_queue_agents_available`
-- `aws_connect_realtime_queue_agents_staffed`
-- `aws_connect_realtime_queue_agents_on_contact`
-- `aws_connect_realtime_queue_agents_after_contact_work`
-- `aws_connect_realtime_queue_agents_error`
+- `aws_connect_realtime_queue_agent_state_agents` (label: `state`)
 - `aws_connect_historical_queue_contacts_queued_today`
 - `aws_connect_historical_queue_contacts_abandoned_today`
 - `aws_connect_historical_queue_contacts_handled_today`
@@ -188,7 +183,7 @@ curl http://localhost:9091/metrics | grep aws_connect_exporter
 **Sample Output:**
 ```
 # Real-time Queue Performance
-aws_connect_exporter_realtime_queue_agents_non_productive{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 2
+aws_connect_exporter_realtime_queue_agent_state_agents{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",state="NonProductive",region="eu-west-2"} 2
 aws_connect_exporter_realtime_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 4
 
 # Agent Status Distribution  

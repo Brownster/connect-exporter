@@ -23,7 +23,7 @@
             "refId": "A"
           },
           {
-            "expr": "sum(aws_connect_exporter_realtime_queue_agents_non_productive)",
+            "expr": "sum(aws_connect_exporter_realtime_queue_agent_state_agents{state=\"NonProductive\"})",
             "legendFormat": "Non-Productive Agents",
             "refId": "B"
           }
@@ -113,7 +113,7 @@
             "instant": true
           },
           {
-            "expr": "aws_connect_exporter_realtime_queue_agents_non_productive",
+            "expr": "aws_connect_exporter_realtime_queue_agent_state_agents{state=\"NonProductive\"}",
             "legendFormat": "{{queue_name}} ({{channel}})",
             "refId": "B",
             "format": "table",
@@ -188,7 +188,7 @@
             "refId": "A"
           },
           {
-            "expr": "aws_connect_exporter_realtime_queue_agents_non_productive",
+            "expr": "aws_connect_exporter_realtime_queue_agent_state_agents{state=\"NonProductive\"}",
             "legendFormat": "{{queue_name}} - Non-Productive",
             "refId": "B"
           }
@@ -242,7 +242,7 @@
             "refId": "A"
           },
           {
-            "expr": "sum(aws_connect_exporter_realtime_queue_agents_non_productive) > 5",
+            "expr": "sum(aws_connect_exporter_realtime_queue_agent_state_agents{state=\"NonProductive\"}) > 5",
             "legendFormat": "High Non-Productive",
             "refId": "B"
           }
