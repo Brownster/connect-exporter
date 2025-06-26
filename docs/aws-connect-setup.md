@@ -170,7 +170,7 @@ The `channel` label indicates whether a queue handles `VOICE`, `CHAT`, or `TASK`
 | `aws_connect_agent_status_count` | Gauge | Number of agents in each status | `status_id`, `status_name`, `status_type`, `region` |
 | `aws_connect_agent_status_display_order` | Gauge | Display order of status types | `status_id`, `status_name`, `status_type`, `region` |
 | `aws_connect_agent_status_custom` | Gauge | Custom status indicator (1=custom, 0=built-in) | `status_id`, `status_name`, `status_type`, `region` |
-| `aws_connect_agent_realtime_status_agents` | Gauge | Number of agents in each realtime status | `status_id`, `status_name`, `status_type`, `region` |
+| `aws_connect_agent_realtime_status_agent_state` | Gauge | Realtime status for each agent | `agent_id`, `username`, `routing_profile_id`, `queue_id`, `status_id`, `status_name`, `status_type`, `region` |
 
 ## Monitoring
 

@@ -65,7 +65,7 @@
         "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
         "targets": [
           {
-            "expr": "aws_connect_exporter_agent_realtime_status_agent_realtime_status_agents",
+            "expr": "count by(status_name) (aws_connect_exporter_agent_realtime_status_agent_state)",
             "legendFormat": "{{status_name}}",
             "refId": "A"
           }

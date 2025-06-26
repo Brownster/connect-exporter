@@ -28,7 +28,7 @@ func NewAgentRealtimeStatusCollector(app *kingpin.Application, config connectors
 			maas.WithFrequency(interval),
 			maas.WithTimeout(timeout),
 		)),
-		maas.WithDescription(app, "agent_realtime_status_agents", "Number of agents in each realtime status", []string{"status_id", "status_name", "status_type", "region"}),
+		maas.WithDescription(app, "agent_state", "Realtime status for each agent", []string{"agent_id", "username", "routing_profile_id", "queue_id", "status_id", "status_name", "status_type", "region"}),
 	)
 }
 
@@ -54,21 +54,21 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to list queues for filter: %w", err)
 	}
-	
+
 	if len(queues) == 0 {
 		return []maas.Metric{}, nil
 	}
-	
+
 	// Use the first queue ID as a filter - this should return all agents assigned to any queue
 	queueIDs := make([]string, 0, len(queues))
 	for _, queue := range queues {
 		queueIDs = append(queueIDs, queue.ID)
 	}
-	
+
 	// Retrieve current user data using queue filter
 	input := &connect.GetCurrentUserDataInput{
 		InstanceId: &instanceID,
-		Filters:    &types.UserDataFilters{
+		Filters: &types.UserDataFilters{
 			Queues: queueIDs, // Use queue IDs to get agents assigned to these queues
 		},
 		MaxResults: aws.Int32(100),
@@ -79,37 +79,86 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 		return nil, fmt.Errorf("failed to get current user data: %w", err)
 	}
 
-	// Count agents by status ARN
-	counts := make(map[string]int)
-	statusInfo := make(map[string]types.AgentStatusReference)
-
-	for _, user := range data.UserDataList {
-		if user.Status != nil && user.Status.StatusArn != nil {
-			arn := aws.ToString(user.Status.StatusArn)
-			counts[arn]++
-			if _, exists := statusInfo[arn]; !exists {
-				statusInfo[arn] = *user.Status
+	// Build a map of userID -> username for enrichment
+	userNames := make(map[string]string)
+	usersInput := &connect.ListUsersInput{
+		InstanceId: &instanceID,
+		MaxResults: aws.Int32(1000),
+	}
+	users, err := conn.ListUsers(context.Background(), usersInput)
+	if err == nil {
+		for _, u := range users.UserSummaryList {
+			if u.Id != nil && u.Username != nil {
+				userNames[aws.ToString(u.Id)] = aws.ToString(u.Username)
 			}
 		}
+	} else {
+		logrus.WithError(err).Debug("failed to list users for enrichment")
 	}
 
-	metrics := make([]maas.Metric, 0, len(counts))
-	for arn, count := range counts {
-		info := statusInfo[arn]
-		name := aws.ToString(info.StatusName)
-		statusID := extractStatusID(arn)
-		statusType := "unknown"
-		// We don't have type info here; attempt to map using ListAgentStatuses
-		// for enrichment
-		nameType, ok := getStatusDetails(arn, conn)
-		if ok {
-			name = aws.ToString(nameType.Name)
-			statusType = string(nameType.Type)
+	// Cache routing profile -> queue IDs
+	rpQueues := make(map[string]string)
+
+	// Collect per-agent metrics
+	var perAgent []maas.Metric
+
+	for _, user := range data.UserDataList {
+
+		agentID := ""
+		if user.User != nil && user.User.Id != nil {
+			agentID = aws.ToString(user.User.Id)
+		}
+		username := userNames[agentID]
+		rpID := ""
+		if user.RoutingProfile != nil && user.RoutingProfile.Id != nil {
+			rpID = aws.ToString(user.RoutingProfile.Id)
+		}
+		queueID := ""
+		if rpID != "" {
+			qid, ok := rpQueues[rpID]
+			if !ok {
+				out, err := conn.ListRoutingProfileQueues(context.Background(), &connect.ListRoutingProfileQueuesInput{
+					InstanceId:       &instanceID,
+					RoutingProfileId: aws.String(rpID),
+				})
+				if err == nil && len(out.RoutingProfileQueueConfigSummaryList) > 0 {
+					qid = aws.ToString(out.RoutingProfileQueueConfigSummaryList[0].QueueId)
+				} else if err != nil {
+					logrus.WithError(err).Debug("failed to list routing profile queues")
+				}
+				rpQueues[rpID] = qid
+			}
+			queueID = qid
 		}
 
-		labels := []string{statusID, name, statusType, cfg.AWS.Region}
-		metrics = append(metrics, maas.NewMetric("agent_realtime_status_agents", prometheus.GaugeValue, float64(count), labels))
+		statusID := ""
+		statusName := ""
+		statusType := "unknown"
+		if user.Status != nil {
+			if user.Status.StatusArn != nil {
+				statusID = extractStatusID(aws.ToString(user.Status.StatusArn))
+			}
+			if user.Status.StatusName != nil {
+				statusName = aws.ToString(user.Status.StatusName)
+			}
+			// Attempt enrichment with ListAgentStatuses for type
+			if user.Status.StatusArn != nil {
+				st, ok := getStatusDetails(aws.ToString(user.Status.StatusArn), conn)
+				if ok {
+					if st.Name != nil {
+						statusName = aws.ToString(st.Name)
+					}
+					statusType = string(st.Type)
+				}
+			}
+		}
+
+		labels := []string{agentID, username, rpID, queueID, statusID, statusName, statusType, cfg.AWS.Region}
+		perAgent = append(perAgent, maas.NewMetric("agent_state", prometheus.GaugeValue, 1, labels))
 	}
+
+	metrics := make([]maas.Metric, 0, len(perAgent))
+	metrics = append(metrics, perAgent...)
 
 	return metrics, nil
 }

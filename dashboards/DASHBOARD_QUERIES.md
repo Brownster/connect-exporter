@@ -16,7 +16,7 @@ sum(aws_connect_exporter_realtime_queue_agents_non_productive)
 ### Agent Status Distribution (Pie Chart)
 ```promql
 # Agent counts by status
-aws_connect_exporter_agent_realtime_status_agent_realtime_status_agents
+count by(status_name) (aws_connect_exporter_agent_realtime_status_agent_state)
 ```
 
 ### Queue Performance Table
@@ -106,7 +106,7 @@ Based on the enhanced mock API, here's what typical query results look like:
 ```
 aws_connect_exporter_realtime_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 3
 aws_connect_exporter_realtime_queue_agents_non_productive{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 1
-aws_connect_exporter_agent_realtime_status_agent_realtime_status_agents{region="eu-west-2",status_id="status-001",status_name="Available",status_type="unknown"} 2
+aws_connect_exporter_agent_realtime_status_agent_state{agent_id="user-001",username="alice.smith",routing_profile_id="",queue_id="",status_id="status-001",status_name="Available",status_type="unknown",region="eu-west-2"} 1
 ```
 
 ### Daily Performance Metrics
