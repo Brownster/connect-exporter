@@ -50,19 +50,25 @@ collectors:
 
 ## Metrics Exposed
 
-- `aws_connect_realtime_queue_connect_queue_contacts_in_queue`
-- `aws_connect_realtime_queue_connect_queue_oldest_contact_age_seconds`
-- `aws_connect_realtime_queue_connect_queue_slots_available`
-- `aws_connect_realtime_queue_connect_queue_slots_active`
-- `aws_connect_realtime_queue_connect_queue_agents` (label: `state`)
-- `aws_connect_historical_queue_connect_historical_contacts_abandoned_total`
-- `aws_connect_historical_queue_connect_historical_contacts_handled_total`
-- `aws_connect_historical_calls_connect_historical_contacts_handled_total`
-- `aws_connect_historical_calls_connect_historical_contacts_abandoned_total`
-- `aws_connect_agent_statuses_total`
-- `aws_connect_agent_status_display_order`
-- `aws_connect_agent_status_custom`
-- `aws_connect_agent_realtime_status_connect_agent_status_state`
+Metrics are published under the `aws_connect_exporter_*` namespace. The main
+metrics produced by the exporter are listed below:
+
+- `aws_connect_exporter_realtime_queue_connect_queue_contacts_in_queue`
+- `aws_connect_exporter_realtime_queue_connect_queue_oldest_contact_age_seconds`
+- `aws_connect_exporter_realtime_queue_connect_queue_slots_available`
+- `aws_connect_exporter_realtime_queue_connect_queue_slots_active`
+- `aws_connect_exporter_realtime_queue_connect_queue_agents` (label: `state`)
+- `aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total`
+- `aws_connect_exporter_historical_queue_connect_historical_contacts_handled_total`
+- `aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total`
+- `aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total`
+- `aws_connect_exporter_agent_status_connect_agent_statuses_total`
+- `aws_connect_exporter_agent_realtime_status_connect_agent_status_state`
+- `aws_connect_exporter_agent_state_agents`
+
+The monitoring framework also exposes internal scrape metrics (e.g.
+`maas_scrape_total`, `maas_scrape_failed_total`, and
+`maas_scrape_duration_seconds`) to help troubleshoot collection issues.
 
 
 All queue metrics include a `channel` label. Possible values are
@@ -104,6 +110,8 @@ The exporter ships with two complementary collectors for historical metrics:
 - `connect:GetMetricDataV2`
 - `connect:ListAgentStatuses`
 - `connect:GetCurrentUserData`
+- `connect:ListUsers`
+- `connect:ListRoutingProfileQueues`
 
 ## Testing with Mock AWS API
 
