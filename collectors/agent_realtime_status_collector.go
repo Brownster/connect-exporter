@@ -49,12 +49,8 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 	cfg := conn.GetConfig()
 	instanceID := conn.GetInstanceID()
 
-	// AWS requires at least one filter parameter. Try using Queues filter instead since we can get those
-	queues, err := conn.ListQueues(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to list queues for filter: %w", err)
-	}
-
+	// AWS requires at least one filter parameter. Use discovered queues
+	queues := conn.GetQueueManager().GetQueues()
 	if len(queues) == 0 {
 		return []maas.Metric{}, nil
 	}

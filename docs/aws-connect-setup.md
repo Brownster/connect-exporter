@@ -147,6 +147,7 @@ CMD ["/aws-connect-exporter", "--config.file=/config.yml"]
 | `aws_connect_realtime_queue_slots_available` | Gauge | Number of contact slots available | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 | `aws_connect_realtime_queue_slots_active` | Gauge | Number of contact slots currently active | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
 | `aws_connect_realtime_queue_agent_state_agents` | Gauge | Number of agents in each state | `queue_id`, `queue_name`, `queue_type`, `channel`, `state`, `region` |
+| `aws_connect_agent_state_agents` | Gauge | Number of agents in each state by queue | `queue`, `state` |
 
 The `channel` label indicates whether a queue handles `VOICE`, `CHAT`, or `TASK` contacts. This applies to both realtime and historical queue metrics.
 

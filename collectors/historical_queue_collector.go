@@ -47,10 +47,7 @@ func (s *HistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 
 	config := conn.GetConfig()
 
-	queues, err := conn.ListQueues(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to list queues: %w", err)
-	}
+	queues := conn.GetQueueManager().GetQueues()
 
 	queueMap := make(map[string]connectors.Queue)
 	for _, q := range queues {

@@ -22,6 +22,8 @@ collectors:
     interval: 60  # Collection interval in seconds (1 minute)
     metrics_cache_ttl: 15s
     queue_cache_ttl: 5m
+    queue_refresh_interval: 5m
+    queues_include_regex: ""
     
   # Agent Status Collector  
   agent_status:

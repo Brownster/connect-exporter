@@ -17,6 +17,8 @@ collectors:
     interval: 30  # 30 seconds for real-time visibility
     metrics_cache_ttl: 15s
     queue_cache_ttl: 5m
+    queue_refresh_interval: 5m
+    queues_include_regex: ""
     
   # ✅ ESSENTIAL: Current agent status distribution  
   # Shows how many agents are in each state (Available, On Contact, etc.)

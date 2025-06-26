@@ -97,6 +97,9 @@ func TestExporterWithMockAPI(t *testing.T) {
 	if !strings.Contains(metrics, "aws_connect_exporter_agent_realtime_status_agent_state") {
 		t.Errorf("missing agent_state metrics")
 	}
+	if !strings.Contains(metrics, "aws_connect_exporter_agent_state_agents") {
+		t.Errorf("missing aggregated agent state metrics")
+	}
 	if !strings.Contains(metrics, "agent_id=\"user-001\"") {
 		t.Logf("Metrics preview: %s", metrics[:min(500, len(metrics))])
 		t.Errorf("expected agent metric for user-001")
