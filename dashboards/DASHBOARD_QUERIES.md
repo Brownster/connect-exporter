@@ -116,7 +116,7 @@ Based on the enhanced mock API, here's what typical query results look like:
 ```
 aws_connect_exporter_realtime_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 3
 aws_connect_exporter_agent_state_agents{queue="Sales Queue",state="NonProductive"} 1
-aws_connect_exporter_agent_realtime_status_agent_state{agent_id="user-001",username="alice.smith",routing_profile_id="rp-sales",queue_id="queue-sales-01",status_id="status-001",status_name="Available",status_type="unknown",region="eu-west-2"} 1
+aws_connect_exporter_agent_realtime_status_agent_state{agent_id="6aed748d-3a99-410c-9e3a-afe3fda0af82",username="alice.smith",routing_profile_id="rp-sales",queue_id="queue-sales-01",status_id="status-001",status_name="Available",status_type="unknown",region="eu-west-2"} 1
 ```
 
 ### Daily Performance Metrics

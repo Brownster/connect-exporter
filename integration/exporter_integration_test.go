@@ -25,12 +25,12 @@ func waitForURL(url string, timeout time.Duration) error {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(url)
 		if err == nil && resp.StatusCode == http.StatusOK {
-               _ = resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil
 		}
 		if resp != nil {
-                       _, _ = io.Copy(io.Discard, resp.Body)
-                       _ = resp.Body.Close()
+			_, _ = io.Copy(io.Discard, resp.Body)
+			_ = resp.Body.Close()
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
@@ -51,7 +51,7 @@ func TestExporterWithMockAPI(t *testing.T) {
 	if err := mockCmd.Start(); err != nil {
 		t.Fatalf("failed to start mock API: %v", err)
 	}
-       defer func() { _ = mockCmd.Process.Kill() }()
+	defer func() { _ = mockCmd.Process.Kill() }()
 
 	// Wait a moment for the mock API to start
 	time.Sleep(2 * time.Second)
@@ -79,7 +79,7 @@ func TestExporterWithMockAPI(t *testing.T) {
 	if err := exporterCmd.Start(); err != nil {
 		t.Fatalf("failed to start exporter: %v", err)
 	}
-       defer func() { _ = exporterCmd.Process.Kill() }()
+	defer func() { _ = exporterCmd.Process.Kill() }()
 
 	if err := waitForURL("http://localhost:9100/metrics", 20*time.Second); err != nil {
 		t.Fatalf("exporter not ready: %v\nOutput:%s", err, out.String())
@@ -89,27 +89,27 @@ func TestExporterWithMockAPI(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to fetch metrics: %v", err)
 	}
-       body, _ := io.ReadAll(resp.Body)
-       _ = resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
 	metrics := string(body)
 
 	// Debug: Print some metrics to see what's available
 	t.Logf("Metrics contains aws_connect_exporter: %v", strings.Contains(metrics, "aws_connect_exporter"))
-       if !strings.Contains(metrics, "aws_connect_exporter_agent_realtime_status_connect_agent_status_state") {
-               t.Errorf("missing agent_state metrics")
-       }
-	if !strings.Contains(metrics, "agent_id=\"user-001\"") {
+	if !strings.Contains(metrics, "aws_connect_exporter_agent_realtime_status_connect_agent_status_state") {
+		t.Errorf("missing agent_state metrics")
+	}
+	if !strings.Contains(metrics, "agent_id=\"6aed748d-3a99-410c-9e3a-afe3fda0af82\"") {
 		t.Logf("Metrics preview: %s", metrics[:min(500, len(metrics))])
-		t.Errorf("expected agent metric for user-001")
+		t.Errorf("expected agent metric for alice.smith")
 	}
 
 	// Verify historical queue metrics are exposed
-       if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total") {
-               t.Errorf("missing historical queue abandoned metric")
-       }
-       if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_connect_historical_contacts_handled_total") {
-               t.Errorf("missing historical queue handled metric")
-       }
+	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total") {
+		t.Errorf("missing historical queue abandoned metric")
+	}
+	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_connect_historical_contacts_handled_total") {
+		t.Errorf("missing historical queue handled metric")
+	}
 
 	// Verify queue discovery found expected queues
 	if !strings.Contains(metrics, "queue_id=\"queue-sales-01\"") || !strings.Contains(metrics, "queue_name=\"Sales Queue\"") {
