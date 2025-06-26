@@ -1,6 +1,8 @@
 package collectors
 
 import (
+	"time"
+
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/sabio-engineering-product/connect-exporter/connectors"
 	maas "github.com/sabio-engineering-product/connect-exporter/monitoring-maas"
@@ -19,7 +21,12 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 	// Create collectors with default configuration - they will get the real config during Connect()
 	defaultConfig := connectors.AWSConnectConfig{
 		Collectors: connectors.CollectorsConfig{
-			RealtimeQueue:       connectors.RealtimeQueueConfig{Enabled: true, Interval: 30},
+			RealtimeQueue: connectors.RealtimeQueueConfig{
+				Enabled:         true,
+				Interval:        30,
+				MetricsCacheTTL: 15 * time.Second,
+				QueueCacheTTL:   5 * time.Minute,
+			},
 			AgentStatus:         connectors.AgentStatusConfig{Enabled: true, Interval: 60},
 			AgentRealtimeStatus: connectors.AgentRealtimeStatusConfig{Enabled: true, Interval: 60},
 			HistoricalQueue:     connectors.HistoricalQueueConfig{Enabled: true, Interval: 300},
