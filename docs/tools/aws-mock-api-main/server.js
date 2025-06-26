@@ -1095,8 +1095,13 @@ app.all('/{*path}', (req, res, next) => {
         }
 
         const { items, nextToken: newNextToken } = paginateResults(MOCK_USERS, nextToken);
+        const formatted = items.map(u => ({
+            User: { Id: u.Id, Arn: u.Arn, Username: u.Username },
+            Status: u.Status,
+            // add RoutingProfile if desired
+        }));
         return res.json({
-            UserDataList: items,
+            UserDataList: formatted,
             NextToken: newNextToken,
             ApproximateTotalCount: MOCK_USERS.length
         });
