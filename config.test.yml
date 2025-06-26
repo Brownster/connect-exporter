@@ -1,0 +1,70 @@
+listen_address: 127.0.0.1
+listen_port: 9091
+log_level: info
+
+aws:
+  region: "eu-west-2"
+  instance_arn: "arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772"
+  endpoint: "http://localhost:3000"  # Point to mock API
+
+collectors:
+  # Realtime Queue Metrics Collector
+  realtime_queue:
+    enabled: true
+    interval: 60  # Collection interval in seconds
+    metrics_cache_ttl: 15s
+    queue_cache_ttl: 5m
+    queue_refresh_interval: 5m
+    queues_include_regex: ""
+    
+  # Agent Status Collector  
+  agent_status:
+    enabled: true
+    interval: 300  # Collection interval in seconds (5 minutes)
+
+  # Agent Realtime Status Collector
+  agent_realtime_status:
+    enabled: true
+    interval: 60  # Collection interval in seconds (1 minute)
+
+  # Historical Queue Metrics Collector
+  historical_queue:
+    enabled: true
+    interval: 300  # Collection interval in seconds (5 minutes)
+
+  # Historical Calls Metrics Collector
+  historical_calls:
+    enabled: true
+    interval: 300  # Collection interval in seconds (5 minutes)
+
+# Global settings
+global:
+  # Default timeout for all operations
+  timeout: 30s
+  
+  # Default labels to add to all metrics
+  labels:
+    environment: "test"
+    service: "aws-connect"
+    
+  # Retry configuration
+  retry:
+    max_attempts: 3
+    backoff_duration: 1s
+    max_backoff_duration: 5s
+
+# Test Configuration Notes:
+# This configuration enables all available collectors for comprehensive testing
+# against the mock AWS Connect API server.
+#
+# To use this configuration:
+# 1. Start the mock API server: cd docs/tools/aws-mock-api-main && node server.js
+# 2. Set environment: export ENV=development
+# 3. Run exporter: ./connect-exporter --config.file=config.test.yml
+#
+# All collectors enabled:
+# - realtime_queue: Real-time queue metrics
+# - agent_status: Agent status counts
+# - agent_realtime_status: Individual agent statuses
+# - historical_queue: Historical queue metrics (abandoned, handled)
+# - historical_calls: Historical call metrics by direction
