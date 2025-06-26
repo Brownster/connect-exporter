@@ -59,15 +59,45 @@ collectors:
 - `aws_connect_historical_queue_contacts_queued_today`
 - `aws_connect_historical_queue_contacts_abandoned_today`
 - `aws_connect_historical_queue_contacts_handled_today`
- - `aws_connect_historical_calls_connect_calls_handled_total`
- - `aws_connect_historical_calls_connect_calls_abandoned_total`
+- `aws_connect_historical_calls_connect_calls_handled_total`
+- `aws_connect_historical_calls_connect_calls_abandoned_total`
 - `aws_connect_agent_status_count`
 - `aws_connect_agent_status_display_order`
 - `aws_connect_agent_status_custom`
 - `aws_connect_agent_realtime_status_agent_state`
 
+
 All queue metrics include a `channel` label. Possible values are
 `VOICE`, `CHAT`, or `TASK`.
+
+## Metrics Glossary and Mapping
+
+This exporter provides real-time and historical metrics from the Amazon Connect API. The metric names in Prometheus may differ slightly from the terminology used in the AWS Console or in business requirements. The following table maps common terms to the metrics provided by this exporter.
+
+| Business Metric / Stakeholder Term | Prometheus Metric & Query | AWS API Metric | Description |
+| ---------------------------------- | ------------------------- | -------------- | ----------- |
+| **Callers in Queue** | `aws_connect_realtime_queue_contacts_in_queue{...}` | `CONTACTS_IN_QUEUE` | The number of contacts currently waiting in a specific queue. |
+| **Longest Wait Time** | `aws_connect_realtime_queue_oldest_contact_age_seconds{...}` | `OLDEST_CONTACT_AGE` | The age, in seconds, of the longest-waiting contact in a queue. |
+| **Agent Status per Queue** | `aws_connect_realtime_queue_agent_state_agents{state="..."}` | `AGENTS_AVAILABLE`, etc. | The number of agents in a specific state (`Available`, `OnContact`). |
+| **Total Concurrent Calls** | `sum(aws_connect_agent_state_agents{state="OnContact"})` | `AGENTS_ON_CONTACT` | **Calculated Total:** The number of agents handling any contact (voice, chat, task). |
+| **Total Calls Today (Inbound)** | `increase(aws_connect_historical_calls_connect_calls_handled_total{direction="inbound"}[1d])` | `CONTACTS_HANDLED` | **Calculated Total:** The number of inbound contacts handled today. |
+| **Total Calls Today (Outbound)** | `increase(aws_connect_historical_calls_connect_calls_handled_total{direction="outbound"}[1d])` | `CONTACTS_HANDLED_OUTBOUND` | **Calculated Total:** The number of outbound contacts handled today. |
+
+### Understanding the Historical Collectors
+
+The exporter ships with two complementary collectors for historical metrics:
+
+**historical_queue Collector (The Analyst's Tool)**
+
+- **Purpose:** Granular, deep-dive analysis.
+- **Use Case:** Answering detailed questions like, "What is the abandonment rate specifically for our CHAT channel in the Support queue?"
+- **Provides:** Depth and detail.
+
+**historical_calls Collector (The Dashboard Builder's Tool)**
+
+- **Purpose:** High-level, business-facing dashboarding and trend analysis.
+- **Use Case:** Answering common questions like, "Show me a graph of our total inbound call rate today," which is a simple `rate(aws_connect_historical_calls_connect_calls_handled_total[5m])` query. Or, "How many calls did we handle yesterday?" using `increase(aws_connect_historical_calls_connect_calls_handled_total[1d])`.
+- **Provides:** Convenience and compatibility with standard PromQL functions.
 
 ## Required IAM Permissions
 
