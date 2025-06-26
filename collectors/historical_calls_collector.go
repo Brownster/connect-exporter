@@ -26,8 +26,8 @@ func NewHistoricalCallsCollector(app *kingpin.Application, config connectors.AWS
 			maas.WithFrequency(interval),
 			maas.WithTimeout(timeout),
 		)),
-		maas.WithDescription(app, "connect_calls_handled_total", "Total calls handled since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "direction", "region"}),
-		maas.WithDescription(app, "connect_calls_abandoned_total", "Total calls abandoned since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "region"}),
+               maas.WithDescription(app, "connect_historical_contacts_handled_total", "Total contacts handled since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "direction", "region"}),
+               maas.WithDescription(app, "connect_historical_contacts_abandoned_total", "Total contacts abandoned since midnight UTC", []string{"queue_id", "queue_name", "queue_type", "region"}),
 	)
 }
 
@@ -114,16 +114,16 @@ func (s *HistoricalCallsScraper) Scrape(c maas.Connector) ([]maas.Metric, error)
 				if md.Metric == nil || md.Value == nil {
 					continue
 				}
-				switch aws.ToString(md.Metric.Name) {
-				case "CONTACTS_HANDLED":
-					labels := append(base, "inbound", config.AWS.Region)
-					allMetrics = append(allMetrics, maas.NewMetric("connect_calls_handled_total", prometheus.CounterValue, *md.Value, labels))
-				case "CONTACTS_HANDLED_OUTBOUND":
-					labels := append(base, "outbound", config.AWS.Region)
-					allMetrics = append(allMetrics, maas.NewMetric("connect_calls_handled_total", prometheus.CounterValue, *md.Value, labels))
-				case "CONTACTS_ABANDONED":
-					labels := append(base, config.AWS.Region)
-					allMetrics = append(allMetrics, maas.NewMetric("connect_calls_abandoned_total", prometheus.CounterValue, *md.Value, labels))
+                                switch aws.ToString(md.Metric.Name) {
+                                case "CONTACTS_HANDLED":
+                                        labels := append(base, "inbound", config.AWS.Region)
+                                        allMetrics = append(allMetrics, maas.NewMetric("connect_historical_contacts_handled_total", prometheus.CounterValue, *md.Value, labels))
+                                case "CONTACTS_HANDLED_OUTBOUND":
+                                        labels := append(base, "outbound", config.AWS.Region)
+                                        allMetrics = append(allMetrics, maas.NewMetric("connect_historical_contacts_handled_total", prometheus.CounterValue, *md.Value, labels))
+                                case "CONTACTS_ABANDONED":
+                                        labels := append(base, config.AWS.Region)
+                                        allMetrics = append(allMetrics, maas.NewMetric("connect_historical_contacts_abandoned_total", prometheus.CounterValue, *md.Value, labels))
 				}
 			}
 		}

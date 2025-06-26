@@ -7,34 +7,34 @@ This document provides the key PromQL queries used in the Kensington dashboards 
 ### Queue Overview Panel
 ```promql
 # Total available slots across all queues
-sum(aws_connect_exporter_realtime_queue_slots_available)
+sum(aws_connect_exporter_realtime_queue_connect_queue_slots_available)
 
 # Total non-productive agents
-sum(aws_connect_exporter_agent_state_agents{state="NonProductive"})
+sum(aws_connect_exporter_realtime_queue_connect_queue_agents{state="NonProductive"})
 ```
 
 ### Agent Status Distribution (Pie Chart)
 ```promql
 # Agent counts by status
-count by(status_name) (aws_connect_exporter_agent_realtime_status_agent_state)
+count by(status_name) (aws_connect_exporter_agent_realtime_status_connect_agent_status_state)
 ```
 
 ### Queue Performance Table
 ```promql
 # Available slots by queue and channel
-aws_connect_exporter_realtime_queue_slots_available
+aws_connect_exporter_realtime_queue_connect_queue_slots_available
 
 # Non-productive agents by queue
-aws_connect_exporter_agent_state_agents{state="NonProductive"}
+aws_connect_exporter_realtime_queue_connect_queue_agents{state="NonProductive"}
 ```
 
 ### Operational Alerts
 ```promql
 # Alert when available slots are low (< 3)
-sum(aws_connect_exporter_realtime_queue_slots_available) < 3
+sum(aws_connect_exporter_realtime_queue_connect_queue_slots_available) < 3
 
 # Alert when non-productive agents are high (> 5)
-sum(aws_connect_exporter_agent_state_agents{state="NonProductive"}) > 5
+sum(aws_connect_exporter_realtime_queue_connect_queue_agents{state="NonProductive"}) > 5
 ```
 
 ## 📈 Daily Performance Analytics Dashboard Queries
@@ -42,45 +42,45 @@ sum(aws_connect_exporter_agent_state_agents{state="NonProductive"}) > 5
 ### Daily Overview Panel
 ```promql
 # Total calls handled today
-sum(aws_connect_exporter_historical_calls_connect_calls_handled_total)
+sum(aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total)
 
 # Total contacts abandoned today
-sum(aws_connect_exporter_historical_queue_contacts_abandoned_today)
+sum(aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total)
 
 # Overall abandonment rate percentage
-sum(aws_connect_exporter_historical_queue_contacts_abandoned_today) /
+sum(aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total) /
 (
-    sum(aws_connect_exporter_historical_calls_connect_calls_handled_total) +
-    sum(aws_connect_exporter_historical_calls_connect_calls_abandoned_total)
+    sum(aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total) +
+    sum(aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total)
 ) * 100
 ```
 
 ### Queue Performance Analysis (Bar Gauge)
 ```promql
 # Abandonment rate by queue
-aws_connect_exporter_historical_queue_contacts_abandoned_today /
-(aws_connect_exporter_historical_calls_connect_calls_handled_total +
- aws_connect_exporter_historical_calls_connect_calls_abandoned_total) * 100
+aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total /
+(aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total +
+ aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total) * 100
 ```
 
 ### Channel Distribution (Pie Chart)
 ```promql
 # Contact volume by channel
 sum by (channel) (
-    aws_connect_exporter_historical_calls_connect_calls_handled_total +
-    aws_connect_exporter_historical_calls_connect_calls_abandoned_total
+    aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total +
+    aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total
 )
 ```
 
 ### Performance KPIs
 ```promql
 # Average abandonment rate across all queues
-avg(aws_connect_exporter_historical_queue_contacts_abandoned_today /
-    (aws_connect_exporter_historical_calls_connect_calls_handled_total +
-     aws_connect_exporter_historical_calls_connect_calls_abandoned_total) * 100)
+avg(aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total /
+    (aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total +
+     aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total) * 100)
 
 # Total daily volume
-sum(aws_connect_exporter_historical_calls_connect_calls_handled_total)
+sum(aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total)
 ```
 
 ## 🔧 Advanced Custom Queries
@@ -88,16 +88,16 @@ sum(aws_connect_exporter_historical_calls_connect_calls_handled_total)
 ### Service Level Calculation (if handled metrics become available)
 ```promql
 # Service level percentage (when handled metrics are added)
-(sum(aws_connect_exporter_historical_calls_connect_calls_handled_total) /
- (sum(aws_connect_exporter_historical_calls_connect_calls_handled_total) +
-  sum(aws_connect_exporter_historical_calls_connect_calls_abandoned_total))) * 100
+(sum(aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total) /
+ (sum(aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total) +
+  sum(aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total))) * 100
 ```
 
 ### Agent Utilization (when more agent metrics are available)
 ```promql
 # Agent utilization percentage
-(sum(aws_connect_exporter_agent_state_agents{state="OnContact"}) /
- sum(aws_connect_exporter_agent_state_agents{state="Staffed"})) * 100
+(sum(aws_connect_exporter_realtime_queue_connect_queue_agents{state="OnContact"}) /
+ sum(aws_connect_exporter_realtime_queue_connect_queue_agents{state="Staffed"})) * 100
 ```
 
 ### Queue Efficiency Score

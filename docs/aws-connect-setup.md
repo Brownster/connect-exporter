@@ -142,12 +142,11 @@ CMD ["/aws-connect-exporter", "--config.file=/config.yml"]
 
 | Metric Name | Type | Description | Labels |
 |-------------|------|-------------|---------|
-| `aws_connect_realtime_queue_contacts_in_queue` | Gauge | Number of contacts waiting in queue | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
-| `aws_connect_realtime_queue_oldest_contact_age_seconds` | Gauge | Age in seconds of oldest contact in queue | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
-| `aws_connect_realtime_queue_slots_available` | Gauge | Number of contact slots available | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
-| `aws_connect_realtime_queue_slots_active` | Gauge | Number of contact slots currently active | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
-| `aws_connect_realtime_queue_agent_state_agents` | Gauge | Number of agents in each state | `queue_id`, `queue_name`, `queue_type`, `channel`, `state`, `region` |
-| `aws_connect_agent_state_agents` | Gauge | Number of agents in each state by queue | `queue`, `state` |
+| `aws_connect_realtime_queue_connect_queue_contacts_in_queue` | Gauge | Number of contacts waiting in queue | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_connect_queue_oldest_contact_age_seconds` | Gauge | Age in seconds of oldest contact in queue | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_connect_queue_slots_available` | Gauge | Number of contact slots available | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_connect_queue_slots_active` | Gauge | Number of contact slots currently active | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_realtime_queue_connect_queue_agents` | Gauge | Number of agents in each state | `queue_id`, `queue_name`, `queue_type`, `channel`, `state`, `region` |
 
 The `channel` label indicates whether a queue handles `VOICE`, `CHAT`, or `TASK` contacts. This applies to both realtime and historical queue metrics.
 
@@ -155,19 +154,19 @@ The `channel` label indicates whether a queue handles `VOICE`, `CHAT`, or `TASK`
 
 | Metric Name | Type | Description | Labels |
 |-------------|------|-------------|---------|
-| `aws_connect_historical_queue_contacts_abandoned_today` | Gauge | Number of contacts abandoned since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
-| `aws_connect_historical_queue_connect_historical_handled_total` | Counter | A counter of contacts handled, partitioned by queue, channel, and direction. | `queue_name`, `channel`, `direction` |
-| `aws_connect_historical_calls_connect_calls_handled_total` | Counter | Total calls handled since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `direction`, `region` |
-| `aws_connect_historical_calls_connect_calls_abandoned_total` | Counter | Total calls abandoned since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `region` |
+| `aws_connect_historical_queue_connect_historical_contacts_abandoned_total` | Counter | Number of contacts abandoned since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
+| `aws_connect_historical_queue_connect_historical_contacts_handled_total` | Counter | A counter of contacts handled, partitioned by queue, channel, and direction. | `queue_name`, `channel`, `direction` |
+| `aws_connect_historical_calls_connect_historical_contacts_handled_total` | Counter | Total contacts handled since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `direction`, `region` |
+| `aws_connect_historical_calls_connect_historical_contacts_abandoned_total` | Counter | Total contacts abandoned since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `region` |
 
 ### Agent Status Metrics
 
 | Metric Name | Type | Description | Labels |
 |-------------|------|-------------|---------|
-| `aws_connect_agent_status_count` | Gauge | Number of agents in each status | `status_id`, `status_name`, `status_type`, `region` |
+| `aws_connect_agent_status_connect_agent_statuses_total` | Gauge | Number of agents in each status | `status_id`, `status_name`, `status_type`, `region` |
 | `aws_connect_agent_status_display_order` | Gauge | Display order of status types | `status_id`, `status_name`, `status_type`, `region` |
 | `aws_connect_agent_status_custom` | Gauge | Custom status indicator (1=custom, 0=built-in) | `status_id`, `status_name`, `status_type`, `region` |
-| `aws_connect_agent_realtime_status_agent_state` | Gauge | Realtime status for each agent | `agent_id`, `username`, `routing_profile_id`, `queue_id`, `status_id`, `status_name`, `status_type`, `region` |
+| `aws_connect_agent_realtime_status_connect_agent_status_state` | Gauge | Realtime status for each agent | `agent_id`, `username`, `routing_profile_id`, `queue_id`, `status_id`, `status_name`, `status_type`, `region` |
 
 ## Monitoring
 
@@ -196,7 +195,7 @@ aws_connect_realtime_queue_contacts_in_queue
 aws_connect_realtime_queue_oldest_contact_age_seconds
 
 # Agent status distribution
-sum by (status_name) (aws_connect_agent_status_count)
+sum by (status_name) (aws_connect_agent_status_connect_agent_statuses_total)
 ```
 
 ## Troubleshooting

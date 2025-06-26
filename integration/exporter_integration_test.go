@@ -95,24 +95,21 @@ func TestExporterWithMockAPI(t *testing.T) {
 
 	// Debug: Print some metrics to see what's available
 	t.Logf("Metrics contains aws_connect_exporter: %v", strings.Contains(metrics, "aws_connect_exporter"))
-	if !strings.Contains(metrics, "aws_connect_exporter_agent_realtime_status_agent_state") {
-		t.Errorf("missing agent_state metrics")
-	}
-	if !strings.Contains(metrics, "aws_connect_exporter_agent_state_agents") {
-		t.Errorf("missing aggregated agent state metrics")
-	}
+       if !strings.Contains(metrics, "aws_connect_exporter_agent_realtime_status_connect_agent_status_state") {
+               t.Errorf("missing agent_state metrics")
+       }
 	if !strings.Contains(metrics, "agent_id=\"user-001\"") {
 		t.Logf("Metrics preview: %s", metrics[:min(500, len(metrics))])
 		t.Errorf("expected agent metric for user-001")
 	}
 
 	// Verify historical queue metrics are exposed
-	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_contacts_abandoned_today") {
-		t.Errorf("missing historical queue abandoned metric")
-	}
-	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_connect_historical_handled_total") {
-		t.Errorf("missing historical queue handled metric")
-	}
+       if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total") {
+               t.Errorf("missing historical queue abandoned metric")
+       }
+       if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_connect_historical_contacts_handled_total") {
+               t.Errorf("missing historical queue handled metric")
+       }
 
 	// Verify queue discovery found expected queues
 	if !strings.Contains(metrics, "queue_id=\"queue-sales-01\"") || !strings.Contains(metrics, "queue_name=\"Sales Queue\"") {

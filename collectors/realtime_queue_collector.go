@@ -41,11 +41,11 @@ func NewRealtimeQueueCollector(app *kingpin.Application, config connectors.AWSCo
 			maas.WithTimeout(timeout),
 		)),
 		// Register metrics with descriptions
-		maas.WithDescription(app, "agent_state_agents", "Number of agents in each state", []string{"queue_id", "queue_name", "queue_type", "channel", "state", "region"}),
-		maas.WithDescription(app, "slots_available", "Number of contact slots available", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
-		maas.WithDescription(app, "slots_active", "Number of contact slots currently active", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
-		maas.WithDescription(app, "contacts_in_queue", "Number of contacts currently waiting in queue", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
-		maas.WithDescription(app, "oldest_contact_age_seconds", "Age in seconds of the oldest contact in queue", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+               maas.WithDescription(app, "connect_queue_agents", "Number of agents in each state", []string{"queue_id", "queue_name", "queue_type", "channel", "state", "region"}),
+               maas.WithDescription(app, "connect_queue_slots_available", "Number of contact slots available", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+               maas.WithDescription(app, "connect_queue_slots_active", "Number of contact slots currently active", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+               maas.WithDescription(app, "connect_queue_contacts_in_queue", "Number of contacts currently waiting in queue", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
+               maas.WithDescription(app, "connect_queue_oldest_contact_age_seconds", "Age in seconds of the oldest contact in queue", []string{"queue_id", "queue_name", "queue_type", "channel", "region"}),
 	)
 }
 
@@ -295,34 +295,34 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 				prometheusMetricName string
 				stateLabel           string
 			)
-			switch collection.Metric.Name {
-			case types.CurrentMetricNameAgentsNonProductive:
-				prometheusMetricName = "agent_state_agents"
-				stateLabel = "NonProductive"
-			case types.CurrentMetricNameSlotsAvailable:
-				prometheusMetricName = "slots_available"
-			case types.CurrentMetricNameSlotsActive:
-				prometheusMetricName = "slots_active"
-			case types.CurrentMetricNameContactsInQueue:
-				prometheusMetricName = "contacts_in_queue"
-			case types.CurrentMetricNameOldestContactAge:
-				prometheusMetricName = "oldest_contact_age_seconds"
-			case types.CurrentMetricNameAgentsAvailable:
-				prometheusMetricName = "agent_state_agents"
-				stateLabel = "Available"
-			case types.CurrentMetricNameAgentsStaffed:
-				prometheusMetricName = "agent_state_agents"
-				stateLabel = "Staffed"
-			case types.CurrentMetricNameAgentsOnContact:
-				prometheusMetricName = "agent_state_agents"
-				stateLabel = "OnContact"
-			case types.CurrentMetricNameAgentsAfterContactWork:
-				prometheusMetricName = "agent_state_agents"
-				stateLabel = "AfterContactWork"
-			case types.CurrentMetricNameAgentsError:
-				prometheusMetricName = "agent_state_agents"
-				stateLabel = "Error"
-			default:
+                        switch collection.Metric.Name {
+                        case types.CurrentMetricNameAgentsNonProductive:
+                                prometheusMetricName = "connect_queue_agents"
+                                stateLabel = "NonProductive"
+                        case types.CurrentMetricNameSlotsAvailable:
+                                prometheusMetricName = "connect_queue_slots_available"
+                        case types.CurrentMetricNameSlotsActive:
+                                prometheusMetricName = "connect_queue_slots_active"
+                        case types.CurrentMetricNameContactsInQueue:
+                                prometheusMetricName = "connect_queue_contacts_in_queue"
+                        case types.CurrentMetricNameOldestContactAge:
+                                prometheusMetricName = "connect_queue_oldest_contact_age_seconds"
+                        case types.CurrentMetricNameAgentsAvailable:
+                                prometheusMetricName = "connect_queue_agents"
+                                stateLabel = "Available"
+                        case types.CurrentMetricNameAgentsStaffed:
+                                prometheusMetricName = "connect_queue_agents"
+                                stateLabel = "Staffed"
+                        case types.CurrentMetricNameAgentsOnContact:
+                                prometheusMetricName = "connect_queue_agents"
+                                stateLabel = "OnContact"
+                        case types.CurrentMetricNameAgentsAfterContactWork:
+                                prometheusMetricName = "connect_queue_agents"
+                                stateLabel = "AfterContactWork"
+                        case types.CurrentMetricNameAgentsError:
+                                prometheusMetricName = "connect_queue_agents"
+                                stateLabel = "Error"
+                        default:
 				logrus.WithFields(logrus.Fields{
 					"metric_name":       metricName,
 					"collector_version": realtimeQueueCollectorVersion,
@@ -331,12 +331,12 @@ func (s *RealtimeQueueScraper) processQueueBatch(conn *connectors.AWSConnectConn
 			}
 
 			// Construct labels for this metric
-			labels := baseLabels
-			if prometheusMetricName == "agent_state_agents" {
-				labels = append(labels, stateLabel, config.AWS.Region)
-			} else {
-				labels = append(labels, config.AWS.Region)
-			}
+                        labels := baseLabels
+                        if prometheusMetricName == "connect_queue_agents" {
+                                labels = append(labels, stateLabel, config.AWS.Region)
+                        } else {
+                                labels = append(labels, config.AWS.Region)
+                        }
 
 			// Create the metric
 			metrics = append(metrics, maas.NewMetric(
