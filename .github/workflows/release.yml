@@ -1,0 +1,39 @@
+name: Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      - name: Build exporter
+        run: go build -o aws-connect-exporter ./cmd/connect-exporter_exporter
+      - name: Prepare quickstart package
+        run: |
+          mkdir package
+          cp aws-connect-exporter package/
+          cp config.development.yml package/
+          cp -r mock-api package/mock-api
+          cp scripts/quickstart.sh package/
+          tar -czf aws-connect-exporter-${{ github.ref_name }}-quickstart.tar.gz -C package .
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: aws-connect-exporter-${{ github.ref_name }}-quickstart.tar.gz
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

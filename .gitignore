@@ -6,3 +6,4 @@ connect-exporter_exporter
 # Node modules
 docs/tools/aws-mock-api-main/node_modules/
 docs/tools/aws-mock-api-main/mock-api.log
+mock-api/node_modules/
