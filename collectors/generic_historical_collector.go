@@ -257,8 +257,8 @@ func (s *GenericHistoricalScraper) processQueueBatch(conn *connectors.AWSConnect
 
 			// Build base labels
 			labels := []string{
-				col.Name,              // collector name
-				def.PrometheusName,    // metric name
+				col.Name,           // collector name
+				def.PrometheusName, // metric name
 				queue.ID,
 				queue.Name,
 				queue.Type,
@@ -282,10 +282,10 @@ func (s *GenericHistoricalScraper) processQueueBatch(conn *connectors.AWSConnect
 			))
 
 			logrus.WithFields(logrus.Fields{
-				"collector":     col.Name,
-				"metric_name":   def.PrometheusName,
-				"metric_value":  *md.Value,
-				"queue_name":    queue.Name,
+				"collector":    col.Name,
+				"metric_name":  def.PrometheusName,
+				"metric_value": *md.Value,
+				"queue_name":   queue.Name,
 			}).Debug("Collected generic historical metric")
 		}
 	}

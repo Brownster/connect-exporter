@@ -16,41 +16,35 @@ aws:
 
 # Collector Configuration
 collectors:
-  # Realtime Queue Metrics Collector
-  realtime_queue:
-    enabled: true
-    interval: 60  # Collection interval in seconds (1 minute)
-    metrics_cache_ttl: 15s
-    queue_cache_ttl: 5m
-    queue_refresh_interval: 5m
-    queues_include_regex: ""
-    
-  # Agent Status Collector  
-  agent_status:
-    enabled: true
-    interval: 300  # Collection interval in seconds (5 minutes)
-
-  # Agent Realtime Status Collector
+  # Generic collectors replace legacy hard-coded collectors
   agent_realtime_status:
     enabled: true
-    interval: 60  # Collection interval in seconds (1 minute)
+    interval: 60
 
-  # Historical Queue Metrics Collector
-  historical_queue:
+  generic_realtime:
     enabled: true
-    interval: 300  # Collection interval in seconds (5 minutes)
+    interval: 30
+    collectors:
+      - name: "queue_realtime_metrics"
+        metrics:
+          - aws_name: "AGENTS_AVAILABLE"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "Available"
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
 
-  historical_calls:
+  generic_historical:
     enabled: true
     interval: 300
-
-  historical_aht:
-    enabled: true
-    interval: 300
-
-  historical_acw:
-    enabled: true
-    interval: 300
+    collectors:
+      - name: "historical_queue"
+        metrics:
+          - aws_name: "CONTACTS_HANDLED"
+            prometheus_name: "connect_historical_contacts_handled_total"
+            labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
 
 # Global settings
 global:

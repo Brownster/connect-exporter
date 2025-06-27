@@ -137,11 +137,38 @@ aws:
 # Faster collection intervals for development
 collectors:
   realtime_queue:
-    enabled: true
-    interval: 30  # 30 seconds for faster feedback
+    enabled: false  # Replaced by generic_realtime collector
+    interval: 30
   agent_status:
+    enabled: false  # Replaced by generic_realtime collector
+    interval: 60
+  
+  agent_realtime_status:
     enabled: true
-    interval: 60  # 1 minute for faster feedback
+    interval: 30
+  generic_realtime:
+    enabled: true
+    interval: 30
+    collectors:
+      - name: "realtime_queue"
+        metrics:
+          - aws_name: "AGENTS_AVAILABLE"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "Available"
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
+  generic_historical:
+    enabled: true
+    interval: 300
+    collectors:
+      - name: "historical_queue"
+        metrics:
+          - aws_name: "CONTACTS_HANDLED"
+            prometheus_name: "connect_historical_contacts_handled_total"
+            labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
 
 # Debug logging
 log_level: debug
@@ -197,8 +224,8 @@ curl -X POST http://localhost:3000/admin/errorRate -d '{"rate": 0.1}'
 curl http://localhost:9090/metrics | grep aws_connect
 
 # Validate specific metrics
-curl -s http://localhost:9090/metrics | grep "aws_connect_realtime_queue_contacts_in_queue"
-curl -s http://localhost:9090/metrics | grep "aws_connect_agent_status_count"
+curl -s http://localhost:9090/metrics | grep "aws_connect_exporter_generic_realtime_generic_metric"
+curl -s http://localhost:9090/metrics | grep "aws_connect_exporter_agent_realtime_status_connect_agent_status_state"
 ```
 
 ## Testing Scenarios
@@ -210,7 +237,7 @@ curl -s http://localhost:9090/metrics | grep "aws_connect_agent_status_count"
 curl -X POST http://localhost:3000/admin/errorRate -d '{"rate": 0.05}'
 
 # Observe normal metric collection
-curl http://localhost:9090/metrics | grep aws_connect_realtime_queue
+curl http://localhost:9090/metrics | grep aws_connect_exporter_generic_realtime_generic_metric
 ```
 
 ### Scenario 2: High Error Rate

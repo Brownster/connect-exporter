@@ -24,12 +24,6 @@ aws:
   instance_arn: "arn:aws:connect:us-east-1:123456789012:instance/your-instance-id"
 
   collectors:
-    realtime_queue:
-      enabled: true
-      interval: 60
-    agent_status:
-      enabled: true
-      interval: 300
     agent_realtime_status:
       enabled: true
       interval: 60
@@ -55,6 +49,20 @@ aws:
               labels: {}
           groupings: ["QUEUE", "CHANNEL"]
           filters: []
+    generic_historical:
+      enabled: true
+      interval: 300
+      collectors:
+        - name: "historical_queue"
+          metrics:
+            - aws_name: "CONTACTS_HANDLED"
+              prometheus_name: "connect_historical_contacts_handled_total"
+              labels: {}
+            - aws_name: "CONTACTS_ABANDONED"
+              prometheus_name: "connect_historical_contacts_abandoned_total"
+              labels: {}
+          groupings: ["QUEUE", "CHANNEL"]
+          filters: []
   ```
 
 ## Running
@@ -72,24 +80,13 @@ aws:
 
 ## Metrics Exposed
 
-Metrics are published under the `aws_connect_exporter_*` namespace. The main
-metrics produced by the exporter are listed below:
+Metrics are published under the `aws_connect_exporter_*` namespace. Common metrics include:
 
-- `aws_connect_exporter_realtime_queue_connect_queue_contacts_in_queue`
-- `aws_connect_exporter_realtime_queue_connect_queue_oldest_contact_age_seconds`
-- `aws_connect_exporter_realtime_queue_connect_queue_slots_available`
-- `aws_connect_exporter_realtime_queue_connect_queue_slots_active`
-- `aws_connect_exporter_realtime_queue_connect_queue_agents` (label: `state`)
-- `aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total`
-- `aws_connect_exporter_historical_queue_connect_historical_contacts_handled_total`
-- `aws_connect_exporter_historical_calls_connect_historical_contacts_handled_total`
-- `aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total`
-- `aws_connect_exporter_historical_aht_connect_historical_avg_handle_time_seconds`
-- `aws_connect_exporter_historical_acw_connect_historical_avg_after_contact_work_time_seconds`
- - `aws_connect_exporter_generic_realtime_generic_metric` (labels: `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`, `state`)
-- `aws_connect_exporter_agent_status_connect_agent_statuses_total`
+- `aws_connect_exporter_generic_realtime_generic_metric` (labels: `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`, `state`)
+- `aws_connect_exporter_generic_historical_generic_metric` (labels: `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`, `direction`)
 - `aws_connect_exporter_agent_realtime_status_connect_agent_status_state`
-- `aws_connect_exporter_agent_state_agents`
+
+Legacy metrics such as `aws_connect_exporter_realtime_queue_*` or `aws_connect_exporter_agent_status_*` have been replaced by the configurable generic collectors.
 
 The monitoring framework also exposes internal scrape metrics (e.g.
 `maas_scrape_total`, `maas_scrape_failed_total`, and

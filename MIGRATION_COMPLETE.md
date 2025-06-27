@@ -29,24 +29,24 @@ Successfully migrated the AWS Connect exporter functionality from the previous s
   - Validates required AWS parameters
   - Dynamic collector registration based on config
 
-### 4. **Realtime Queue Collector**
-- ✅ **File**: `collectors/realtime_queue_collector.go`
+### 4. **Generic Realtime Collector**
+- ✅ **File**: `collectors/generic_realtime_collector.go`
 - ✅ **Features**:
-  - Migrated from original `realtime-queue-collector.go`
+  - Config-driven realtime metrics
   - Uses maas.ScheduledScraper pattern
   - Preserves batch processing (max 100 queues)
   - Includes retry logic with exponential backoff
-  - **Metrics**: `contacts_in_queue`, `oldest_contact_age`
-  - **Labels**: `queue_id`, `queue_name`, `queue_type`, `region`
+  - **Metric**: `generic_realtime_generic_metric`
+  - **Labels**: `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`, `state`
 
-### 5. **Agent Status Collector**
-- ✅ **File**: `collectors/agent_status_collector.go`
+### 5. **Generic Historical Collector**
+- ✅ **File**: `collectors/generic_historical_collector.go`
 - ✅ **Features**:
-  - Migrated from original `agent-status-collector.go`
+  - Config-driven historical metrics
   - Uses maas.ScheduledScraper pattern
-  - Preserves pagination handling with NextToken
-  - **Metrics**: `agent_status_count`, `agent_status_display_order`, `agent_status_custom`
-  - **Labels**: `status_id`, `status_name`, `status_type`, `region`
+  - Handles pagination and batching
+  - **Metric**: `generic_historical_generic_metric`
+  - **Labels**: `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`, `direction`
 
 ### 6. **Configuration Files**
 - ✅ **Production**: `config.aws-connect.yml` - Complete production template
