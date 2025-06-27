@@ -62,6 +62,8 @@ type CollectorsConfig struct {
 	AgentRealtimeStatus AgentRealtimeStatusConfig `yaml:"agent_realtime_status"`
 	HistoricalQueue     HistoricalQueueConfig     `yaml:"historical_queue"`
 	HistoricalCalls     HistoricalCallsConfig     `yaml:"historical_calls"`
+	HistoricalAHT       HistoricalAHTConfig       `yaml:"historical_aht"`
+	HistoricalACW       HistoricalACWConfig       `yaml:"historical_acw"`
 }
 
 // RealtimeQueueConfig configures the realtime queue collector
@@ -94,6 +96,18 @@ type HistoricalQueueConfig struct {
 
 // HistoricalCallsConfig configures the historical calls collector
 type HistoricalCallsConfig struct {
+	Enabled  bool `yaml:"enabled"`
+	Interval int  `yaml:"interval"`
+}
+
+// HistoricalAHTConfig configures the historical average handle time collector
+type HistoricalAHTConfig struct {
+	Enabled  bool `yaml:"enabled"`
+	Interval int  `yaml:"interval"`
+}
+
+// HistoricalACWConfig configures the historical after contact work time collector
+type HistoricalACWConfig struct {
 	Enabled  bool `yaml:"enabled"`
 	Interval int  `yaml:"interval"`
 }
@@ -429,6 +443,12 @@ func (c *AWSConnectConnector) configure() error {
 	if cfg.Collectors.HistoricalCalls.Interval <= 0 {
 		cfg.Collectors.HistoricalCalls.Interval = 300 // Default 5 minutes
 	}
+	if cfg.Collectors.HistoricalAHT.Interval <= 0 {
+		cfg.Collectors.HistoricalAHT.Interval = 300 // Default 5 minutes
+	}
+	if cfg.Collectors.HistoricalACW.Interval <= 0 {
+		cfg.Collectors.HistoricalACW.Interval = 300 // Default 5 minutes
+	}
 
 	// Validate required configuration
 	if cfg.AWS.InstanceARN == "" {
@@ -493,6 +513,12 @@ func (c *AWSConnectConnector) configure() error {
 	}
 	if cfg.Collectors.HistoricalCalls.Enabled {
 		logrus.WithField("interval", cfg.Collectors.HistoricalCalls.Interval).Info("Enabled historical calls collector")
+	}
+	if cfg.Collectors.HistoricalAHT.Enabled {
+		logrus.WithField("interval", cfg.Collectors.HistoricalAHT.Interval).Info("Enabled historical AHT collector")
+	}
+	if cfg.Collectors.HistoricalACW.Enabled {
+		logrus.WithField("interval", cfg.Collectors.HistoricalACW.Interval).Info("Enabled historical ACW collector")
 	}
 
 	c.configured = true

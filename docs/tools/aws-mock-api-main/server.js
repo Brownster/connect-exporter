@@ -83,7 +83,9 @@ const VALID_METRICS = {
   CONTACTS_QUEUED: 'COUNT',
   CONTACTS_ABANDONED: 'COUNT',
   CONTACTS_HANDLED_OUTBOUND: 'COUNT',
-  CONTACTS_HANDLED: 'COUNT'
+  CONTACTS_HANDLED: 'COUNT',
+  AVG_HANDLE_TIME: 'SECONDS',
+  AVG_AFTER_CONTACT_WORK_TIME: 'SECONDS'
 };
 
 // Valid channels that this mock service recognizes
@@ -648,6 +650,14 @@ const MetricGenerators = {
       // Random number of scheduled contacts between 1 and 5
       value: Math.floor(Math.random() * 5) + 1,
       unit: VALID_METRICS.CONTACTS_SCHEDULED
+    }),
+    AVG_HANDLE_TIME: (queue, baseValues) => ({
+      value: Math.floor(Math.random() * 300) + 30,
+      unit: VALID_METRICS.AVG_HANDLE_TIME
+    }),
+    AVG_AFTER_CONTACT_WORK_TIME: (queue, baseValues) => ({
+      value: Math.floor(Math.random() * 60) + 10,
+      unit: VALID_METRICS.AVG_AFTER_CONTACT_WORK_TIME
     })
   }
 };
