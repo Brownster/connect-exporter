@@ -242,6 +242,8 @@ npm start
    ```bash
    curl http://localhost:3000/health
    ```
+   Metrics returned by the mock API are configured in
+   `docs/tools/aws-mock-api-main/metrics-config.json`.
 
 2. **Configure the Exporter for Mock API**
    Create a test configuration file `config.test.yml`:

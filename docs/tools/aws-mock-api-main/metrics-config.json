@@ -1,0 +1,21 @@
+{
+  "metrics": [
+    {"name": "CONTACTS_IN_QUEUE", "unit": "COUNT", "type": "random", "min": 1, "max": 8},
+    {"name": "AGENTS_STAFFED", "unit": "COUNT", "type": "random", "min": 10, "max": 25},
+    {"name": "AGENTS_ON_CONTACT", "unit": "COUNT", "type": "ratio", "base": "AGENTS_STAFFED", "ratio": 0.6},
+    {"name": "AGENTS_AVAILABLE", "unit": "COUNT", "type": "difference", "base": "AGENTS_STAFFED", "subtract": "AGENTS_ON_CONTACT"},
+    {"name": "OLDEST_CONTACT_AGE", "unit": "SECONDS", "type": "ratio", "base": "CONTACTS_IN_QUEUE", "ratio": 15},
+    {"name": "SLOTS_ACTIVE", "unit": "COUNT", "type": "ratio", "base": "AGENTS_STAFFED", "ratio": 1.0},
+    {"name": "SLOTS_AVAILABLE", "unit": "COUNT", "type": "difference", "base": "SLOTS_ACTIVE", "subtract": "CONTACTS_IN_QUEUE"},
+    {"name": "AGENTS_AFTER_CONTACT_WORK", "unit": "COUNT", "type": "ratio", "base": "AGENTS_ON_CONTACT", "ratio": 0.2},
+    {"name": "AGENTS_NON_PRODUCTIVE", "unit": "COUNT", "type": "ratio", "base": "AGENTS_STAFFED", "ratio": 0.1},
+    {"name": "AGENTS_ERROR", "unit": "COUNT", "type": "ratio", "base": "AGENTS_STAFFED", "ratio": 0.05},
+    {"name": "CONTACTS_SCHEDULED", "unit": "COUNT", "type": "random", "min": 1, "max": 5},
+    {"name": "CONTACTS_QUEUED", "unit": "COUNT", "type": "cumulative", "stepMin": 0, "stepMax": 5},
+    {"name": "CONTACTS_ABANDONED", "unit": "COUNT", "type": "cumulative", "stepMin": 0, "stepMax": 3},
+    {"name": "CONTACTS_HANDLED", "unit": "COUNT", "type": "cumulative", "stepMin": 0, "stepMax": 5},
+    {"name": "CONTACTS_HANDLED_OUTBOUND", "unit": "COUNT", "type": "cumulative", "stepMin": 0, "stepMax": 3},
+    {"name": "AVG_HANDLE_TIME", "unit": "SECONDS", "type": "random", "min": 30, "max": 300},
+    {"name": "AVG_AFTER_CONTACT_WORK_TIME", "unit": "SECONDS", "type": "random", "min": 10, "max": 60}
+  ]
+}
