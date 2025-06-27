@@ -22,32 +22,28 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 	defaultConfig := connectors.AWSConnectConfig{
 		Collectors: connectors.CollectorsConfig{
 			RealtimeQueue: connectors.RealtimeQueueConfig{
-				Enabled:              true,
+				Enabled:              false, // Replaced by generic_realtime
 				Interval:             30,
 				MetricsCacheTTL:      15 * time.Second,
 				QueueCacheTTL:        5 * time.Minute,
 				QueueRefreshInterval: 5 * time.Minute,
 				QueuesIncludeRegex:   "",
 			},
-			AgentStatus:         connectors.AgentStatusConfig{Enabled: true, Interval: 60},
+			AgentStatus:         connectors.AgentStatusConfig{Enabled: false, Interval: 60}, // Removed - not operationally useful
 			AgentRealtimeStatus: connectors.AgentRealtimeStatusConfig{Enabled: true, Interval: 60},
-			HistoricalQueue:     connectors.HistoricalQueueConfig{Enabled: true, Interval: 300},
-			HistoricalCalls:     connectors.HistoricalCallsConfig{Enabled: true, Interval: 300},
-			HistoricalAHT:       connectors.HistoricalAHTConfig{Enabled: true, Interval: 300},
-			HistoricalACW:       connectors.HistoricalACWConfig{Enabled: true, Interval: 300},
-			GenericRealtime:     connectors.GenericRealtimeConfig{Enabled: false, Interval: 30},
+			HistoricalQueue:     connectors.HistoricalQueueConfig{Enabled: false, Interval: 300}, // Replaced by generic_historical
+			HistoricalCalls:     connectors.HistoricalCallsConfig{Enabled: false, Interval: 300}, // Replaced by generic_historical
+			HistoricalAHT:       connectors.HistoricalAHTConfig{Enabled: false, Interval: 300}, // Replaced by generic_historical
+			HistoricalACW:       connectors.HistoricalACWConfig{Enabled: false, Interval: 300}, // Replaced by generic_historical
+			GenericRealtime:     connectors.GenericRealtimeConfig{Enabled: true, Interval: 30},
+			GenericHistorical:   connectors.GenericHistoricalConfig{Enabled: true, Interval: 300},
 		},
 	}
 
 	scrapers := []*maas.ScheduledScraper{
-		NewRealtimeQueueCollector(app, defaultConfig),
-		NewAgentStatusCollector(app, defaultConfig),
 		NewAgentRealtimeStatusCollector(app, defaultConfig),
-		NewHistoricalQueueCollector(app, defaultConfig),
-		NewHistoricalCallsCollector(app, defaultConfig),
-		NewHistoricalAHTCollector(app, defaultConfig),
-		NewHistoricalACWCollector(app, defaultConfig),
 		NewGenericRealtimeCollector(app, defaultConfig),
+		NewGenericHistoricalCollector(app, defaultConfig),
 	}
 
 	// Create the exporter with the connector and collectors

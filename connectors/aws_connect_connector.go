@@ -34,6 +34,8 @@ type AWSConnectConnector struct {
 	config AWSConnectConfig
 	// Queue manager for shared queue discovery
 	queueManager *QueueManager
+	// Agent manager for shared agent discovery
+	agentManager *AgentManager
 }
 
 // Queue represents queue metadata
@@ -65,6 +67,7 @@ type CollectorsConfig struct {
 	HistoricalAHT       HistoricalAHTConfig       `yaml:"historical_aht"`
 	HistoricalACW       HistoricalACWConfig       `yaml:"historical_acw"`
 	GenericRealtime     GenericRealtimeConfig     `yaml:"generic_realtime"`
+	GenericHistorical   GenericHistoricalConfig   `yaml:"generic_historical"`
 }
 
 // RealtimeQueueConfig configures the realtime queue collector
@@ -139,6 +142,35 @@ type GenericRealtimeConfig struct {
 	Enabled    bool                  `yaml:"enabled"`
 	Interval   int                   `yaml:"interval"`
 	Collectors []GenericMetricConfig `yaml:"collectors"`
+}
+
+// HistoricalMetricDefinition maps an AWS historical metric to a Prometheus metric with optional labels and filters
+type HistoricalMetricDefinition struct {
+	AWSName        string            `yaml:"aws_name"`
+	PrometheusName string            `yaml:"prometheus_name"`
+	Labels         map[string]string `yaml:"labels"`
+	MetricFilters  []MetricFilter    `yaml:"metric_filters"`
+}
+
+// MetricFilter defines AWS Connect metric filters (e.g., for direction filtering)
+type MetricFilter struct {
+	Key    string   `yaml:"key"`
+	Values []string `yaml:"values"`
+}
+
+// GenericHistoricalMetricConfig defines a single generic historical metric query
+type GenericHistoricalMetricConfig struct {
+	Name      string                        `yaml:"name"`
+	Metrics   []HistoricalMetricDefinition  `yaml:"metrics"`
+	Groupings []string                      `yaml:"groupings"`
+	Filters   []FilterConfig                `yaml:"filters"`
+}
+
+// GenericHistoricalConfig configures the generic historical collector
+type GenericHistoricalConfig struct {
+	Enabled    bool                             `yaml:"enabled"`
+	Interval   int                              `yaml:"interval"`
+	Collectors []GenericHistoricalMetricConfig `yaml:"collectors"`
 }
 
 // NewConfigurableAWSConnectConnector creates a new AWS Connect connector with kingpin flags
@@ -252,6 +284,12 @@ func (c *AWSConnectConnector) Connect() error {
 		}
 		c.queueManager = qm
 		qm.Start()
+	}
+	
+	if c.agentManager == nil {
+		am := NewAgentManager(c, c.config.Collectors.RealtimeQueue.QueueRefreshInterval)
+		c.agentManager = am
+		am.Start()
 	}
 	return nil
 }
@@ -481,6 +519,9 @@ func (c *AWSConnectConnector) configure() error {
 	if cfg.Collectors.GenericRealtime.Interval <= 0 {
 		cfg.Collectors.GenericRealtime.Interval = 30 // Default 30 seconds
 	}
+	if cfg.Collectors.GenericHistorical.Interval <= 0 {
+		cfg.Collectors.GenericHistorical.Interval = 300 // Default 5 minutes
+	}
 
 	// Validate required configuration
 	if cfg.AWS.InstanceARN == "" {
@@ -555,6 +596,9 @@ func (c *AWSConnectConnector) configure() error {
 	if cfg.Collectors.GenericRealtime.Enabled {
 		logrus.WithField("interval", cfg.Collectors.GenericRealtime.Interval).Info("Enabled generic realtime collector")
 	}
+	if cfg.Collectors.GenericHistorical.Enabled {
+		logrus.WithField("interval", cfg.Collectors.GenericHistorical.Interval).Info("Enabled generic historical collector")
+	}
 
 	c.configured = true
 	return nil
@@ -568,6 +612,11 @@ func (c *AWSConnectConnector) GetConfig() AWSConnectConfig {
 // GetQueueManager exposes the shared QueueManager
 func (c *AWSConnectConnector) GetQueueManager() *QueueManager {
 	return c.queueManager
+}
+
+// GetAgentManager exposes the shared AgentManager
+func (c *AWSConnectConnector) GetAgentManager() *AgentManager {
+	return c.agentManager
 }
 
 // GetInstanceID extracts the instance ID from the ARN

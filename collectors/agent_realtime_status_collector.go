@@ -75,22 +75,8 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 		return nil, fmt.Errorf("failed to get current user data: %w", err)
 	}
 
-	// Build a map of userID -> username for enrichment
-	userNames := make(map[string]string)
-	usersInput := &connect.ListUsersInput{
-		InstanceId: &instanceID,
-		MaxResults: aws.Int32(1000),
-	}
-	users, err := conn.ListUsers(context.Background(), usersInput)
-	if err == nil {
-		for _, u := range users.UserSummaryList {
-			if u.Id != nil && u.Username != nil {
-				userNames[aws.ToString(u.Id)] = aws.ToString(u.Username)
-			}
-		}
-	} else {
-		logrus.WithError(err).Debug("failed to list users for enrichment")
-	}
+	// Get agent metadata from shared AgentManager
+	agentMap := conn.GetAgentManager().GetAgentMap()
 
 	// Cache routing profile -> queue IDs
 	rpQueues := make(map[string]string)
@@ -104,7 +90,10 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 		if user.User != nil && user.User.Id != nil {
 			agentID = aws.ToString(user.User.Id)
 		}
-		username := userNames[agentID]
+		username := ""
+		if agent, exists := agentMap[agentID]; exists {
+			username = agent.Username
+		}
 		rpID := ""
 		if user.RoutingProfile != nil && user.RoutingProfile.Id != nil {
 			rpID = aws.ToString(user.RoutingProfile.Id)

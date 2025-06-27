@@ -37,13 +37,24 @@ aws:
       enabled: true
       interval: 30
       collectors:
-        - name: "agents_available_by_queue"
+        - name: "queue_realtime_metrics"
           metrics:
             - aws_name: "AGENTS_AVAILABLE"
               prometheus_name: "connect_queue_agents"
               labels:
                 state: "Available"
+            - aws_name: "AGENTS_STAFFED"
+              prometheus_name: "connect_queue_agents"
+              labels:
+                state: "Staffed"
+            - aws_name: "SLOTS_AVAILABLE"
+              prometheus_name: "connect_queue_slots_available"
+              labels: {}
+            - aws_name: "CONTACTS_IN_QUEUE"
+              prometheus_name: "connect_queue_contacts_in_queue"
+              labels: {}
           groupings: ["QUEUE", "CHANNEL"]
+          filters: []
   ```
 
 ## Running
@@ -83,6 +94,83 @@ metrics produced by the exporter are listed below:
 The monitoring framework also exposes internal scrape metrics (e.g.
 `maas_scrape_total`, `maas_scrape_failed_total`, and
 `maas_scrape_duration_seconds`) to help troubleshoot collection issues.
+
+## Generic Realtime Collector
+
+The generic realtime collector provides a config-driven approach to collecting AWS Connect realtime metrics. Instead of hardcoded metric mappings, you can define any combination of AWS Connect current metrics in your configuration file.
+
+### Configuration
+
+```yaml
+collectors:
+  generic_realtime:
+    enabled: true
+    interval: 30  # Collection interval in seconds
+    collectors:
+      - name: "queue_realtime_metrics"  # Collector name (used in labels)
+        metrics:
+          # Agent metrics with state labels
+          - aws_name: "AGENTS_AVAILABLE"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "Available"
+          - aws_name: "AGENTS_STAFFED"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "Staffed"
+          - aws_name: "AGENTS_ON_CONTACT"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "OnContact"
+          # Queue capacity metrics
+          - aws_name: "SLOTS_AVAILABLE"
+            prometheus_name: "connect_queue_slots_available"
+            labels: {}
+          - aws_name: "CONTACTS_IN_QUEUE"
+            prometheus_name: "connect_queue_contacts_in_queue"
+            labels: {}
+        groupings: ["QUEUE", "CHANNEL"]  # AWS Connect groupings
+        filters: []  # Optional additional filters
+```
+
+### Supported AWS Metrics
+
+Any AWS Connect current metric can be configured. Common metrics include:
+
+- **Agent Metrics**: `AGENTS_AVAILABLE`, `AGENTS_STAFFED`, `AGENTS_ON_CONTACT`, `AGENTS_AFTER_CONTACT_WORK`, `AGENTS_NON_PRODUCTIVE`, `AGENTS_ERROR`
+- **Queue Metrics**: `CONTACTS_IN_QUEUE`, `OLDEST_CONTACT_AGE`, `SLOTS_AVAILABLE`, `SLOTS_ACTIVE`
+
+### Output Format
+
+All generic realtime metrics are published as `aws_connect_exporter_generic_realtime_generic_metric` with labels:
+- `collector`: The collector name from configuration
+- `metric_name`: The Prometheus metric name from configuration  
+- `queue_id`, `queue_name`, `queue_type`: Queue information
+- `channel`: Channel type (VOICE, CHAT, TASK)
+- `region`: AWS region
+- `state`: Additional state label (if configured)
+
+### Benefits
+
+- **Flexible**: Add new metrics without code changes
+- **Consistent**: Same API patterns and retry logic as hardcoded collectors
+- **Extensible**: Support for multiple collector configurations
+- **Compatible**: Uses the same AWS Connect APIs as existing collectors
+- **Replaces Legacy**: Can completely replace hardcoded `realtime_queue` and `agent_status` collectors
+
+### Migration from Hardcoded Collectors
+
+The generic realtime collector can replace the following hardcoded collectors:
+
+**✅ Replaced Collectors:**
+- `realtime_queue`: All 10 realtime queue metrics (agents, slots, contacts, etc.)
+- `agent_status`: Aggregated agent state metrics by queue
+
+**⚠️ Still Required:**
+- `agent_realtime_status`: Individual agent status (uses different API)
+- `historical_*`: Historical metrics (use different time-based APIs)
+
+In the default configuration, the hardcoded collectors are now **disabled** and replaced by equivalent generic collector configurations.
 
 
 All queue metrics include a `channel` label. Possible values are

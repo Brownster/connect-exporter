@@ -1,0 +1,8 @@
+
+# Build artifacts
+connect-exporter_exporter
+*.log
+
+# Node modules
+docs/tools/aws-mock-api-main/node_modules/
+docs/tools/aws-mock-api-main/mock-api.log

@@ -25,13 +25,21 @@ func (m *mockGenericServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, `{"QueueSummaryList":[{"Id":"q-1","Name":"Sales_Queue_VOICE","QueueType":"STANDARD"}]}`) //nolint:errcheck
 		return
 	}
-	if r.Method == http.MethodPost && r.URL.Path == "/metrics/data" {
+	// Handle ListUsers endpoint for AgentManager
+	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/users-summary/") {
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"UserSummaryList":[{"Id":"agent-1","Username":"test.agent","Arn":"arn:aws:connect:us-east-1:123456789012:instance/test/agent/agent-1"}]}`) //nolint:errcheck
+		return
+	}
+	// Handle GetCurrentMetricData (realtime API)
+	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/metrics/current/") {
 		body, _ := io.ReadAll(r.Body)
 		var req struct{ Groupings []string }
 		json.Unmarshal(body, &req) //nolint:errcheck
 		m.groupings = req.Groupings
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"MetricResults":[{"Dimensions":{"QUEUE":"q-1","CHANNEL":"VOICE"},"Collections":[{"Metric":{"Name":"AGENTS_AVAILABLE"},"Value":5.0}]}]}`) //nolint:errcheck
+		// Return current metric data format
+		io.WriteString(w, `{"MetricResults":[{"Dimensions":{"Queue":{"Id":"q-1"},"Channel":"VOICE"},"Collections":[{"Metric":{"Name":"AGENTS_AVAILABLE"},"Value":5.0}]}]}`) //nolint:errcheck
 		return
 	}
 	http.NotFound(w, r)
@@ -50,7 +58,7 @@ func setupGenericConnector(t *testing.T, srv *httptest.Server) *connectors.AWSCo
 		t.Fatal(err)
 	}
 
-	cfgData := []byte("aws:\n  region: eu-west-2\n  instance_arn: arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772\ncollectors:\n  generic_realtime:\n    enabled: true\n    interval: 30\n    collectors:\n      - name: agents_available_by_queue\n        metrics:\n          - aws_name: AGENTS_AVAILABLE\n            prometheus_name: connect_queue_agents\n            labels:\n              state: Available\n        groupings: [QUEUE, CHANNEL]\n")
+	cfgData := []byte("aws:\n  region: eu-west-2\n  instance_arn: arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772\ncollectors:\n  generic_realtime:\n    enabled: true\n    interval: 30\n    collectors:\n      - name: queue_realtime_metrics\n        metrics:\n          - aws_name: AGENTS_AVAILABLE\n            prometheus_name: connect_queue_agents\n            labels:\n              state: Available\n          - aws_name: CONTACTS_IN_QUEUE\n            prometheus_name: connect_queue_contacts_in_queue\n            labels: {}\n        groupings: [QUEUE, CHANNEL]\n        filters: []\n")
 	tmpFile, err := os.CreateTemp("", "cfg*.yml")
 	if err != nil {
 		t.Fatal(err)
@@ -91,9 +99,11 @@ func TestGenericRealtimeCollector(t *testing.T) {
 	for _, m := range metrics {
 		if metricName(m) == "generic_metric" {
 			assert.Equal(t, prometheus.GaugeValue, metricValueType(m))
-			assert.Equal(t, "connect_queue_agents", metricLabels(m)[1])
-			assert.Equal(t, "Available", metricLabels(m)[7])
-			found = true
+			// Check if this is the agents metric
+			if metricLabels(m)[1] == "connect_queue_agents" {
+				assert.Equal(t, "Available", metricLabels(m)[7]) // state label
+				found = true
+			}
 		}
 	}
 	assert.True(t, found)
@@ -117,5 +127,5 @@ func TestGenericRealtimeCollectorError(t *testing.T) {
 	metrics, err := scraper.Scrape(conn)
 	assert.NoError(t, err)
 	assert.Empty(t, metrics)
-	assert.Contains(t, buf.String(), "Failed to get generic realtime data")
+	assert.Contains(t, buf.String(), "Failed to get current metric data")
 }
