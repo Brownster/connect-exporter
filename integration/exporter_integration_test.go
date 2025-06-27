@@ -102,11 +102,14 @@ func TestExporterWithMockAPI(t *testing.T) {
 		t.Errorf("expected agent metric for alice.smith")
 	}
 
-	// Verify historical queue metrics are exposed
-	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total") {
+	// Verify historical queue metrics are exposed (now via generic collector)
+	if !strings.Contains(metrics, "aws_connect_exporter_generic_historical_generic_historical_metric") {
+		t.Errorf("missing generic historical metric")
+	}
+	if !strings.Contains(metrics, "connect_historical_contacts_abandoned_total") {
 		t.Errorf("missing historical queue abandoned metric")
 	}
-	if !strings.Contains(metrics, "aws_connect_exporter_historical_queue_connect_historical_contacts_handled_total") {
+	if !strings.Contains(metrics, "connect_historical_contacts_handled_total") {
 		t.Errorf("missing historical queue handled metric")
 	}
 
