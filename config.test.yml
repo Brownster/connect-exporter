@@ -45,6 +45,18 @@ collectors:
     enabled: true
     interval: 300
 
+  generic_realtime:
+    enabled: true
+    interval: 30
+    collectors:
+      - name: "agents_available_by_queue"
+        metrics:
+          - "AGENTS_AVAILABLE"
+        groupings:
+          - "QUEUE"
+          - "CHANNEL"
+        filters: []
+
 # Global settings
 global:
   # Default timeout for all operations

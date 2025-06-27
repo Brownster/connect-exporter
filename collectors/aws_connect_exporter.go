@@ -35,6 +35,7 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 			HistoricalCalls:     connectors.HistoricalCallsConfig{Enabled: true, Interval: 300},
 			HistoricalAHT:       connectors.HistoricalAHTConfig{Enabled: true, Interval: 300},
 			HistoricalACW:       connectors.HistoricalACWConfig{Enabled: true, Interval: 300},
+			GenericRealtime:     connectors.GenericRealtimeConfig{Enabled: false, Interval: 30},
 		},
 	}
 
@@ -46,6 +47,7 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 		NewHistoricalCallsCollector(app, defaultConfig),
 		NewHistoricalAHTCollector(app, defaultConfig),
 		NewHistoricalACWCollector(app, defaultConfig),
+		NewGenericRealtimeCollector(app, defaultConfig),
 	}
 
 	// Create the exporter with the connector and collectors
