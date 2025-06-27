@@ -37,6 +37,14 @@ collectors:
     enabled: true
     interval: 300  # Collection interval in seconds (5 minutes)
 
+  historical_aht:
+    enabled: true
+    interval: 300
+
+  historical_acw:
+    enabled: true
+    interval: 300
+
 # Global settings
 global:
   # Default timeout for all operations

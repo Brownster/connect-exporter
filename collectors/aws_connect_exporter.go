@@ -33,15 +33,19 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 			AgentRealtimeStatus: connectors.AgentRealtimeStatusConfig{Enabled: true, Interval: 60},
 			HistoricalQueue:     connectors.HistoricalQueueConfig{Enabled: true, Interval: 300},
 			HistoricalCalls:     connectors.HistoricalCallsConfig{Enabled: true, Interval: 300},
+			HistoricalAHT:       connectors.HistoricalAHTConfig{Enabled: true, Interval: 300},
+			HistoricalACW:       connectors.HistoricalACWConfig{Enabled: true, Interval: 300},
 		},
 	}
 
 	scrapers := []*maas.ScheduledScraper{
 		NewRealtimeQueueCollector(app, defaultConfig),
-               NewAgentStatusCollector(app, defaultConfig),
-               NewAgentRealtimeStatusCollector(app, defaultConfig),
-               NewHistoricalQueueCollector(app, defaultConfig),
-               NewHistoricalCallsCollector(app, defaultConfig),
+		NewAgentStatusCollector(app, defaultConfig),
+		NewAgentRealtimeStatusCollector(app, defaultConfig),
+		NewHistoricalQueueCollector(app, defaultConfig),
+		NewHistoricalCallsCollector(app, defaultConfig),
+		NewHistoricalAHTCollector(app, defaultConfig),
+		NewHistoricalACWCollector(app, defaultConfig),
 	}
 
 	// Create the exporter with the connector and collectors

@@ -43,6 +43,14 @@ collectors:
     enabled: false
     interval: 60
 
+  historical_aht:
+    enabled: true
+    interval: 60
+
+  historical_acw:
+    enabled: true
+    interval: 60
+
 # Global settings
 global:
   # Shorter timeout for development

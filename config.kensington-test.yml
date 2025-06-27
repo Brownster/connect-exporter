@@ -31,6 +31,14 @@ collectors:
   historical_queue:
     enabled: true
     interval: 300  # 5 minutes for historical data
+
+  historical_aht:
+    enabled: true
+    interval: 300
+
+  historical_acw:
+    enabled: true
+    interval: 300
     
   # ❌ DISABLED: Agent status definitions (not operationally useful)
   # This only shows status definitions (always=1) and custom indicators (0/1)
