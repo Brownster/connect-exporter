@@ -119,12 +119,19 @@ type FilterConfig struct {
 	Values []string `yaml:"values"`
 }
 
+// MetricDefinition maps an AWS metric to a Prometheus metric with optional labels
+type MetricDefinition struct {
+	AWSName        string            `yaml:"aws_name"`
+	PrometheusName string            `yaml:"prometheus_name"`
+	Labels         map[string]string `yaml:"labels"`
+}
+
 // GenericMetricConfig defines a single generic metric query
 type GenericMetricConfig struct {
-	Name      string         `yaml:"name"`
-	Metrics   []string       `yaml:"metrics"`
-	Groupings []string       `yaml:"groupings"`
-	Filters   []FilterConfig `yaml:"filters"`
+	Name      string             `yaml:"name"`
+	Metrics   []MetricDefinition `yaml:"metrics"`
+	Groupings []string           `yaml:"groupings"`
+	Filters   []FilterConfig     `yaml:"filters"`
 }
 
 // GenericRealtimeConfig configures the generic realtime collector

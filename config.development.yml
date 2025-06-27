@@ -57,7 +57,10 @@ collectors:
     collectors:
       - name: "agents_available_by_queue"
         metrics:
-          - "AGENTS_AVAILABLE"
+          - aws_name: "AGENTS_AVAILABLE"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "Available"
         groupings:
           - "QUEUE"
           - "CHANNEL"

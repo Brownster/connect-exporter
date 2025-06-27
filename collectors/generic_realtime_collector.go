@@ -28,7 +28,7 @@ func NewGenericRealtimeCollector(app *kingpin.Application, cfg connectors.AWSCon
 			maas.WithFrequency(interval),
 			maas.WithTimeout(timeout),
 		)),
-		maas.WithDescription(app, "generic_metric", "Generic realtime metric", []string{"collector", "metric_name", "queue_id", "queue_name", "queue_type", "channel", "region"}),
+		maas.WithDescription(app, "generic_metric", "Generic realtime metric", []string{"collector", "metric_name", "queue_id", "queue_name", "queue_type", "channel", "region", "state"}),
 	)
 }
 
@@ -66,8 +66,10 @@ func (s *GenericRealtimeScraper) Scrape(c maas.Connector) ([]maas.Metric, error)
 
 	for _, col := range rt.Collectors {
 		metricDefs := make([]types.MetricV2, len(col.Metrics))
+		metricMap := make(map[string]connectors.MetricDefinition)
 		for i, m := range col.Metrics {
-			metricDefs[i] = types.MetricV2{Name: aws.String(m)}
+			metricDefs[i] = types.MetricV2{Name: aws.String(m.AWSName)}
+			metricMap[m.AWSName] = m
 		}
 
 		filters := []types.FilterV2{{FilterKey: aws.String("QUEUE"), FilterValues: queueIDs}}
@@ -102,8 +104,14 @@ func (s *GenericRealtimeScraper) Scrape(c maas.Connector) ([]maas.Metric, error)
 				if md.Metric == nil || md.Value == nil {
 					continue
 				}
+				def, ok := metricMap[aws.ToString(md.Metric.Name)]
+				if !ok {
+					continue
+				}
 				labels := append([]string{}, labelsBase...)
-				labels[1] = aws.ToString(md.Metric.Name)
+				labels[1] = def.PrometheusName
+				state := def.Labels["state"]
+				labels = append(labels, state)
 				metrics = append(metrics, maas.NewMetric("generic_metric", prometheus.GaugeValue, *md.Value, labels))
 			}
 		}

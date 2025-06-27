@@ -50,7 +50,7 @@ func setupGenericConnector(t *testing.T, srv *httptest.Server) *connectors.AWSCo
 		t.Fatal(err)
 	}
 
-	cfgData := []byte("aws:\n  region: eu-west-2\n  instance_arn: arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772\ncollectors:\n  generic_realtime:\n    enabled: true\n    interval: 30\n    collectors:\n      - name: agents_available_by_queue\n        metrics: [AGENTS_AVAILABLE]\n        groupings: [QUEUE, CHANNEL]\n")
+	cfgData := []byte("aws:\n  region: eu-west-2\n  instance_arn: arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772\ncollectors:\n  generic_realtime:\n    enabled: true\n    interval: 30\n    collectors:\n      - name: agents_available_by_queue\n        metrics:\n          - aws_name: AGENTS_AVAILABLE\n            prometheus_name: connect_queue_agents\n            labels:\n              state: Available\n        groupings: [QUEUE, CHANNEL]\n")
 	tmpFile, err := os.CreateTemp("", "cfg*.yml")
 	if err != nil {
 		t.Fatal(err)
@@ -91,7 +91,8 @@ func TestGenericRealtimeCollector(t *testing.T) {
 	for _, m := range metrics {
 		if metricName(m) == "generic_metric" {
 			assert.Equal(t, prometheus.GaugeValue, metricValueType(m))
-			assert.Equal(t, "AGENTS_AVAILABLE", metricLabels(m)[1])
+			assert.Equal(t, "connect_queue_agents", metricLabels(m)[1])
+			assert.Equal(t, "Available", metricLabels(m)[7])
 			found = true
 		}
 	}

@@ -38,7 +38,11 @@ aws:
       interval: 30
       collectors:
         - name: "agents_available_by_queue"
-          metrics: ["AGENTS_AVAILABLE"]
+          metrics:
+            - aws_name: "AGENTS_AVAILABLE"
+              prometheus_name: "connect_queue_agents"
+              labels:
+                state: "Available"
           groupings: ["QUEUE", "CHANNEL"]
   ```
 
@@ -71,7 +75,7 @@ metrics produced by the exporter are listed below:
 - `aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total`
 - `aws_connect_exporter_historical_aht_connect_historical_avg_handle_time_seconds`
 - `aws_connect_exporter_historical_acw_connect_historical_avg_after_contact_work_time_seconds`
-- `aws_connect_exporter_generic_realtime_generic_metric` (labels: `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`)
+ - `aws_connect_exporter_generic_realtime_generic_metric` (labels: `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`, `state`)
 - `aws_connect_exporter_agent_status_connect_agent_statuses_total`
 - `aws_connect_exporter_agent_realtime_status_connect_agent_status_state`
 - `aws_connect_exporter_agent_state_agents`
