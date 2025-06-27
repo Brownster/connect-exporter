@@ -232,8 +232,8 @@ aws_connect_exporter_agent_realtime_status_connect_agent_status_state{agent_id="
 aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 6
 
 # Agent Status Definitions
-aws_connect_exporter_agent_status_connect_agent_statuses_total{region="eu-west-2",status_id="status-001",status_name="Available",status_type="ROUTABLE"} 1
-aws_connect_exporter_agent_status_connect_agent_statuses_total{region="eu-west-2",status_id="status-002",status_name="Busy",status_type="ROUTABLE"} 1
+aws_connect_exporter_agent_status_connect_agent_statuses_total{region="eu-west-2",status_id="available-status-id",status_name="Available",status_type="ROUTABLE"} 3
+aws_connect_exporter_agent_status_connect_agent_statuses_total{region="eu-west-2",status_id="oncall-status-id",status_name="On Call",status_type="NOT_ROUTABLE"} 1
 ```
 
 ### Adjusting Mock API Behavior

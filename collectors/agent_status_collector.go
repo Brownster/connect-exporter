@@ -33,7 +33,7 @@ func NewAgentStatusCollector(app *kingpin.Application, config connectors.AWSConn
 			maas.WithTimeout(timeout),
 		)),
 		// Register metrics with descriptions
-               maas.WithDescription(app, "connect_agent_statuses_total", "Number of agents in each status", []string{"status_id", "status_name", "status_type", "region"}),
+		maas.WithDescription(app, "connect_agent_statuses_total", "Number of agents in each status", []string{"status_id", "status_name", "status_type", "region"}),
 		// REMOVED: agent_status_custom - Not operationally valuable (just indicates custom vs built-in)
 	)
 }
@@ -61,9 +61,9 @@ func (s *AgentStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 
 	// Log the start of the metrics collection process
 	logrus.WithFields(logrus.Fields{
-		"instance_arn":       config.AWS.InstanceARN,
-		"region":             config.AWS.Region,
-		"collector_version":  agentStatusCollectorVersion,
+		"instance_arn":      config.AWS.InstanceARN,
+		"region":            config.AWS.Region,
+		"collector_version": agentStatusCollectorVersion,
 	}).Debug("Starting agent status metrics collection")
 
 	// Initialize a slice to hold the collected metrics
@@ -74,12 +74,12 @@ func (s *AgentStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 
 	for {
 		// Create the input for ListAgentStatuses API call
-                instanceID := conn.GetInstanceID()
-                input := &connect.ListAgentStatusesInput{
-                        InstanceId: &instanceID,
-                        MaxResults: aws.Int32(maxAgentsPerRequest),
-                        NextToken:  nextToken,
-                }
+		instanceID := conn.GetInstanceID()
+		input := &connect.ListAgentStatusesInput{
+			InstanceId: &instanceID,
+			MaxResults: aws.Int32(maxAgentsPerRequest),
+			NextToken:  nextToken,
+		}
 
 		// Fetch agent statuses
 		data, err := conn.ListAgentStatuses(context.Background(), input)
@@ -88,41 +88,49 @@ func (s *AgentStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 		}
 
 		// Process the agent statuses
+		statusCounts := make(map[string]struct {
+			name  string
+			stype string
+			count float64
+		})
+
 		for _, agentStatus := range data.AgentStatusSummaryList {
 			if agentStatus.Id == nil || agentStatus.Name == nil {
 				logrus.WithField("collector_version", agentStatusCollectorVersion).Debug("Skipping agent status with missing information")
 				continue
 			}
 
-			labels := []string{
-				*agentStatus.Id,
-				*agentStatus.Name,
-				string(agentStatus.Type),
-				config.AWS.Region,
+			id := *agentStatus.Id
+			info, ok := statusCounts[id]
+			if !ok {
+				info = struct {
+					name  string
+					stype string
+					count float64
+				}{name: *agentStatus.Name, stype: string(agentStatus.Type), count: 0}
 			}
+			info.count++
+			statusCounts[id] = info
+		}
 
-			// Create metric for agent status count (always 1 per status type)
-                        metrics = append(metrics, maas.NewMetric(
-                                "connect_agent_statuses_total",
-                                prometheus.GaugeValue,
-                                1, // Count of this status type
-                                labels,
-                        ))
-
-			// Note: DisplayOrder field is not available in current AWS SDK version
-			// If needed, this could be retrieved via a separate DescribeAgentStatus call
-
-			// REMOVED: Custom status indicator metric - not operationally valuable
-			// Just indicates if status is custom (1) or built-in (0), provides no actionable data
+		for id, info := range statusCounts {
+			labels := []string{id, info.name, info.stype, config.AWS.Region}
+			metrics = append(metrics, maas.NewMetric(
+				"connect_agent_statuses_total",
+				prometheus.GaugeValue,
+				info.count,
+				labels,
+			))
 
 			logrus.WithFields(logrus.Fields{
-				"status_id":          *agentStatus.Id,
-				"status_name":        *agentStatus.Name,
-				"status_type":        string(agentStatus.Type),
-				"collector_version":  agentStatusCollectorVersion,
+				"status_id":         id,
+				"status_name":       info.name,
+				"status_type":       info.stype,
+				"agent_count":       info.count,
+				"collector_version": agentStatusCollectorVersion,
 			}).Debug("Collected agent status metrics")
 
-			totalAgentStatuses++
+			totalAgentStatuses += int(info.count)
 		}
 
 		// Check if there are more pages
@@ -140,9 +148,9 @@ func (s *AgentStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"total_metrics":      len(metrics),
-		"total_statuses":     totalAgentStatuses,
-		"collector_version":  agentStatusCollectorVersion,
+		"total_metrics":     len(metrics),
+		"total_statuses":    totalAgentStatuses,
+		"collector_version": agentStatusCollectorVersion,
 	}).Debug("Completed agent status metrics collection")
 
 	return metrics, nil
