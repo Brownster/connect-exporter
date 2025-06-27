@@ -10,38 +10,32 @@ aws:
   instance_arn: "arn:aws:connect:eu-west-2:891612549865:instance/9ef29e46-0487-46f8-ae5f-9d495adb897f"
 
 collectors:
-  # ✅ ESSENTIAL: Real-time queue performance metrics
-  # Provides: caller counts, wait times, agent availability by queue/channel
-  realtime_queue:
-    enabled: true
-    interval: 30  # 30 seconds for real-time visibility
-    metrics_cache_ttl: 15s
-    queue_cache_ttl: 5m
-    queue_refresh_interval: 5m
-    queues_include_regex: ""
-    
-  # ✅ ESSENTIAL: Current agent status distribution  
-  # Shows how many agents are in each state (Available, On Contact, etc.)
+  # Essential collectors
   agent_realtime_status:
     enabled: true
-    interval: 60  # 1 minute for agent state changes
-    
-  # ✅ VALUABLE: Daily call volumes and outcomes
-  # Provides: calls handled today (inbound/outbound), abandoned calls
-  historical_queue:
-    enabled: true
-    interval: 300  # 5 minutes for historical data
+    interval: 60
 
-  historical_aht:
+  generic_realtime:
+    enabled: true
+    interval: 30
+    collectors:
+      - name: "queue_realtime_metrics"
+        metrics:
+          - aws_name: "AGENTS_AVAILABLE"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "Available"
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
+
+  generic_historical:
     enabled: true
     interval: 300
-
-  historical_acw:
-    enabled: true
-    interval: 300
-
-  # ❌ DISABLED: Agent status definitions (not operationally useful)
-  # This only shows status definitions (always=1) and custom indicators (0/1)
-  # Does NOT show actual agent counts in those statuses
-  agent_status:
-    enabled: false
+    collectors:
+      - name: "historical_queue"
+        metrics:
+          - aws_name: "CONTACTS_HANDLED"
+            prometheus_name: "connect_historical_contacts_handled_total"
+            labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []

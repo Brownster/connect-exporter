@@ -76,12 +76,32 @@ aws:
   instance_arn: "arn:aws:connect:us-east-1:123456789012:instance/your-instance-id"
 
 collectors:
-  realtime_queue:
+  agent_realtime_status:
     enabled: true
-    interval: 60  # seconds
-  agent_status:
+    interval: 60
+  generic_realtime:
     enabled: true
-    interval: 300  # seconds
+    interval: 30
+    collectors:
+      - name: "queue_realtime_metrics"
+        metrics:
+          - aws_name: "AGENTS_AVAILABLE"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "Available"
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
+  generic_historical:
+    enabled: true
+    interval: 300
+    collectors:
+      - name: "historical_queue"
+        metrics:
+          - aws_name: "CONTACTS_HANDLED"
+            prometheus_name: "connect_historical_contacts_handled_total"
+            labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
 ```
 
 ### 2. Environment Variables
@@ -138,26 +158,16 @@ CMD ["/aws-connect-exporter", "--config.file=/config.yml"]
 
 ## Metrics
 
-### Realtime Queue Metrics
+### Metrics
 
-| Metric Name | Type | Description | Labels |
-|-------------|------|-------------|---------|
-| `aws_connect_realtime_queue_connect_queue_contacts_in_queue` | Gauge | Number of contacts waiting in queue | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
-| `aws_connect_realtime_queue_connect_queue_oldest_contact_age_seconds` | Gauge | Age in seconds of oldest contact in queue | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
-| `aws_connect_realtime_queue_connect_queue_slots_available` | Gauge | Number of contact slots available | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
-| `aws_connect_realtime_queue_connect_queue_slots_active` | Gauge | Number of contact slots currently active | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
-| `aws_connect_realtime_queue_connect_queue_agents` | Gauge | Number of agents in each state | `queue_id`, `queue_name`, `queue_type`, `channel`, `state`, `region` |
+The exporter exposes generic metrics so you can define exactly which AWS Connect metrics to collect:
 
-The `channel` label indicates whether a queue handles `VOICE`, `CHAT`, or `TASK` contacts. This applies to both realtime and historical queue metrics.
+| Metric Name | Type | Labels |
+|-------------|------|--------|
+| `aws_connect_exporter_generic_realtime_generic_metric` | Gauge | `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`, `state` |
+| `aws_connect_exporter_generic_historical_generic_metric` | Gauge | `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`, `direction` |
 
-### Historical Queue Metrics
-
-| Metric Name | Type | Description | Labels |
-|-------------|------|-------------|---------|
-| `aws_connect_historical_queue_connect_historical_contacts_abandoned_total` | Counter | Number of contacts abandoned since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `channel`, `region` |
-| `aws_connect_historical_queue_connect_historical_contacts_handled_total` | Counter | A counter of contacts handled, partitioned by queue, channel, and direction. | `queue_name`, `channel`, `direction` |
-| `aws_connect_historical_calls_connect_historical_contacts_handled_total` | Counter | Total contacts handled since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `direction`, `region` |
-| `aws_connect_historical_calls_connect_historical_contacts_abandoned_total` | Counter | Total contacts abandoned since midnight UTC | `queue_id`, `queue_name`, `queue_type`, `region` |
+Legacy metric names from the old hard-coded collectors are still exported if those collectors are enabled, but they are disabled by default in favor of the generic collectors.
 
 ### Agent Status Metrics
 
@@ -189,13 +199,13 @@ Sample Grafana queries:
 
 ```promql
 # Current contacts in queue
-aws_connect_realtime_queue_contacts_in_queue
+aws_connect_exporter_generic_realtime_generic_metric{metric_name="connect_queue_contacts_in_queue"}
 
 # Average wait time by queue
-aws_connect_realtime_queue_oldest_contact_age_seconds
+aws_connect_exporter_generic_realtime_generic_metric{metric_name="connect_queue_oldest_contact_age_seconds"}
 
 # Agent status distribution
-sum by (status_name) (aws_connect_agent_status_connect_agent_statuses_total)
+sum by (status_name) (aws_connect_exporter_agent_realtime_status_connect_agent_status_state)
 ```
 
 ## Troubleshooting

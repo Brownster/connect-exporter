@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/connect"
-	"github.com/aws/aws-sdk-go-v2/service/connect/types"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -160,16 +159,16 @@ type MetricFilter struct {
 
 // GenericHistoricalMetricConfig defines a single generic historical metric query
 type GenericHistoricalMetricConfig struct {
-	Name      string                        `yaml:"name"`
-	Metrics   []HistoricalMetricDefinition  `yaml:"metrics"`
-	Groupings []string                      `yaml:"groupings"`
-	Filters   []FilterConfig                `yaml:"filters"`
+	Name      string                       `yaml:"name"`
+	Metrics   []HistoricalMetricDefinition `yaml:"metrics"`
+	Groupings []string                     `yaml:"groupings"`
+	Filters   []FilterConfig               `yaml:"filters"`
 }
 
 // GenericHistoricalConfig configures the generic historical collector
 type GenericHistoricalConfig struct {
-	Enabled    bool                             `yaml:"enabled"`
-	Interval   int                              `yaml:"interval"`
+	Enabled    bool                            `yaml:"enabled"`
+	Interval   int                             `yaml:"interval"`
 	Collectors []GenericHistoricalMetricConfig `yaml:"collectors"`
 }
 
@@ -285,7 +284,7 @@ func (c *AWSConnectConnector) Connect() error {
 		c.queueManager = qm
 		qm.Start()
 	}
-	
+
 	if c.agentManager == nil {
 		am := NewAgentManager(c, c.config.Collectors.RealtimeQueue.QueueRefreshInterval)
 		c.agentManager = am
@@ -571,7 +570,7 @@ func (c *AWSConnectConnector) configure() error {
 		c.client = connect.NewFromConfig(awsCfg)
 	}
 
-	// TODO: Add collectors based on configuration - this will be done separately
+	// Log which collectors are enabled based on configuration
 	if cfg.Collectors.RealtimeQueue.Enabled {
 		logrus.WithField("interval", cfg.Collectors.RealtimeQueue.Interval).Info("Enabled realtime queue collector")
 	}
@@ -628,24 +627,4 @@ func (c *AWSConnectConnector) GetInstanceID() string {
 		return parts[len(parts)-1]
 	}
 	return c.instanceARN
-}
-
-// CreateCurrentMetricInput creates a GetCurrentMetricDataInput for queue metrics
-func CreateCurrentMetricInput(instanceID string, queueIDs []string) *connect.GetCurrentMetricDataInput {
-	return &connect.GetCurrentMetricDataInput{
-		InstanceId: &instanceID,
-		Filters: &types.Filters{
-			Queues: queueIDs,
-		},
-		CurrentMetrics: []types.CurrentMetric{
-			{
-				Name: types.CurrentMetricNameContactsInQueue,
-				Unit: types.UnitCount,
-			},
-			{
-				Name: types.CurrentMetricNameOldestContactAge,
-				Unit: types.UnitSeconds,
-			},
-		},
-	}
 }

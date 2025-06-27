@@ -29,8 +29,8 @@ connect-exporter/
 │   └── mock.go                               # Test connector
 ├── collectors/
 │   ├── aws_connect_exporter.go               # Main exporter constructor
-│   ├── realtime_queue_collector.go           # Queue metrics collector
-│   └── agent_status_collector.go             # Agent status collector
+│   ├── generic_realtime_collector.go         # Configurable realtime metrics
+│   └── generic_historical_collector.go       # Configurable historical metrics
 ├── config.development.yml                    # Development configuration
 ├── config.aws-connect.yml                    # Production configuration
 └── monitoring-maas/                          # Framework (DO NOT MODIFY)
