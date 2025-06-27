@@ -24,6 +24,22 @@ collectors:
     queue_cache_ttl: 5m
     queue_refresh_interval: 5m
     queues_include_regex: ""
+    # Available real-time metrics via GetCurrentMetricData
+    # Uncomment any extra metrics you wish to collect. Each entry
+    # maps the AWS metric name to the Prometheus metric output.
+    # - AGENTS_AFTER_CONTACT_WORK -> connect_queue_agents{state="AfterContactWork"}
+    # - AGENTS_AVAILABLE         -> connect_queue_agents{state="Available"}
+    # - AGENTS_ERROR             -> connect_queue_agents{state="Error"}
+    # - AGENTS_NON_PRODUCTIVE    -> connect_queue_agents{state="NonProductive"}
+    # - AGENTS_ON_CALL           -> connect_queue_agents{state="OnCall"}
+    # - AGENTS_ON_CONTACT        -> connect_queue_agents{state="OnContact"}
+    # - AGENTS_ONLINE            -> connect_queue_agents{state="Online"}
+    # - AGENTS_STAFFED           -> connect_queue_agents{state="Staffed"}
+    # - CONTACTS_IN_QUEUE        -> connect_queue_contacts_in_queue
+    # - CONTACTS_SCHEDULED       -> connect_queue_contacts_scheduled
+    # - OLDEST_CONTACT_AGE       -> connect_queue_oldest_contact_age_seconds
+    # - SLOTS_ACTIVE             -> connect_queue_slots_active
+    # - SLOTS_AVAILABLE          -> connect_queue_slots_available
     
   # Agent Status Collector  
   agent_status:
