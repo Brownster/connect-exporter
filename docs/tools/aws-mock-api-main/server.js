@@ -67,26 +67,69 @@ if (process.env.ITEMS_PER_PAGE) {
 }
 const ITEMS_PER_PAGE = itemsPerPage;
 
-// Valid metrics and their default units (for AWS Connect-like behavior)
-const VALID_METRICS = {
-  CONTACTS_IN_QUEUE: 'COUNT',
-  OLDEST_CONTACT_AGE: 'SECONDS',
-  AGENTS_NON_PRODUCTIVE: 'COUNT',
-  SLOTS_AVAILABLE: 'COUNT',
-  SLOTS_ACTIVE: 'COUNT',
-  AGENTS_ON_CONTACT: 'COUNT',
-  AGENTS_AVAILABLE: 'COUNT',
-  AGENTS_STAFFED: 'COUNT',
-  AGENTS_AFTER_CONTACT_WORK: 'COUNT',
-  AGENTS_ERROR: 'COUNT',
-  CONTACTS_SCHEDULED: 'COUNT',
-  CONTACTS_QUEUED: 'COUNT',
-  CONTACTS_ABANDONED: 'COUNT',
-  CONTACTS_HANDLED_OUTBOUND: 'COUNT',
-  CONTACTS_HANDLED: 'COUNT',
-  AVG_HANDLE_TIME: 'SECONDS',
-  AVG_AFTER_CONTACT_WORK_TIME: 'SECONDS'
-};
+// ----------------------------------------------
+// Metric configuration
+// ----------------------------------------------
+const fs = require('fs');
+const path = require('path');
+
+const CONFIG_PATH = path.join(__dirname, 'metrics-config.json');
+let metricsConfig;
+try {
+  metricsConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+  console.log(`Loaded metric config from ${CONFIG_PATH}`);
+} catch (err) {
+  console.warn(`Could not load ${CONFIG_PATH}: ${err}. Using built-in defaults`);
+  metricsConfig = {
+    metrics: [
+      { name: 'CONTACTS_IN_QUEUE', unit: 'COUNT', type: 'random', min: 1, max: 8 },
+      { name: 'AGENTS_STAFFED', unit: 'COUNT', type: 'random', min: 10, max: 25 },
+      { name: 'AGENTS_ON_CONTACT', unit: 'COUNT', type: 'ratio', base: 'AGENTS_STAFFED', ratio: 0.6 },
+      { name: 'AGENTS_AVAILABLE', unit: 'COUNT', type: 'difference', base: 'AGENTS_STAFFED', subtract: 'AGENTS_ON_CONTACT' },
+      { name: 'OLDEST_CONTACT_AGE', unit: 'SECONDS', type: 'ratio', base: 'CONTACTS_IN_QUEUE', ratio: 15 },
+      { name: 'SLOTS_ACTIVE', unit: 'COUNT', type: 'ratio', base: 'AGENTS_STAFFED', ratio: 1.0 },
+      { name: 'SLOTS_AVAILABLE', unit: 'COUNT', type: 'difference', base: 'SLOTS_ACTIVE', subtract: 'CONTACTS_IN_QUEUE' },
+      { name: 'CONTACTS_QUEUED', unit: 'COUNT', type: 'cumulative', stepMin: 0, stepMax: 5 },
+      { name: 'CONTACTS_ABANDONED', unit: 'COUNT', type: 'cumulative', stepMin: 0, stepMax: 3 },
+      { name: 'CONTACTS_HANDLED', unit: 'COUNT', type: 'cumulative', stepMin: 0, stepMax: 5 }
+    ]
+  };
+}
+
+const VALID_METRICS = {};
+const MetricGenerators = { baseMetrics: {}, derivedMetrics: {} };
+
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+metricsConfig.metrics.forEach(def => {
+  VALID_METRICS[def.name] = def.unit || 'COUNT';
+  if (def.type === 'random') {
+    MetricGenerators.baseMetrics[def.name] = () => ({
+      value: randomInt(def.min, def.max),
+      unit: def.unit
+    });
+  } else if (def.type === 'cumulative') {
+    MetricGenerators.baseMetrics[def.name] = (queue, baseValues, d) => {
+      if (!queueTotals[queue.Id]) queueTotals[queue.Id] = {};
+      if (!queueTotals[queue.Id][def.name]) queueTotals[queue.Id][def.name] = 0;
+      queueTotals[queue.Id][def.name] += randomInt(def.stepMin, def.stepMax);
+      return { value: queueTotals[queue.Id][def.name], unit: def.unit };
+    };
+  } else if (def.type === 'ratio') {
+    MetricGenerators.derivedMetrics[def.name] = (queue, baseValues, d) => {
+      const base = baseValues[def.base] ? baseValues[def.base].value : 0;
+      return { value: Math.floor(base * def.ratio), unit: def.unit };
+    };
+  } else if (def.type === 'difference') {
+    MetricGenerators.derivedMetrics[def.name] = (queue, baseValues, d) => {
+      const base = baseValues[def.base] ? baseValues[def.base].value : 0;
+      const sub = baseValues[def.subtract] ? baseValues[def.subtract].value : 0;
+      return { value: Math.max(0, base - sub), unit: def.unit };
+    };
+  }
+});
 
 // Valid channels that this mock service recognizes
 const VALID_CHANNELS = ['VOICE', 'CHAT', 'TASK'];
@@ -558,136 +601,8 @@ function generateMetricsV2(queue, metricDefs) {
   return results;
 }
 
-// Metric generators for different metric types
-const MetricGenerators = {
-  baseMetrics: {
-    CONTACTS_IN_QUEUE: (queue, baseValues, def) => ({
-      // Random number between 1 and 8
-      value: Math.floor(Math.random() * 8) + 1,
-      unit: VALID_METRICS.CONTACTS_IN_QUEUE
-    }),
-    AGENTS_STAFFED: (queue, baseValues, def) => {
-      // Agents staffed is a random number between queue.StaffingTarget.min and max
-      const { min, max } = queue.StaffingTarget;
-        return {
-          // Use inclusive upper bound so that `max` can be returned
-          value: Math.floor(Math.random() * (max - min + 1)) + min,
-          unit: VALID_METRICS.AGENTS_STAFFED
-        };
-    },
-    AGENTS_ON_CONTACT: (queue, baseValues, def) => {
-      // AGENTS_ON_CONTACT is some fraction of AGENTS_STAFFED,
-      // but at least as many as we have contacts in queue
-      const staffed = baseValues.AGENTS_STAFFED ? baseValues.AGENTS_STAFFED.value : 15;
-      const contacts = baseValues.CONTACTS_IN_QUEUE ? baseValues.CONTACTS_IN_QUEUE.value : 3;
-      const maxAgentsForContacts = Math.floor(staffed * 0.7);
-      const minAgentsNeeded = Math.min(contacts, maxAgentsForContacts);
-      return {
-        value: Math.max(minAgentsNeeded, Math.floor(maxAgentsForContacts * 0.6)),
-        unit: VALID_METRICS.AGENTS_ON_CONTACT
-      };
-    },
-    CONTACTS_QUEUED: (queue, baseValues, def) => {
-      const inc = Math.floor(Math.random() * 5);
-      queueTotals[queue.Id].CONTACTS_QUEUED += inc;
-      return {
-        value: queueTotals[queue.Id].CONTACTS_QUEUED,
-        unit: VALID_METRICS.CONTACTS_QUEUED
-      };
-    },
-    CONTACTS_ABANDONED: (queue, baseValues, def) => {
-      const inc = Math.floor(Math.random() * 3);
-      queueTotals[queue.Id].CONTACTS_ABANDONED += inc;
-      return {
-        value: queueTotals[queue.Id].CONTACTS_ABANDONED,
-        unit: VALID_METRICS.CONTACTS_ABANDONED
-      };
-    },
-    CONTACTS_HANDLED: (queue, baseValues, def) => {
-      const inc = Math.floor(Math.random() * 5);
-      queueTotals[queue.Id].CONTACTS_HANDLED += inc;
-      return {
-        value: queueTotals[queue.Id].CONTACTS_HANDLED,
-        unit: VALID_METRICS.CONTACTS_HANDLED
-      };
-    },
-    CONTACTS_HANDLED_OUTBOUND: (queue, baseValues, def) => {
-      const inc = Math.floor(Math.random() * 3);
-      queueTotals[queue.Id].CONTACTS_HANDLED_OUTBOUND += inc;
-      return {
-        value: queueTotals[queue.Id].CONTACTS_HANDLED_OUTBOUND,
-        unit: VALID_METRICS.CONTACTS_HANDLED_OUTBOUND
-      };
-    }
-  },
-  
-  // Derived metric generators use base metrics to calculate further values
-  derivedMetrics: {
-    OLDEST_CONTACT_AGE: (queue, baseValues) => ({
-      // OLDEST_CONTACT_AGE is proportional to the number of CONTACTS_IN_QUEUE
-      value: baseValues.CONTACTS_IN_QUEUE.value * (Math.floor(Math.random() * 20) + 10),
-      unit: VALID_METRICS.OLDEST_CONTACT_AGE
-    }),
-    AGENTS_NON_PRODUCTIVE: (queue, baseValues) => ({
-      // Around 10% of agents might be in NPT
-      value: Math.floor(baseValues.AGENTS_STAFFED.value * 0.1),
-      unit: VALID_METRICS.AGENTS_NON_PRODUCTIVE
-    }),
-    SLOTS_ACTIVE: (queue, baseValues) => {
-      const concurrency = queue.Channel === 'VOICE' ? 1 : queue.Channel === 'CHAT' ? 3 : 5;
-      const totalSlots = baseValues.AGENTS_STAFFED.value * concurrency;
-      const active = Math.min(totalSlots, baseValues.CONTACTS_IN_QUEUE.value + Math.floor(baseValues.AGENTS_STAFFED.value * 0.6));
-      return {
-        value: active,
-        unit: VALID_METRICS.SLOTS_ACTIVE
-      };
-    },
-    SLOTS_AVAILABLE: (queue, baseValues) => {
-      const concurrency = queue.Channel === 'VOICE' ? 1 : queue.Channel === 'CHAT' ? 3 : 5;
-      const totalSlots = baseValues.AGENTS_STAFFED.value * concurrency;
-      const active = Math.min(totalSlots, baseValues.CONTACTS_IN_QUEUE.value + Math.floor(baseValues.AGENTS_STAFFED.value * 0.6));
-      const available = Math.max(0, totalSlots - active);
-      return {
-        value: available,
-        unit: VALID_METRICS.SLOTS_AVAILABLE
-      };
-    },
-    AGENTS_AVAILABLE: (queue, baseValues) => {
-      // AGENTS_AVAILABLE = AGENTS_STAFFED - busyAgents - acwAgents - otherStates
-      const busyAgents = baseValues.AGENTS_ON_CONTACT.value;
-      const acwAgents = Math.floor(baseValues.AGENTS_ON_CONTACT.value * 0.2);
-      const otherStates = Math.floor(baseValues.AGENTS_STAFFED.value * 0.2);
-      const availableAgents = Math.max(0, baseValues.AGENTS_STAFFED.value - busyAgents - acwAgents - otherStates);
-      return {
-        value: availableAgents,
-        unit: VALID_METRICS.AGENTS_AVAILABLE
-      };
-    },
-    AGENTS_AFTER_CONTACT_WORK: (queue, baseValues) => ({
-      // AGENTS_AFTER_CONTACT_WORK is set to 20% of AGENTS_ON_CONTACT
-      value: Math.max(1, Math.floor(baseValues.AGENTS_ON_CONTACT.value * 0.2)),
-      unit: VALID_METRICS.AGENTS_AFTER_CONTACT_WORK
-    }),
-    AGENTS_ERROR: (queue, baseValues) => ({
-      // A small fraction of agents may be in error state
-      value: Math.floor(baseValues.AGENTS_STAFFED.value * 0.05),
-      unit: VALID_METRICS.AGENTS_ERROR
-    }),
-    CONTACTS_SCHEDULED: (queue, baseValues) => ({
-      // Random number of scheduled contacts between 1 and 5
-      value: Math.floor(Math.random() * 5) + 1,
-      unit: VALID_METRICS.CONTACTS_SCHEDULED
-    }),
-    AVG_HANDLE_TIME: (queue, baseValues) => ({
-      value: Math.floor(Math.random() * 300) + 30,
-      unit: VALID_METRICS.AVG_HANDLE_TIME
-    }),
-    AVG_AFTER_CONTACT_WORK_TIME: (queue, baseValues) => ({
-      value: Math.floor(Math.random() * 60) + 10,
-      unit: VALID_METRICS.AVG_AFTER_CONTACT_WORK_TIME
-    })
-  }
-};
+// Metric generators for different metric types are now
+// built dynamically from the configuration above.
 
 /****************************************************
  * VALIDATION FUNCTIONS
