@@ -130,6 +130,14 @@ collectors:
         filters: []  # Optional additional filters
 ```
 
+### Collector Groupings
+
+All metrics listed under a collector share the same `groupings` list. The exporter sends
+one AWS Connect API request per collector and the API applies groupings to that entire
+request. If you need different grouping dimensions for some metrics, define separate
+collectors so each one issues its own API call with its specific groupings. Per-metric
+grouping is not supported because it would require additional requests for every metric.
+
 ### Supported AWS Metrics
 
 Any AWS Connect current metric can be configured. Common metrics include:

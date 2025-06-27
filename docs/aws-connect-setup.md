@@ -104,6 +104,12 @@ collectors:
         filters: []
 ```
 
+Note that the `groupings` field applies to the entire collector. All metrics
+listed under the collector share these groupings because the exporter issues a
+single AWS API request per collector. To use different groupings, define another
+
+collector block with its own configuration.
+
 ### 2. Environment Variables
 
 Alternatively, configure using environment variables:

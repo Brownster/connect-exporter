@@ -174,6 +174,9 @@ collectors:
 log_level: debug
 ```
 
+Note that `groupings` apply to the entire collector. The exporter makes one AWS
+API request per collector and the API groups all metrics in that request the same
+way. To use different grouping dimensions, define a separate collector entry.
 ### Environment Detection
 
 The exporter automatically detects development mode through:
