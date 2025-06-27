@@ -29,3 +29,7 @@ Example:
 ```bash
 MOCK_ERROR_RATE=0.5 ITEMS_PER_PAGE=5 node server.js
 ```
+
+## Historical metrics
+
+Values returned for `CONTACTS_QUEUED`, `CONTACTS_ABANDONED`, `CONTACTS_HANDLED` and `CONTACTS_HANDLED_OUTBOUND` accumulate over time. The totals reset when the server is restarted. If the `/admin/resetTotals` endpoint is enabled you can POST to it to clear the counters without restarting.

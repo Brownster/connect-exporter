@@ -217,6 +217,21 @@ const MOCK_QUEUES = {
   }
 };
 
+// ----------------------------------------------------------
+// Queue metric totals
+// ----------------------------------------------------------
+// Track cumulative historical metrics per queue so that successive
+// requests return increasing values similar to the real API.
+const queueTotals = {};
+Object.values(MOCK_QUEUES).forEach(q => {
+  queueTotals[q.Id] = {
+    CONTACTS_QUEUED: 0,
+    CONTACTS_ABANDONED: 0,
+    CONTACTS_HANDLED: 0,
+    CONTACTS_HANDLED_OUTBOUND: 0
+  };
+});
+
 /****************************************************
  * MOCK AGENT STATUSES
  *
@@ -570,26 +585,38 @@ const MetricGenerators = {
         unit: VALID_METRICS.AGENTS_ON_CONTACT
       };
     },
-    CONTACTS_QUEUED: (queue, baseValues, def) => ({
-      // Number of contacts queued today between 0 and 50
-      value: Math.floor(Math.random() * 51),
-      unit: VALID_METRICS.CONTACTS_QUEUED
-    }),
-    CONTACTS_ABANDONED: (queue, baseValues, def) => ({
-      // Number of contacts abandoned today between 0 and 10
-      value: Math.floor(Math.random() * 11),
-      unit: VALID_METRICS.CONTACTS_ABANDONED
-    }),
-    CONTACTS_HANDLED: (queue, baseValues, def) => ({
-      // Number of contacts abandoned today between 0 and 10
-      value: Math.floor(Math.random() * 51),
-      unit: VALID_METRICS.CONTACTS_HANDLED
-    }),
-    CONTACTS_HANDLED_OUTBOUND: (queue, baseValues, def) => ({
-      // Number of outbound contacts handled today between 0 and 20
-      value: Math.floor(Math.random() * 21),
-      unit: VALID_METRICS.CONTACTS_HANDLED_OUTBOUND
-    })
+    CONTACTS_QUEUED: (queue, baseValues, def) => {
+      const inc = Math.floor(Math.random() * 5);
+      queueTotals[queue.Id].CONTACTS_QUEUED += inc;
+      return {
+        value: queueTotals[queue.Id].CONTACTS_QUEUED,
+        unit: VALID_METRICS.CONTACTS_QUEUED
+      };
+    },
+    CONTACTS_ABANDONED: (queue, baseValues, def) => {
+      const inc = Math.floor(Math.random() * 3);
+      queueTotals[queue.Id].CONTACTS_ABANDONED += inc;
+      return {
+        value: queueTotals[queue.Id].CONTACTS_ABANDONED,
+        unit: VALID_METRICS.CONTACTS_ABANDONED
+      };
+    },
+    CONTACTS_HANDLED: (queue, baseValues, def) => {
+      const inc = Math.floor(Math.random() * 5);
+      queueTotals[queue.Id].CONTACTS_HANDLED += inc;
+      return {
+        value: queueTotals[queue.Id].CONTACTS_HANDLED,
+        unit: VALID_METRICS.CONTACTS_HANDLED
+      };
+    },
+    CONTACTS_HANDLED_OUTBOUND: (queue, baseValues, def) => {
+      const inc = Math.floor(Math.random() * 3);
+      queueTotals[queue.Id].CONTACTS_HANDLED_OUTBOUND += inc;
+      return {
+        value: queueTotals[queue.Id].CONTACTS_HANDLED_OUTBOUND,
+        unit: VALID_METRICS.CONTACTS_HANDLED_OUTBOUND
+      };
+    }
   },
   
   // Derived metric generators use base metrics to calculate further values
@@ -1361,6 +1388,16 @@ app.post('/admin/errorRate', (req, res) => {
     // If it's not a valid number, respond with an INVALID_PARAMETER error
     res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
   }
+});
+
+// Optional admin endpoint to reset historical totals for easier testing
+app.post('/admin/resetTotals', (req, res) => {
+  Object.keys(queueTotals).forEach(qid => {
+    Object.keys(queueTotals[qid]).forEach(metric => {
+      queueTotals[qid][metric] = 0;
+    });
+  });
+  res.json({ message: 'Queue totals reset' });
 });
 
 // Basic liveness check
