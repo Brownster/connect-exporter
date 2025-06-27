@@ -23,17 +23,24 @@ aws:
   region: "us-east-1"
   instance_arn: "arn:aws:connect:us-east-1:123456789012:instance/your-instance-id"
 
-collectors:
-  realtime_queue:
-    enabled: true
-    interval: 60
-  agent_status:
-    enabled: true
-    interval: 300
-  agent_realtime_status:
-    enabled: true
-    interval: 60
-```
+  collectors:
+    realtime_queue:
+      enabled: true
+      interval: 60
+    agent_status:
+      enabled: true
+      interval: 300
+    agent_realtime_status:
+      enabled: true
+      interval: 60
+    generic_realtime:
+      enabled: true
+      interval: 30
+      collectors:
+        - name: "agents_available_by_queue"
+          metrics: ["AGENTS_AVAILABLE"]
+          groupings: ["QUEUE", "CHANNEL"]
+  ```
 
 ## Running
 
@@ -64,6 +71,7 @@ metrics produced by the exporter are listed below:
 - `aws_connect_exporter_historical_calls_connect_historical_contacts_abandoned_total`
 - `aws_connect_exporter_historical_aht_connect_historical_avg_handle_time_seconds`
 - `aws_connect_exporter_historical_acw_connect_historical_avg_after_contact_work_time_seconds`
+- `aws_connect_exporter_generic_realtime_generic_metric` (labels: `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`)
 - `aws_connect_exporter_agent_status_connect_agent_statuses_total`
 - `aws_connect_exporter_agent_realtime_status_connect_agent_status_state`
 - `aws_connect_exporter_agent_state_agents`

@@ -64,6 +64,7 @@ type CollectorsConfig struct {
 	HistoricalCalls     HistoricalCallsConfig     `yaml:"historical_calls"`
 	HistoricalAHT       HistoricalAHTConfig       `yaml:"historical_aht"`
 	HistoricalACW       HistoricalACWConfig       `yaml:"historical_acw"`
+	GenericRealtime     GenericRealtimeConfig     `yaml:"generic_realtime"`
 }
 
 // RealtimeQueueConfig configures the realtime queue collector
@@ -110,6 +111,27 @@ type HistoricalAHTConfig struct {
 type HistoricalACWConfig struct {
 	Enabled  bool `yaml:"enabled"`
 	Interval int  `yaml:"interval"`
+}
+
+// FilterConfig defines a key/value filter for metric queries
+type FilterConfig struct {
+	Key    string   `yaml:"key"`
+	Values []string `yaml:"values"`
+}
+
+// GenericMetricConfig defines a single generic metric query
+type GenericMetricConfig struct {
+	Name      string         `yaml:"name"`
+	Metrics   []string       `yaml:"metrics"`
+	Groupings []string       `yaml:"groupings"`
+	Filters   []FilterConfig `yaml:"filters"`
+}
+
+// GenericRealtimeConfig configures the generic realtime collector
+type GenericRealtimeConfig struct {
+	Enabled    bool                  `yaml:"enabled"`
+	Interval   int                   `yaml:"interval"`
+	Collectors []GenericMetricConfig `yaml:"collectors"`
 }
 
 // NewConfigurableAWSConnectConnector creates a new AWS Connect connector with kingpin flags
@@ -449,6 +471,9 @@ func (c *AWSConnectConnector) configure() error {
 	if cfg.Collectors.HistoricalACW.Interval <= 0 {
 		cfg.Collectors.HistoricalACW.Interval = 300 // Default 5 minutes
 	}
+	if cfg.Collectors.GenericRealtime.Interval <= 0 {
+		cfg.Collectors.GenericRealtime.Interval = 30 // Default 30 seconds
+	}
 
 	// Validate required configuration
 	if cfg.AWS.InstanceARN == "" {
@@ -519,6 +544,9 @@ func (c *AWSConnectConnector) configure() error {
 	}
 	if cfg.Collectors.HistoricalACW.Enabled {
 		logrus.WithField("interval", cfg.Collectors.HistoricalACW.Interval).Info("Enabled historical ACW collector")
+	}
+	if cfg.Collectors.GenericRealtime.Enabled {
+		logrus.WithField("interval", cfg.Collectors.GenericRealtime.Interval).Info("Enabled generic realtime collector")
 	}
 
 	c.configured = true
