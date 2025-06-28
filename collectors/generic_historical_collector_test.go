@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,7 +21,8 @@ import (
 type mockGenericHistoricalServer struct{ groupings []string }
 
 func (m *mockGenericHistoricalServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/queues-summary") {
+	log.Printf("%s %s", r.Method, r.URL.Path)
+	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/queues-summary/") {
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, `{"QueueSummaryList":[{"Id":"q-1","Name":"Sales_Queue_VOICE","QueueType":"STANDARD"}]}`) //nolint:errcheck
 		return
@@ -32,7 +34,7 @@ func (m *mockGenericHistoricalServer) ServeHTTP(w http.ResponseWriter, r *http.R
 		return
 	}
 	// Handle GetMetricDataV2 (historical API)
-	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/metrics/data") {
+	if r.Method == http.MethodPost && (strings.HasPrefix(r.URL.Path, "/metrics/data") || strings.HasPrefix(r.URL.Path, "/metrics/historical/")) {
 		body, _ := io.ReadAll(r.Body)
 		var req struct{ Groupings []string }
 		json.Unmarshal(body, &req) //nolint:errcheck
