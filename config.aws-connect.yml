@@ -31,6 +31,49 @@ collectors:
             prometheus_name: "connect_queue_agents"
             labels:
               state: "Available"
+          # - aws_name: "AGENTS_STAFFED"
+          #   prometheus_name: "connect_queue_agents"
+          #   labels:
+          #     state: "Staffed"
+          # - aws_name: "AGENTS_ON_CONTACT"
+          #   prometheus_name: "connect_queue_agents"
+          #   labels:
+          #     state: "OnContact"
+          # - aws_name: "AGENTS_AFTER_CONTACT_WORK"
+          #   prometheus_name: "connect_queue_agents"
+          #   labels:
+          #     state: "AfterContactWork"
+          # - aws_name: "AGENTS_NON_PRODUCTIVE"
+          #   prometheus_name: "connect_queue_agents"
+          #   labels:
+          #     state: "NonProductive"
+          # - aws_name: "AGENTS_ERROR"
+          #   prometheus_name: "connect_queue_agents"
+          #   labels:
+          #     state: "Error"
+          # - aws_name: "SLOTS_AVAILABLE"
+          #   prometheus_name: "connect_queue_slots_available"
+          #   labels: {}
+          # - aws_name: "SLOTS_ACTIVE"
+          #   prometheus_name: "connect_queue_slots_active"
+          #   labels: {}
+          # - aws_name: "CONTACTS_IN_QUEUE"
+          #   prometheus_name: "connect_queue_contacts_in_queue"
+          #   labels: {}
+          # - aws_name: "OLDEST_CONTACT_AGE"
+          #   prometheus_name: "connect_queue_oldest_contact_age_seconds"
+          #   labels: {}
+          # - aws_name: "AGENTS_ONLINE"
+          #   prometheus_name: "connect_queue_agents"
+          #   labels:
+          #     state: "Online"
+          # - aws_name: "AGENTS_ON_CALL"
+          #   prometheus_name: "connect_queue_agents"
+          #   labels:
+          #     state: "OnCall"
+          # - aws_name: "CONTACTS_SCHEDULED"
+          #   prometheus_name: "connect_queue_contacts_scheduled"
+          #   labels: {}
         groupings: ["QUEUE", "CHANNEL"]
         filters: []
 

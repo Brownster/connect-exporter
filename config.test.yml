@@ -88,6 +88,17 @@ collectors:
           - aws_name: "OLDEST_CONTACT_AGE"
             prometheus_name: "connect_queue_oldest_contact_age_seconds"
             labels: {}
+          # - aws_name: "AGENTS_ONLINE"
+          #   prometheus_name: "connect_queue_agents"
+          #   labels:
+          #     state: "Online"
+          # - aws_name: "AGENTS_ON_CALL"
+          #   prometheus_name: "connect_queue_agents"
+          #   labels:
+          #     state: "OnCall"
+          # - aws_name: "CONTACTS_SCHEDULED"
+          #   prometheus_name: "connect_queue_contacts_scheduled"
+          #   labels: {}
         groupings:
           - "QUEUE"
           - "CHANNEL"
@@ -119,6 +130,14 @@ collectors:
             prometheus_name: "agents"
             labels:
               state: "Error"
+          # - aws_name: "AGENTS_ONLINE"
+          #   prometheus_name: "agents"
+          #   labels:
+          #     state: "Online"
+          # - aws_name: "AGENTS_ON_CALL"
+          #   prometheus_name: "agents"
+          #   labels:
+          #     state: "OnCall"
         groupings:
           - "QUEUE"
         filters: []
