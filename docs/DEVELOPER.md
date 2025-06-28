@@ -36,6 +36,26 @@ connect-exporter/
 └── monitoring-maas/                          # Framework (DO NOT MODIFY)
 ```
 
+### Exporter Flow Diagram
+
+The exporter relies on the **monitoring-maas** framework to handle common
+functionality such as configuration parsing, scheduling collectors and exposing
+the `/metrics` endpoint. The following diagram shows the high level flow from
+application start to metrics being available for Prometheus:
+
+```mermaid
+flowchart TD
+    main(Main Entry \`main.go\`) --> new(NewAWSConnectExporter)
+    new --> maas["monitoring-maas Exporter"]
+    maas --> connect["AWSConnectConnector.Connect()"]
+    connect --> aws[AWS Connect API]
+    maas --> sched["Scheduled Collectors"]
+    sched -->|scrape| aws
+    sched --> metrics["/metrics endpoint"]
+    metrics --> prom[Prometheus]
+```
+
+
 ### Key Design Patterns
 
 1. **Connector Pattern**: All external API interactions go through connectors implementing `maas.Connector`
