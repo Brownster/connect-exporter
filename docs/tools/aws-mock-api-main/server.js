@@ -873,10 +873,10 @@ app.all('/{*path}', (req, res, next) => {
     console.log('Action:', action);
 
     // Check if this is an AWS SDK style request
-    if (action === 'ListQueues' || req.path.includes('/queues-summary/')) {
+    if (action === 'ListQueues' || req.path.startsWith('/queues-summary/')) {
         // Extract instanceId from either query or path
         let instanceId;
-        if (req.path.includes('/queues-summary/')) {
+        if (req.path.startsWith('/queues-summary/')) {
             instanceId = req.path.split('/queues-summary/')[1]?.split('?')[0];
             console.log('Extracted instanceId from path:', instanceId);
         } else {
@@ -921,12 +921,12 @@ app.all('/{*path}', (req, res, next) => {
             NextToken: newNextToken
         });
     } 
-    else if (action === 'GetCurrentMetricData' || req.path.includes('/metrics/current/')) {
+    else if (action === 'GetCurrentMetricData' || req.path.startsWith('/metrics/current/')) {
         console.log('\n=== Processing Metrics Request ===');
         
         // 1. Extract and validate instanceId
         let instanceId;
-        if (req.path.includes('/metrics/current/')) {
+        if (req.path.startsWith('/metrics/current/')) {
             instanceId = req.path.split('/metrics/current/')[1]?.split('?')[0];
             console.log('📍 Extracted instanceId from path:', instanceId);
         } else {
@@ -1050,15 +1050,15 @@ app.all('/{*path}', (req, res, next) => {
         }
         return res.json(response);
     }
-    else if (action === 'GetMetricDataV2' || req.path.includes('/metrics/historical/') || req.path.includes('/metrics/data')) {
+    else if (action === 'GetMetricDataV2' || req.path.startsWith('/metrics/historical/') || req.path.startsWith('/metrics/data')) {
         console.log('\n=== Processing Historical Metrics Request ===');
 
         let resourceArn;
-        if (req.path.includes('/metrics/historical/')) {
+        if (req.path.startsWith('/metrics/historical/')) {
             const instanceId = req.path.split('/metrics/historical/')[1]?.split('?')[0];
             console.log('📍 Extracted instanceId from historical path:', instanceId);
             resourceArn = `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${instanceId}`;
-        } else if (req.path.includes('/metrics/data')) {
+        } else if (req.path.startsWith('/metrics/data')) {
             // Extract from request body since /metrics/data is typically POST
             resourceArn = req.body.ResourceArn;
             console.log('📍 Using resourceArn from body for /metrics/data:', resourceArn);
@@ -1147,14 +1147,14 @@ app.all('/{*path}', (req, res, next) => {
             return res.status(500).json(AWS_ERRORS.INTERNAL_SERVICE_ERROR);
         }
     }
-    else if (action === 'GetCurrentUserData' || req.path.includes('/current-user-data/') || req.path.includes('/metrics/userdata/')) {
+    else if (action === 'GetCurrentUserData' || req.path.startsWith('/current-user-data/') || req.path.startsWith('/metrics/userdata/')) {
         console.log('\n=== Processing Current User Data Request ===');
 
         let instanceId;
-        if (req.path.includes('/current-user-data/')) {
+        if (req.path.startsWith('/current-user-data/')) {
             instanceId = req.path.split('/current-user-data/')[1]?.split('?')[0];
             console.log('📍 Extracted instanceId from path:', instanceId);
-        } else if (req.path.includes('/metrics/userdata/')) {
+        } else if (req.path.startsWith('/metrics/userdata/')) {
             instanceId = req.path.split('/metrics/userdata/')[1]?.split('?')[0];
             console.log('📍 Extracted instanceId from userdata path:', instanceId);
         } else {
@@ -1191,11 +1191,11 @@ app.all('/{*path}', (req, res, next) => {
             ApproximateTotalCount: MOCK_USERS.length
         });
     }
-    else if (action === 'ListRoutingProfileQueues' || req.path.includes('/routing-profile-queues/')) {
+    else if (action === 'ListRoutingProfileQueues' || req.path.startsWith('/routing-profile-queues/')) {
         console.log('\n=== Processing Routing Profile Queues Request ===');
 
         let instanceId, rpId;
-        if (req.path.includes('/routing-profile-queues/')) {
+        if (req.path.startsWith('/routing-profile-queues/')) {
             const parts = req.path.split('/routing-profile-queues/')[1]?.split('/') || [];
             instanceId = parts[0];
             rpId = parts[1]?.split('?')[0];
@@ -1246,11 +1246,11 @@ app.all('/{*path}', (req, res, next) => {
             NextToken: newNextToken
         });
     }
-    else if (action === 'ListAgentStatuses' || req.path.includes('/agent-status/')) {
+    else if (action === 'ListAgentStatuses' || req.path.startsWith('/agent-status/')) {
         console.log('\n=== Processing Agent Status Request ===');
 
         let instanceId;
-        if (req.path.includes('/agent-status/')) {
+        if (req.path.startsWith('/agent-status/')) {
             instanceId = req.path.split('/agent-status/')[1]?.split('?')[0];
             console.log('📍 Extracted instanceId from path:', instanceId);
         } else {

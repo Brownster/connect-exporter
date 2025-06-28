@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,6 +21,7 @@ import (
 type mockGenericServer struct{ groupings []string }
 
 func (m *mockGenericServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s %s", r.Method, r.URL.Path)
 	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/queues-summary/") {
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, `{"QueueSummaryList":[{"Id":"q-1","Name":"Sales_Queue_VOICE","QueueType":"STANDARD"}]}`) //nolint:errcheck
