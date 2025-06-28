@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/connect"
+	"github.com/aws/aws-sdk-go-v2/service/connect/types"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -375,17 +376,46 @@ func (c *AWSConnectConnector) GetMetricDataV2(ctx context.Context, input *connec
 
 // GetCurrentUserData retrieves current user data including agent status
 func (c *AWSConnectConnector) GetCurrentUserData(ctx context.Context, input *connect.GetCurrentUserDataInput) (*connect.GetCurrentUserDataOutput, error) {
-	output, err := c.client.GetCurrentUserData(ctx, input)
-	if err != nil {
-		return nil, fmt.Errorf("error getting current user data: %w", err)
+	instanceID := input.InstanceId
+	var err error
+	var users []types.UserData
+	var count int64
+
+	for attempt := 0; attempt < 3; attempt++ {
+		users = users[:0]
+		var nextToken *string
+		for {
+			var out *connect.GetCurrentUserDataOutput
+			out, err = c.client.GetCurrentUserData(ctx, &connect.GetCurrentUserDataInput{
+				InstanceId: instanceID,
+				Filters:    input.Filters,
+				MaxResults: input.MaxResults,
+				NextToken:  nextToken,
+			})
+			if err != nil {
+				break
+			}
+			users = append(users, out.UserDataList...)
+			if out.ApproximateTotalCount != nil {
+				count = *out.ApproximateTotalCount
+			}
+			if out.NextToken == nil {
+				break
+			}
+			nextToken = out.NextToken
+		}
+		if err == nil {
+			logrus.WithFields(logrus.Fields{
+				"user_count":   len(users),
+				"instance_arn": c.instanceARN,
+			}).Debug("Successfully retrieved current user data")
+
+			return &connect.GetCurrentUserDataOutput{UserDataList: users, ApproximateTotalCount: aws.Int64(count)}, nil
+		}
+		time.Sleep(time.Duration(attempt+1) * time.Second)
 	}
-
-	logrus.WithFields(logrus.Fields{
-		"user_count":   len(output.UserDataList),
-		"instance_arn": c.instanceARN,
-	}).Debug("Successfully retrieved current user data")
-
-	return output, nil
+	logrus.WithError(err).Warn("failed to get current user data")
+	return nil, fmt.Errorf("error getting current user data: %w", err)
 }
 
 // ListAgentStatuses retrieves agent status information
@@ -405,17 +435,41 @@ func (c *AWSConnectConnector) ListAgentStatuses(ctx context.Context, input *conn
 
 // ListUsers retrieves user information
 func (c *AWSConnectConnector) ListUsers(ctx context.Context, input *connect.ListUsersInput) (*connect.ListUsersOutput, error) {
-	output, err := c.client.ListUsers(ctx, input)
-	if err != nil {
-		return nil, fmt.Errorf("error listing users: %w", err)
+	instanceID := input.InstanceId
+	var err error
+	var users []types.UserSummary
+
+	for attempt := 0; attempt < 3; attempt++ {
+		users = users[:0]
+		var nextToken *string
+		for {
+			var out *connect.ListUsersOutput
+			out, err = c.client.ListUsers(ctx, &connect.ListUsersInput{
+				InstanceId: instanceID,
+				MaxResults: input.MaxResults,
+				NextToken:  nextToken,
+			})
+			if err != nil {
+				break
+			}
+			users = append(users, out.UserSummaryList...)
+			if out.NextToken == nil {
+				break
+			}
+			nextToken = out.NextToken
+		}
+		if err == nil {
+			logrus.WithFields(logrus.Fields{
+				"user_count":   len(users),
+				"instance_arn": c.instanceARN,
+			}).Debug("Successfully listed users")
+
+			return &connect.ListUsersOutput{UserSummaryList: users}, nil
+		}
+		time.Sleep(time.Duration(attempt+1) * time.Second)
 	}
-
-	logrus.WithFields(logrus.Fields{
-		"user_count":   len(output.UserSummaryList),
-		"instance_arn": c.instanceARN,
-	}).Debug("Successfully listed users")
-
-	return output, nil
+	logrus.WithError(err).Warn("failed to list users")
+	return nil, fmt.Errorf("error listing users: %w", err)
 }
 
 // ListRoutingProfileQueues retrieves queue IDs associated with a routing profile
