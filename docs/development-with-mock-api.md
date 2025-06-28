@@ -93,6 +93,8 @@ The mock API provides the following AWS Connect endpoints:
 - `AGENTS_STAFFED` (COUNT)
 - `AGENTS_AFTER_CONTACT_WORK` (COUNT)
 - `CONTACTS_SCHEDULED` (COUNT)
+- `AGENTS_ON_CALL` (COUNT)
+- `AGENTS_ONLINE` (COUNT)
 
 ### Error Simulation
 

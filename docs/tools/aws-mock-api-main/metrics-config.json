@@ -15,11 +15,25 @@
       "max": 25
     },
     {
+      "name": "AGENTS_ONLINE",
+      "unit": "COUNT",
+      "type": "ratio",
+      "base": "AGENTS_STAFFED",
+      "ratio": 1.0
+    },
+    {
       "name": "AGENTS_ON_CONTACT",
       "unit": "COUNT",
       "type": "ratio",
       "base": "AGENTS_STAFFED",
       "ratio": 0.6
+    },
+    {
+      "name": "AGENTS_ON_CALL",
+      "unit": "COUNT",
+      "type": "ratio",
+      "base": "AGENTS_STAFFED",
+      "ratio": 0.1
     },
     {
       "name": "AGENTS_AVAILABLE",
