@@ -1,21 +1,858 @@
 {
   "metrics": [
-    {"name": "CONTACTS_IN_QUEUE", "unit": "COUNT", "type": "random", "min": 1, "max": 8},
-    {"name": "AGENTS_STAFFED", "unit": "COUNT", "type": "random", "min": 10, "max": 25},
-    {"name": "AGENTS_ON_CONTACT", "unit": "COUNT", "type": "ratio", "base": "AGENTS_STAFFED", "ratio": 0.6},
-    {"name": "AGENTS_AVAILABLE", "unit": "COUNT", "type": "difference", "base": "AGENTS_STAFFED", "subtract": "AGENTS_ON_CONTACT"},
-    {"name": "OLDEST_CONTACT_AGE", "unit": "SECONDS", "type": "ratio", "base": "CONTACTS_IN_QUEUE", "ratio": 15},
-    {"name": "SLOTS_ACTIVE", "unit": "COUNT", "type": "ratio", "base": "AGENTS_STAFFED", "ratio": 1.0},
-    {"name": "SLOTS_AVAILABLE", "unit": "COUNT", "type": "difference", "base": "SLOTS_ACTIVE", "subtract": "CONTACTS_IN_QUEUE"},
-    {"name": "AGENTS_AFTER_CONTACT_WORK", "unit": "COUNT", "type": "ratio", "base": "AGENTS_ON_CONTACT", "ratio": 0.2},
-    {"name": "AGENTS_NON_PRODUCTIVE", "unit": "COUNT", "type": "ratio", "base": "AGENTS_STAFFED", "ratio": 0.1},
-    {"name": "AGENTS_ERROR", "unit": "COUNT", "type": "ratio", "base": "AGENTS_STAFFED", "ratio": 0.05},
-    {"name": "CONTACTS_SCHEDULED", "unit": "COUNT", "type": "random", "min": 1, "max": 5},
-    {"name": "CONTACTS_QUEUED", "unit": "COUNT", "type": "cumulative", "stepMin": 0, "stepMax": 5},
-    {"name": "CONTACTS_ABANDONED", "unit": "COUNT", "type": "cumulative", "stepMin": 0, "stepMax": 3},
-    {"name": "CONTACTS_HANDLED", "unit": "COUNT", "type": "cumulative", "stepMin": 0, "stepMax": 5},
-    {"name": "CONTACTS_HANDLED_OUTBOUND", "unit": "COUNT", "type": "cumulative", "stepMin": 0, "stepMax": 3},
-    {"name": "AVG_HANDLE_TIME", "unit": "SECONDS", "type": "random", "min": 30, "max": 300},
-    {"name": "AVG_AFTER_CONTACT_WORK_TIME", "unit": "SECONDS", "type": "random", "min": 10, "max": 60}
+    {
+      "name": "CONTACTS_IN_QUEUE",
+      "unit": "COUNT",
+      "type": "random",
+      "min": 1,
+      "max": 8
+    },
+    {
+      "name": "AGENTS_STAFFED",
+      "unit": "COUNT",
+      "type": "random",
+      "min": 10,
+      "max": 25
+    },
+    {
+      "name": "AGENTS_ON_CONTACT",
+      "unit": "COUNT",
+      "type": "ratio",
+      "base": "AGENTS_STAFFED",
+      "ratio": 0.6
+    },
+    {
+      "name": "AGENTS_AVAILABLE",
+      "unit": "COUNT",
+      "type": "difference",
+      "base": "AGENTS_STAFFED",
+      "subtract": "AGENTS_ON_CONTACT"
+    },
+    {
+      "name": "OLDEST_CONTACT_AGE",
+      "unit": "SECONDS",
+      "type": "ratio",
+      "base": "CONTACTS_IN_QUEUE",
+      "ratio": 15
+    },
+    {
+      "name": "SLOTS_ACTIVE",
+      "unit": "COUNT",
+      "type": "ratio",
+      "base": "AGENTS_STAFFED",
+      "ratio": 1.0
+    },
+    {
+      "name": "SLOTS_AVAILABLE",
+      "unit": "COUNT",
+      "type": "difference",
+      "base": "SLOTS_ACTIVE",
+      "subtract": "CONTACTS_IN_QUEUE"
+    },
+    {
+      "name": "AGENTS_AFTER_CONTACT_WORK",
+      "unit": "COUNT",
+      "type": "ratio",
+      "base": "AGENTS_ON_CONTACT",
+      "ratio": 0.2
+    },
+    {
+      "name": "AGENTS_NON_PRODUCTIVE",
+      "unit": "COUNT",
+      "type": "ratio",
+      "base": "AGENTS_STAFFED",
+      "ratio": 0.1
+    },
+    {
+      "name": "AGENTS_ERROR",
+      "unit": "COUNT",
+      "type": "ratio",
+      "base": "AGENTS_STAFFED",
+      "ratio": 0.05
+    },
+    {
+      "name": "CONTACTS_SCHEDULED",
+      "unit": "COUNT",
+      "type": "random",
+      "min": 1,
+      "max": 5
+    },
+    {
+      "name": "CONTACTS_QUEUED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_ABANDONED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 3
+    },
+    {
+      "name": "CONTACTS_HANDLED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_HANDLED_OUTBOUND",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 3
+    },
+    {
+      "name": "AVG_HANDLE_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_AFTER_CONTACT_WORK_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 10,
+      "max": 60
+    },
+    {
+      "name": "ABANDONMENT_RATE",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "AGENT_ADHERENT_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AGENT_ANSWER_RATE",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "AGENT_NON_ADHERENT_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AGENT_NON_RESPONSE",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "AGENT_NON_RESPONSE_WITHOUT_CUSTOMER_ABANDONS",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "AGENT_OCCUPANCY",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "AGENT_SCHEDULED_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AGENT_SCHEDULE_ADHERENCE",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "AVG_ABANDON_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_ACTIVE_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_AGENT_CONNECTING_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_AGENT_PAUSE_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_BOT_CONVERSATION_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_BOT_CONVERSATION_TURNS",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_CASE_RELATED_CONTACTS",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_CASE_RESOLUTION_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_CONTACT_DURATION",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_CONVERSATION_DURATION",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_DIALS_PER_MINUTE",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_EVALUATION_SCORE",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_FLOW_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_GREETING_TIME_AGENT",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_HOLDS",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_HOLD_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_HOLD_TIME_ALL_CONTACTS",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_INTERACTION_AND_HOLD_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_INTERACTION_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_INTERRUPTIONS_AGENT",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_INTERRUPTION_TIME_AGENT",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_NON_TALK_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_QUEUE_ANSWER_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_RESOLUTION_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_TALK_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_TALK_TIME_AGENT",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_TALK_TIME_CUSTOMER",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_WAIT_TIME_AFTER_CUSTOMER_CONNECTION",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "AVG_WEIGHTED_EVALUATION_SCORE",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "BOT_CONVERSATIONS_COMPLETED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "BOT_INTENTS_COMPLETED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CAMPAIGN_CONTACTS_ABANDONED_AFTER_X",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CAMPAIGN_CONTACTS_ABANDONED_AFTER_X_RATE",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "CAMPAIGN_INTERACTIONS",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CAMPAIGN_PROGRESS_RATE",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "CAMPAIGN_SEND_ATTEMPTS",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CAMPAIGN_SEND_EXCLUSIONS",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CASES_CREATED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_CREATED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_HANDLED_BY_CONNECTED_TO_AGENT",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_HOLD_ABANDONS",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_ON_HOLD_AGENT_DISCONNECT",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_ON_HOLD_CUSTOMER_DISCONNECT",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_PUT_ON_HOLD",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_QUEUED_BY_ENQUEUE",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_REMOVED_FROM_QUEUE_IN_X",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_RESOLVED_IN_X",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_TRANSFERRED_OUT",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_TRANSFERRED_OUT_BY_AGENT",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_TRANSFERRED_OUT_EXTERNAL",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_TRANSFERRED_OUT_FROM_QUEUE",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CONTACTS_TRANSFERRED_OUT_INTERNAL",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "CURRENT_CASES",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "DELIVERY_ATTEMPTS",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "DELIVERY_ATTEMPT_DISPOSITION_RATE",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "EVALUATIONS_PERFORMED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "FLOWS_OUTCOME",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "FLOWS_STARTED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "HUMAN_ANSWERED_CALLS",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "MAX_FLOW_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "MAX_QUEUED_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "MIN_FLOW_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "PERCENT_AUTOMATIC_FAILS",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "PERCENT_BOT_CONVERSATIONS_OUTCOME",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "PERCENT_BOT_INTENTS_OUTCOME",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "PERCENT_CASES_FIRST_CONTACT_RESOLVED",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "PERCENT_CONTACTS_STEP_EXPIRED",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "PERCENT_CONTACTS_STEP_JOINED",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "PERCENT_FLOWS_OUTCOME",
+      "unit": "PERCENT",
+      "type": "random",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "PERCENT_NON_TALK_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "PERCENT_TALK_TIME",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "PERCENT_TALK_TIME_AGENT",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "PERCENT_TALK_TIME_CUSTOMER",
+      "unit": "SECONDS",
+      "type": "random",
+      "min": 30,
+      "max": 300
+    },
+    {
+      "name": "RECIPIENTS_ATTEMPTED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "RECIPIENTS_INTERACTED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "RECIPIENTS_TARGETED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "REOPENED_CASE_ACTIONS",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "RESOLVED_CASE_ACTIONS",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "SERVICE_LEVEL",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "STEP_CONTACTS_QUEUED",
+      "unit": "COUNT",
+      "type": "cumulative",
+      "stepMin": 0,
+      "stepMax": 5
+    },
+    {
+      "name": "SUM_AFTER_CONTACT_WORK_TIME",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_CONNECTING_TIME_AGENT",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_CONTACTS_ABANDONED_IN_X",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_CONTACTS_ANSWERED_IN_X",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_CONTACTS_DISCONNECTED",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_CONTACT_FLOW_TIME",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_CONTACT_TIME_AGENT",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_ERROR_STATUS_TIME_AGENT",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_HANDLE_TIME",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_HOLD_TIME",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_IDLE_TIME_AGENT",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_INTERACTION_AND_HOLD_TIME",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_INTERACTION_TIME",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_NON_PRODUCTIVE_TIME_AGENT",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_ONLINE_TIME_AGENT",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    },
+    {
+      "name": "SUM_RETRY_CALLBACK_ATTEMPTS",
+      "unit": "SECONDS",
+      "type": "cumulative",
+      "stepMin": 30,
+      "stepMax": 300
+    }
   ]
 }
