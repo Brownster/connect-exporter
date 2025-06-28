@@ -28,7 +28,7 @@ func (m *mockGenericHistoricalServer) ServeHTTP(w http.ResponseWriter, r *http.R
 		return
 	}
 	// Handle ListUsers endpoint for AgentManager
-	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/users-summary/") {
+	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/users-summary") {
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, `{"UserSummaryList":[{"Id":"agent-1","Username":"test.agent","Arn":"arn:aws:connect:us-east-1:123456789012:instance/test/agent/agent-1"}]}`) //nolint:errcheck
 		return

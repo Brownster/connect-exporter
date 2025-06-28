@@ -16,7 +16,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-
 // NewAgentRealtimeStatusCollector creates a scheduled scraper for agent realtime status metrics
 func NewAgentRealtimeStatusCollector(app *kingpin.Application, config connectors.AWSConnectConfig) *maas.ScheduledScraper {
 	interval := time.Duration(config.Collectors.AgentRealtimeStatus.Interval) * time.Second
@@ -27,7 +26,7 @@ func NewAgentRealtimeStatusCollector(app *kingpin.Application, config connectors
 			maas.WithFrequency(interval),
 			maas.WithTimeout(timeout),
 		)),
-               maas.WithDescription(app, "connect_agent_status_state", "Realtime status for each agent", []string{"agent_id", "username", "routing_profile_id", "queue_id", "status_id", "status_name", "status_type", "region"}),
+		maas.WithDescription(app, "connect_agent_status_state", "Realtime status for each agent", []string{"agent_id", "username", "routing_profile_id", "queue_id", "status_id", "status_name", "status_type", "region"}),
 	)
 }
 
@@ -78,11 +77,10 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 	// Get agent metadata from shared AgentManager
 	agentMap := conn.GetAgentManager().GetAgentMap()
 
-	// Cache routing profile -> queue IDs
-	rpQueues := make(map[string]string)
-
 	// Collect per-agent metrics
 	var perAgent []maas.Metric
+
+	rpManager := conn.GetRoutingProfileQueueManager()
 
 	for _, user := range data.UserDataList {
 
@@ -98,22 +96,14 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 		if user.RoutingProfile != nil && user.RoutingProfile.Id != nil {
 			rpID = aws.ToString(user.RoutingProfile.Id)
 		}
-		queueID := ""
-		if rpID != "" {
-			qid, ok := rpQueues[rpID]
-			if !ok {
-				out, err := conn.ListRoutingProfileQueues(context.Background(), &connect.ListRoutingProfileQueuesInput{
-					InstanceId:       &instanceID,
-					RoutingProfileId: aws.String(rpID),
-				})
-				if err == nil && len(out.RoutingProfileQueueConfigSummaryList) > 0 {
-					qid = aws.ToString(out.RoutingProfileQueueConfigSummaryList[0].QueueId)
-				} else if err != nil {
-					logrus.WithError(err).Debug("failed to list routing profile queues")
-				}
-				rpQueues[rpID] = qid
+		agentQueueIDs := []string{""}
+		if rpID != "" && rpManager != nil {
+			ids, err := rpManager.GetQueuesForRoutingProfile(rpID)
+			if err != nil {
+				logrus.WithError(err).Debug("failed to list routing profile queues")
+			} else if len(ids) > 0 {
+				agentQueueIDs = ids
 			}
-			queueID = qid
 		}
 
 		statusID := ""
@@ -138,8 +128,10 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 			}
 		}
 
-		labels := []string{agentID, username, rpID, queueID, statusID, statusName, statusType, cfg.AWS.Region}
-               perAgent = append(perAgent, maas.NewMetric("connect_agent_status_state", prometheus.GaugeValue, 1, labels))
+		for _, qid := range agentQueueIDs {
+			labels := []string{agentID, username, rpID, qid, statusID, statusName, statusType, cfg.AWS.Region}
+			perAgent = append(perAgent, maas.NewMetric("connect_agent_status_state", prometheus.GaugeValue, 1, labels))
+		}
 	}
 
 	metrics := make([]maas.Metric, 0, len(perAgent))
