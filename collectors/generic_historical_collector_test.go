@@ -20,19 +20,19 @@ import (
 type mockGenericHistoricalServer struct{ groupings []string }
 
 func (m *mockGenericHistoricalServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/queues-summary/") {
+	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/queues-summary") {
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, `{"QueueSummaryList":[{"Id":"q-1","Name":"Sales_Queue_VOICE","QueueType":"STANDARD"}]}`) //nolint:errcheck
 		return
 	}
 	// Handle ListUsers endpoint for AgentManager
-	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/users-summary/") {
+	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/users-summary") {
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, `{"UserSummaryList":[{"Id":"agent-1","Username":"test.agent","Arn":"arn:aws:connect:us-east-1:123456789012:instance/test/agent/agent-1"}]}`) //nolint:errcheck
 		return
 	}
 	// Handle GetMetricDataV2 (historical API)
-	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/metrics/data/") {
+	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/metrics/data") {
 		body, _ := io.ReadAll(r.Body)
 		var req struct{ Groupings []string }
 		json.Unmarshal(body, &req) //nolint:errcheck
@@ -118,7 +118,7 @@ func TestGenericHistoricalCollector(t *testing.T) {
 		if metricName(m) == "generic_historical_metric" {
 			assert.Equal(t, prometheus.GaugeValue, metricValueType(m))
 			labels := metricLabels(m)
-			assert.Equal(t, "historical_queue", labels[0]) // collector name
+			assert.Equal(t, "historical_queue", labels[0])                          // collector name
 			assert.Equal(t, "connect_historical_contacts_handled_total", labels[1]) // metric name
 			found = true
 		}

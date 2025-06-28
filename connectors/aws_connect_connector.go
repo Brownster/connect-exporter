@@ -35,6 +35,8 @@ type AWSConnectConnector struct {
 	queueManager *QueueManager
 	// Agent manager for shared agent discovery
 	agentManager *AgentManager
+	// Routing profile -> queues mapping with caching
+	rpQueueManager *RoutingProfileQueueManager
 }
 
 // Queue represents queue metadata
@@ -289,6 +291,10 @@ func (c *AWSConnectConnector) Connect() error {
 		am := NewAgentManager(c, c.config.Collectors.RealtimeQueue.QueueRefreshInterval)
 		c.agentManager = am
 		am.Start()
+	}
+
+	if c.rpQueueManager == nil {
+		c.rpQueueManager = NewRoutingProfileQueueManager(c, c.config.Collectors.RealtimeQueue.QueueCacheTTL)
 	}
 	return nil
 }
@@ -616,6 +622,11 @@ func (c *AWSConnectConnector) GetQueueManager() *QueueManager {
 // GetAgentManager exposes the shared AgentManager
 func (c *AWSConnectConnector) GetAgentManager() *AgentManager {
 	return c.agentManager
+}
+
+// GetRoutingProfileQueueManager exposes the routing profile queue manager
+func (c *AWSConnectConnector) GetRoutingProfileQueueManager() *RoutingProfileQueueManager {
+	return c.rpQueueManager
 }
 
 // GetInstanceID extracts the instance ID from the ARN
