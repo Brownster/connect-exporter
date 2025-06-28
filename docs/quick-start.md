@@ -45,7 +45,7 @@ This guide explains how to run the exporter with the mock API in the simplest wa
 
 5. **Run the exporter**
    ```bash
-   ENV=development ./connect-exporter --config.file=config.simple.yml
+   ENV=development ./connect-exporter --config.file=config.simple.yml --web.listen-port=9090 --labels.fqdn=localhost --labels.ip-address=127.0.0.1 --labels.location=test --labels.country=US
    ```
    Now visit `http://localhost:9090/metrics` in your browser. You should see numbers changing.
 
