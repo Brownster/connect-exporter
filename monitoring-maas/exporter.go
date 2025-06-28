@@ -253,7 +253,7 @@ func (e *Exporter) webFlags() {
 	e.application.Flag(
 		"web.listen-port",
 		"Port on which to expose metrics and web interface",
-	).Required().IntVar(&e.listenPort)
+	).IntVar(&e.listenPort)
 
 	e.application.Flag(
 		"web.telemetry-path",

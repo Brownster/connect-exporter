@@ -53,8 +53,9 @@ func TestExporterWithMockAPI(t *testing.T) {
 	}
 	defer func() { _ = mockCmd.Process.Kill() }()
 
-	// Wait a moment for the mock API to start
-	time.Sleep(2 * time.Second)
+	if err := waitForURL("http://localhost:3000/health", 10*time.Second); err != nil {
+		t.Fatalf("mock API not ready: %v", err)
+	}
 
 	exporterPath := filepath.Join("..", "cmd", "connect-exporter_exporter")
 	exporterCmd := exec.Command("go", "run", exporterPath,
@@ -81,7 +82,7 @@ func TestExporterWithMockAPI(t *testing.T) {
 	defer func() { _ = exporterCmd.Process.Kill() }()
 
 	if err := waitForURL("http://localhost:9100/metrics", 20*time.Second); err != nil {
-		t.Fatalf("exporter not ready: %v\nOutput:%s", err, out.String())
+		t.Fatalf("exporter not ready: %v\nOutput: %s", err, out.String())
 	}
 
 	resp, err := http.Get("http://localhost:9100/metrics")
