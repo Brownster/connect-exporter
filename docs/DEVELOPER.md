@@ -25,7 +25,10 @@ The **monitoring-maas framework is stable and should NOT be modified**. It has b
 connect-exporter/
 ├── cmd/connect-exporter_exporter/main.go    # Entry point
 ├── connectors/
-│   ├── aws_connect_connector.go              # AWS Connect API abstraction
+│   ├── aws_connect_connector.go              # Connector initialization logic
+│   ├── client.go                             # AWS Connect API wrappers
+│   ├── config.go                             # Configuration structs
+│   ├── dev.go                                # Development helpers
 │   └── mock.go                               # Test connector
 ├── collectors/
 │   ├── aws_connect_exporter.go               # Main exporter constructor

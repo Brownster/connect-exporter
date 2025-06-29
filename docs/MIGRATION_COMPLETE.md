@@ -12,7 +12,7 @@ Successfully migrated the AWS Connect exporter functionality from the previous s
 - ✅ All required AWS Connect service packages included
 
 ### 2. **AWS Connect Connector**
-- ✅ **File**: `connectors/aws_connect_connector.go`
+- ✅ **Files**: `connectors/aws_connect_connector.go`, `connectors/client.go`, `connectors/config.go`, `connectors/dev.go`
 - ✅ **Features**:
   - Implements maas.Connector interface
   - Supports development mode with mock API integration
