@@ -14,12 +14,12 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/ArthurHlt/logrusprom"
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
-	"github.com/alecthomas/kingpin/v2"
 )
 
 type Exporter struct {

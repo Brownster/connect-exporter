@@ -33,8 +33,8 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 			AgentRealtimeStatus: connectors.AgentRealtimeStatusConfig{Enabled: true, Interval: 60},
 			HistoricalQueue:     connectors.HistoricalQueueConfig{Enabled: false, Interval: 300}, // Replaced by generic_historical
 			HistoricalCalls:     connectors.HistoricalCallsConfig{Enabled: false, Interval: 300}, // Replaced by generic_historical
-			HistoricalAHT:       connectors.HistoricalAHTConfig{Enabled: false, Interval: 300}, // Replaced by generic_historical
-			HistoricalACW:       connectors.HistoricalACWConfig{Enabled: false, Interval: 300}, // Replaced by generic_historical
+			HistoricalAHT:       connectors.HistoricalAHTConfig{Enabled: false, Interval: 300},   // Replaced by generic_historical
+			HistoricalACW:       connectors.HistoricalACWConfig{Enabled: false, Interval: 300},   // Replaced by generic_historical
 			GenericRealtime:     connectors.GenericRealtimeConfig{Enabled: true, Interval: 30},
 			GenericHistorical:   connectors.GenericHistoricalConfig{Enabled: true, Interval: 300},
 		},

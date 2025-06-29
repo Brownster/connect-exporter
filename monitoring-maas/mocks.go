@@ -3,8 +3,8 @@ package maas
 import (
 	"errors"
 
-	"github.com/robfig/cron/v3"
 	"github.com/alecthomas/kingpin/v2"
+	"github.com/robfig/cron/v3"
 )
 
 type MockScraper struct{}

@@ -3,8 +3,8 @@ package maas
 import (
 	"testing"
 
-	"github.com/stretchr/testify/suite"
 	"github.com/alecthomas/kingpin/v2"
+	"github.com/stretchr/testify/suite"
 )
 
 type LabelTestSuite struct {

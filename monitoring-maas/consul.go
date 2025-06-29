@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/alecthomas/kingpin/v2"
 	consul "github.com/hashicorp/consul/api"
 	log "github.com/sirupsen/logrus"
-	"github.com/alecthomas/kingpin/v2"
 )
 
 type Advertiser interface {
