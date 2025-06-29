@@ -1,3 +1,8 @@
+// Package collectors provides the metric collectors for the AWS Connect exporter.
+//
+// This file contains the unit tests for the generic_historical collector. The tests
+// use a mock HTTP server to simulate the AWS Connect API, which allows for
+// controlled testing of the collector's logic without making actual API calls.
 package collectors
 
 import (
@@ -18,35 +23,41 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// mockGenericHistoricalServer is a mock HTTP server that simulates the AWS Connect
+// API for the generic_historical collector.
 type mockGenericHistoricalServer struct{ groupings []string }
 
+// ServeHTTP is the handler for the mock HTTP server. It responds to the API
+// requests made by the collector with mock data.
 func (m *mockGenericHistoricalServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s", r.Method, r.URL.Path)
 	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/queues-summary/") {
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"QueueSummaryList":[{"Id":"q-1","Name":"Sales_Queue_VOICE","QueueType":"STANDARD"}]}`) //nolint:errcheck
+		io.WriteString(w, `{"QueueSummaryList":[{"Id":"q-1","Name":"Sales_Queue_VOICE","QueueType":"STANDARD"}]}`)
 		return
 	}
 	// Handle ListUsers endpoint for AgentManager
 	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/users-summary") {
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"UserSummaryList":[{"Id":"agent-1","Username":"test.agent","Arn":"arn:aws:connect:us-east-1:123456789012:instance/test/agent/agent-1"}]}`) //nolint:errcheck
+		io.WriteString(w, `{"UserSummaryList":[{"Id":"agent-1","Username":"test.agent","Arn":"arn:aws:connect:us-east-1:123456789012:instance/test/agent/agent-1"}]}`)
 		return
 	}
 	// Handle GetMetricDataV2 (historical API)
 	if r.Method == http.MethodPost && (strings.HasPrefix(r.URL.Path, "/metrics/data") || strings.HasPrefix(r.URL.Path, "/metrics/historical/")) {
 		body, _ := io.ReadAll(r.Body)
 		var req struct{ Groupings []string }
-		json.Unmarshal(body, &req) //nolint:errcheck
+		json.Unmarshal(body, &req)
 		m.groupings = req.Groupings
 		w.Header().Set("Content-Type", "application/json")
 		// Return historical metric data format
-		io.WriteString(w, `{"MetricResults":[{"Dimensions":{"QUEUE":"q-1","CHANNEL":"VOICE"},"Collections":[{"Metric":{"Name":"CONTACTS_HANDLED"},"Value":10.0}]}]}`) //nolint:errcheck
+		io.WriteString(w, `{"MetricResults":[{"Dimensions":{"QUEUE":"q-1","CHANNEL":"VOICE"},"Collections":[{"Metric":{"Name":"CONTACTS_HANDLED"},"Value":10.0}]}]}`)
 		return
 	}
 	http.NotFound(w, r)
 }
 
+// setupGenericHistoricalConnector is a helper function that sets up a mock AWS
+// Connect connector for testing.
 func setupGenericHistoricalConnector(t *testing.T, srv *httptest.Server) *connectors.AWSConnectConnector {
 	t.Setenv("ENV", "development")
 	t.Setenv("AWS_CONNECT_MOCK_ENDPOINT", srv.URL)
@@ -103,6 +114,8 @@ collectors:
 	return conn
 }
 
+// TestGenericHistoricalCollector tests the basic functionality of the
+// generic_historical collector.
 func TestGenericHistoricalCollector(t *testing.T) {
 	ms := &mockGenericHistoricalServer{}
 	srv := httptest.NewServer(ms)
@@ -128,6 +141,8 @@ func TestGenericHistoricalCollector(t *testing.T) {
 	assert.True(t, found)
 }
 
+// TestGenericHistoricalCollectorError tests that the generic_historical collector
+// handles errors from the AWS Connect API gracefully.
 func TestGenericHistoricalCollectorError(t *testing.T) {
 	ms := &mockGenericHistoricalServer{}
 	srv := httptest.NewServer(ms)
@@ -149,6 +164,8 @@ func TestGenericHistoricalCollectorError(t *testing.T) {
 	assert.Contains(t, buf.String(), "Failed to get historical metric data")
 }
 
+// TestGenericHistoricalCollectorDisabled tests that the generic_historical
+// collector does not scrape any metrics when it is disabled in the configuration.
 func TestGenericHistoricalCollectorDisabled(t *testing.T) {
 	ms := &mockGenericHistoricalServer{}
 	srv := httptest.NewServer(ms)

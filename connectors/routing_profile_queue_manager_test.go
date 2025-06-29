@@ -1,3 +1,10 @@
+// Package connectors provides the interfaces and implementations for connecting to
+// external services like AWS Connect.
+//
+// This file contains the unit tests for the RoutingProfileQueueManager. The tests
+// use a mock implementation of the RoutingProfileQueueLister interface to isolate
+// the manager from the AWS Connect API. This allows for fast, reliable, and
+// focused testing of the manager's caching and error handling logic.
 package connectors
 
 import (
@@ -11,19 +18,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// mockRPQLister is a mock implementation of the RoutingProfileQueueLister
+// interface used for testing the RoutingProfileQueueManager.
 type mockRPQLister struct {
 	output *connect.ListRoutingProfileQueuesOutput
 	err    error
 	calls  int
 }
 
+// ListRoutingProfileQueues is the mock implementation of the
+// ListRoutingProfileQueues method. It returns the mock output or an error,
+// depending on how it's configured.
 func (m *mockRPQLister) ListRoutingProfileQueues(ctx context.Context, input *connect.ListRoutingProfileQueuesInput) (*connect.ListRoutingProfileQueuesOutput, error) {
 	m.calls++
 	return m.output, m.err
 }
 
+// GetInstanceID is the mock implementation of the GetInstanceID method.
 func (m *mockRPQLister) GetInstanceID() string { return "test-instance" }
 
+// TestRoutingProfileQueueManagerCaching tests the caching logic of the
+// RoutingProfileQueueManager. It verifies that the manager caches the results
+// of the ListRoutingProfileQueues API call and that the cache expires after the
+// configured TTL.
 func TestRoutingProfileQueueManagerCaching(t *testing.T) {
 	lister := &mockRPQLister{output: &connect.ListRoutingProfileQueuesOutput{
 		RoutingProfileQueueConfigSummaryList: []types.RoutingProfileQueueConfigSummary{
@@ -46,6 +63,8 @@ func TestRoutingProfileQueueManagerCaching(t *testing.T) {
 	assert.Equal(t, 2, lister.calls)
 }
 
+// TestRoutingProfileQueueManagerError tests that the RoutingProfileQueueManager
+// handles errors from the RoutingProfileQueueLister gracefully.
 func TestRoutingProfileQueueManagerError(t *testing.T) {
 	lister := &mockRPQLister{err: assert.AnError}
 	mgr := NewRoutingProfileQueueManager(lister, time.Minute)

@@ -1,3 +1,10 @@
+// Package collectors provides the metric collectors for the AWS Connect exporter.
+//
+// This file defines the generic_historical collector, which is responsible for
+// gathering historical metrics from AWS Connect. This collector is highly
+// configurable, allowing users to define which metrics to collect, how to group
+// them, and what filters to apply. This flexibility is crucial for adapting the
+// exporter to different monitoring needs without requiring code changes.
 package collectors
 
 import (
@@ -19,16 +26,20 @@ import (
 )
 
 const (
-	// AWS Connect API limits and configuration for generic historical collector
-	genericHistoricalMaxQueuesPerRequest = 100 // Maximum number of queues that can be processed in a single API request
+	// genericHistoricalMaxQueuesPerRequest is the maximum number of queues that can be processed in a single API request.
+	genericHistoricalMaxQueuesPerRequest = 100
 
-	// AWS API retry configuration for generic historical collector
-	genericHistoricalDefaultRetryAttempts = 3               // Maximum number of retry attempts for failed API calls
-	genericHistoricalDefaultRetryDelay    = 1 * time.Second // Initial delay between retry attempts
-	genericHistoricalDefaultMaxRetryDelay = 5 * time.Second // Maximum delay between retry attempts
+	// genericHistoricalDefaultRetryAttempts is the maximum number of retry attempts for failed API calls.
+	genericHistoricalDefaultRetryAttempts = 3
+	// genericHistoricalDefaultRetryDelay is the initial delay between retry attempts.
+	genericHistoricalDefaultRetryDelay    = 1 * time.Second
+	// genericHistoricalDefaultMaxRetryDelay is the maximum delay between retry attempts.
+	genericHistoricalDefaultMaxRetryDelay = 5 * time.Second
 )
 
-// NewGenericHistoricalCollector creates a scheduled scraper for generic historical metrics
+// NewGenericHistoricalCollector creates a new scheduled scraper for collecting
+// generic historical metrics. It configures the scraper with a schedule and a
+// metric description.
 func NewGenericHistoricalCollector(app *kingpin.Application, cfg connectors.AWSConnectConfig) *maas.ScheduledScraper {
 	interval := time.Duration(cfg.Collectors.GenericHistorical.Interval) * time.Second
 	timeout := 30 * time.Second
@@ -44,7 +55,8 @@ func NewGenericHistoricalCollector(app *kingpin.Application, cfg connectors.AWSC
 	)
 }
 
-// GenericHistoricalScraper gathers historical metrics defined in configuration
+// GenericHistoricalScraper is the scraper implementation for generic historical metrics.
+// It includes a cache to avoid redundant API calls.
 type GenericHistoricalScraper struct {
 	metricsCache struct {
 		metrics   []maas.Metric
@@ -54,14 +66,16 @@ type GenericHistoricalScraper struct {
 	mu         sync.Mutex
 }
 
-// NewGenericHistoricalScraper constructs the scraper
+// NewGenericHistoricalScraper creates a new GenericHistoricalScraper.
 func NewGenericHistoricalScraper() *GenericHistoricalScraper {
 	return &GenericHistoricalScraper{
 		metricsTTL: 15 * time.Second, // Default cache TTL
 	}
 }
 
-// Scrape implements the Scraper interface
+// Scrape collects generic historical metrics by fetching data from the AWS Connect
+// API based on the user's configuration. It uses a cache to avoid making
+// redundant API calls.
 func (s *GenericHistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 	conn, ok := c.(*connectors.AWSConnectConnector)
 	if !ok {
@@ -112,7 +126,8 @@ func (s *GenericHistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, erro
 	return allMetrics, nil
 }
 
-// processHistoricalCollectorConfig handles metrics collection for a single historical collector configuration
+// processHistoricalCollectorConfig handles the metrics collection for a single
+// historical collector configuration.
 func (s *GenericHistoricalScraper) processHistoricalCollectorConfig(conn *connectors.AWSConnectConnector, queues []connectors.Queue, col connectors.GenericHistoricalMetricConfig, cfg connectors.AWSConnectConfig) ([]maas.Metric, error) {
 	allMetrics := make([]maas.Metric, 0)
 
@@ -163,7 +178,7 @@ func (s *GenericHistoricalScraper) processHistoricalCollectorConfig(conn *connec
 	return allMetrics, nil
 }
 
-// processQueueBatch handles metrics collection for a batch of queues
+// processQueueBatch handles the metrics collection for a single batch of queues.
 func (s *GenericHistoricalScraper) processQueueBatch(conn *connectors.AWSConnectConnector, batchQueues []connectors.Queue, metricsToFetch []types.MetricV2, metricMap map[string]connectors.HistoricalMetricDefinition, col connectors.GenericHistoricalMetricConfig, cfg connectors.AWSConnectConfig, startTime, endTime time.Time) ([]maas.Metric, error) {
 	metrics := make([]maas.Metric, 0)
 	batchIDs := make([]string, len(batchQueues))

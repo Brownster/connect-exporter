@@ -1,3 +1,9 @@
+// Package collectors provides the metric collectors for the AWS Connect exporter.
+//
+// This file defines the agent_realtime_status collector, which is responsible
+// for gathering live data about the status of each agent in the AWS Connect
+// instance. This information is crucial for real-time monitoring of agent
+// activity and availability.
 package collectors
 
 import (
@@ -16,7 +22,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// NewAgentRealtimeStatusCollector creates a scheduled scraper for agent realtime status metrics
+// NewAgentRealtimeStatusCollector creates a new scheduled scraper for collecting
+// agent realtime status metrics. It configures the scraper with a schedule and
+// a metric description.
 func NewAgentRealtimeStatusCollector(app *kingpin.Application, config connectors.AWSConnectConfig) *maas.ScheduledScraper {
 	interval := time.Duration(config.Collectors.AgentRealtimeStatus.Interval) * time.Second
 	timeout := 30 * time.Second
@@ -30,14 +38,16 @@ func NewAgentRealtimeStatusCollector(app *kingpin.Application, config connectors
 	)
 }
 
-// AgentRealtimeStatusScraper collects realtime agent status metrics
+// AgentRealtimeStatusScraper is the scraper implementation for agent realtime status metrics.
 type AgentRealtimeStatusScraper struct{}
 
+// NewAgentRealtimeStatusScraper creates a new AgentRealtimeStatusScraper.
 func NewAgentRealtimeStatusScraper(app *kingpin.Application, config connectors.AWSConnectConfig) *AgentRealtimeStatusScraper {
 	return &AgentRealtimeStatusScraper{}
 }
 
-// Scrape collects agent realtime status metrics by counting agents in each status
+// Scrape collects agent realtime status metrics by fetching the current user data
+// from the AWS Connect API and transforming it into Prometheus metrics.
 func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 	conn, ok := c.(*connectors.AWSConnectConnector)
 	if !ok {
@@ -140,7 +150,7 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 	return metrics, nil
 }
 
-// helper to extract status ID from ARN
+// extractStatusID is a helper function to extract the status ID from an ARN.
 func extractStatusID(arn string) string {
 	parts := strings.Split(arn, "/")
 	if len(parts) > 0 {
@@ -149,7 +159,8 @@ func extractStatusID(arn string) string {
 	return arn
 }
 
-// getStatusDetails fetches status info from ListAgentStatuses if not already known
+// getStatusDetails fetches additional status information, such as the status type,
+// by calling the ListAgentStatuses API.
 func getStatusDetails(arn string, conn *connectors.AWSConnectConnector) (types.AgentStatusSummary, bool) {
 	instanceID := conn.GetInstanceID()
 	input := &connect.ListAgentStatusesInput{

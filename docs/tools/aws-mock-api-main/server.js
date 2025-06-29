@@ -1,25 +1,13 @@
-/****************************************************
- * MOCK AWS CONNECT API
- * 
- * This file simulates a subset of AWS Connect's 
- * functionality for testing or demonstration purposes.
- * 
- * It provides endpoints that mimic:
- *   - ListQueues
- *   - GetCurrentMetricData
- *   - Error rate control (admin)
- *   
- * It uses in-memory data and randomized metrics, 
- * allowing you to experiment with how an AWS Connect 
- * client might interact with a real AWS Connect service.
- *
- * set random error rate 10%:
- * curl -X POST http://localhost:3000/admin/errorRate \ -H 'Content-Type: application/json' \ -d '{"rate": 0.1}'
+/**
+ * @file This file implements a mock AWS Connect API server for testing and
+ * development purposes. It simulates a subset of the AWS Connect API, allowing
+ * the exporter to be tested without connecting to a real AWS instance.
+ * @author Sabio
+ * @license ISC
+ */
 
- ****************************************************/
-
-const express = require('express');     // Express framework for routing and HTTP handling
-const bodyParser = require('body-parser');  // Middleware for parsing incoming request bodies
+const express = require('express');
+const bodyParser = require('body-parser');
 
 const app = express();
 

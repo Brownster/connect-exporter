@@ -1,3 +1,8 @@
+// Package collectors provides the metric collectors for the AWS Connect exporter.
+//
+// This file contains the unit tests for the generic_realtime collector. The tests
+// use a mock HTTP server to simulate the AWS Connect API, which allows for
+// controlled testing of the collector's logic without making actual API calls.
 package collectors
 
 import (
@@ -18,35 +23,41 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// mockGenericServer is a mock HTTP server that simulates the AWS Connect API for
+// the generic_realtime collector.
 type mockGenericServer struct{ groupings []string }
 
+// ServeHTTP is the handler for the mock HTTP server. It responds to the API
+// requests made by the collector with mock data.
 func (m *mockGenericServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s", r.Method, r.URL.Path)
 	if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/queues-summary/") {
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"QueueSummaryList":[{"Id":"q-1","Name":"Sales_Queue_VOICE","QueueType":"STANDARD"}]}`) //nolint:errcheck
+		io.WriteString(w, `{"QueueSummaryList":[{"Id":"q-1","Name":"Sales_Queue_VOICE","QueueType":"STANDARD"}]}`)
 		return
 	}
 	// Handle ListUsers endpoint for AgentManager
 	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/users-summary/") {
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"UserSummaryList":[{"Id":"agent-1","Username":"test.agent","Arn":"arn:aws:connect:us-east-1:123456789012:instance/test/agent/agent-1"}]}`) //nolint:errcheck
+		io.WriteString(w, `{"UserSummaryList":[{"Id":"agent-1","Username":"test.agent","Arn":"arn:aws:connect:us-east-1:123456789012:instance/test/agent/agent-1"}]}`)
 		return
 	}
 	// Handle GetCurrentMetricData (realtime API)
 	if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/metrics/current/") {
 		body, _ := io.ReadAll(r.Body)
 		var req struct{ Groupings []string }
-		json.Unmarshal(body, &req) //nolint:errcheck
+		json.Unmarshal(body, &req)
 		m.groupings = req.Groupings
 		w.Header().Set("Content-Type", "application/json")
 		// Return current metric data format
-		io.WriteString(w, `{"MetricResults":[{"Dimensions":{"Queue":{"Id":"q-1"},"Channel":"VOICE"},"Collections":[{"Metric":{"Name":"AGENTS_AVAILABLE"},"Value":5.0}]}]}`) //nolint:errcheck
+		io.WriteString(w, `{"MetricResults":[{"Dimensions":{"Queue":{"Id":"q-1"},"Channel":"VOICE"},"Collections":[{"Metric":{"Name":"AGENTS_AVAILABLE"},"Value":5.0}]}]}`)
 		return
 	}
 	http.NotFound(w, r)
 }
 
+// setupGenericConnector is a helper function that sets up a mock AWS Connect
+// connector for testing.
 func setupGenericConnector(t *testing.T, srv *httptest.Server) *connectors.AWSConnectConnector {
 	t.Setenv("ENV", "development")
 	t.Setenv("AWS_CONNECT_MOCK_ENDPOINT", srv.URL)
@@ -85,6 +96,8 @@ func setupGenericConnector(t *testing.T, srv *httptest.Server) *connectors.AWSCo
 	return conn
 }
 
+// TestGenericRealtimeCollector tests the basic functionality of the
+// generic_realtime collector.
 func TestGenericRealtimeCollector(t *testing.T) {
 	ms := &mockGenericServer{}
 	srv := httptest.NewServer(ms)
@@ -111,6 +124,8 @@ func TestGenericRealtimeCollector(t *testing.T) {
 	assert.True(t, found)
 }
 
+// TestGenericRealtimeCollectorError tests that the generic_realtime collector
+// handles errors from the AWS Connect API gracefully.
 func TestGenericRealtimeCollectorError(t *testing.T) {
 	ms := &mockGenericServer{}
 	srv := httptest.NewServer(ms)

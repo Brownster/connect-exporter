@@ -1,3 +1,10 @@
+// Package connectors provides the interfaces and implementations for connecting to
+// external services like AWS Connect.
+//
+// This file contains the unit tests for the AgentManager. The tests use a mock
+// implementation of the AgentLister interface to isolate the AgentManager from
+// the AWS Connect API. This allows for fast, reliable, and focused testing of
+// the AgentManager's logic.
 package connectors
 
 import (
@@ -11,11 +18,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// mockAgentLister is a mock implementation of the AgentLister interface used
+// for testing the AgentManager.
 type mockAgentLister struct {
 	agents []types.UserSummary
 	err    error
 }
 
+// ListUsers is the mock implementation of the ListUsers method. It returns the
+// mock agents or an error, depending on how it's configured.
 func (m *mockAgentLister) ListUsers(ctx context.Context, input *connect.ListUsersInput) (*connect.ListUsersOutput, error) {
 	if m.err != nil {
 		return nil, m.err
@@ -25,10 +36,13 @@ func (m *mockAgentLister) ListUsers(ctx context.Context, input *connect.ListUser
 	}, nil
 }
 
+// GetInstanceID is the mock implementation of the GetInstanceID method.
 func (m *mockAgentLister) GetInstanceID() string {
 	return "test-instance"
 }
 
+// TestAgentManager tests the basic functionality of the AgentManager, including
+// refreshing the agent list and retrieving agents by ID and as a map.
 func TestAgentManager(t *testing.T) {
 	mockAgents := []types.UserSummary{
 		{
@@ -71,6 +85,8 @@ func TestAgentManager(t *testing.T) {
 	assert.Equal(t, "jane.smith", agentMap["agent-2"].Username)
 }
 
+// TestAgentManagerWithError tests that the AgentManager handles errors from the
+// AgentLister gracefully.
 func TestAgentManagerWithError(t *testing.T) {
 	lister := &mockAgentLister{err: assert.AnError}
 	manager := NewAgentManager(lister, 10*time.Millisecond)
@@ -83,6 +99,8 @@ func TestAgentManagerWithError(t *testing.T) {
 	assert.Len(t, agents, 0)
 }
 
+// TestAgentManagerStartStop tests that the AgentManager can be started and
+// stopped without any issues.
 func TestAgentManagerStartStop(t *testing.T) {
 	lister := &mockAgentLister{agents: []types.UserSummary{}}
 	manager := NewAgentManager(lister, 10*time.Millisecond)

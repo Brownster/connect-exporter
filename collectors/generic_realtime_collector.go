@@ -1,3 +1,10 @@
+// Package collectors provides the metric collectors for the AWS Connect exporter.
+//
+// This file defines the generic_realtime collector, which is responsible for
+// gathering live metrics from AWS Connect. This collector is highly configurable,
+// allowing users to define which metrics to collect, how to group them, and what
+// filters to apply. This flexibility is crucial for adapting the exporter to
+// different monitoring needs without requiring code changes.
 package collectors
 
 import (
@@ -18,16 +25,20 @@ import (
 )
 
 const (
-	// AWS Connect API limits and configuration for generic collector
-	genericMaxQueuesPerRequest = 100 // Maximum number of queues that can be processed in a single API request
+	// genericMaxQueuesPerRequest is the maximum number of queues that can be processed in a single API request.
+	genericMaxQueuesPerRequest = 100
 
-	// AWS API retry configuration for generic collector
-	genericDefaultRetryAttempts = 3               // Maximum number of retry attempts for failed API calls
-	genericDefaultRetryDelay    = 1 * time.Second // Initial delay between retry attempts
-	genericDefaultMaxRetryDelay = 5 * time.Second // Maximum delay between retry attempts
+	// genericDefaultRetryAttempts is the maximum number of retry attempts for failed API calls.
+	genericDefaultRetryAttempts = 3
+	// genericDefaultRetryDelay is the initial delay between retry attempts.
+	genericDefaultRetryDelay    = 1 * time.Second
+	// genericDefaultMaxRetryDelay is the maximum delay between retry attempts.
+	genericDefaultMaxRetryDelay = 5 * time.Second
 )
 
-// NewGenericRealtimeCollector creates a scheduled scraper for generic realtime metrics
+// NewGenericRealtimeCollector creates a new scheduled scraper for collecting
+// generic realtime metrics. It configures the scraper with a schedule and a
+// metric description.
 func NewGenericRealtimeCollector(app *kingpin.Application, cfg connectors.AWSConnectConfig) *maas.ScheduledScraper {
 	interval := time.Duration(cfg.Collectors.GenericRealtime.Interval) * time.Second
 	timeout := 30 * time.Second
@@ -43,8 +54,8 @@ func NewGenericRealtimeCollector(app *kingpin.Application, cfg connectors.AWSCon
 	)
 }
 
-
-// GenericRealtimeScraper gathers realtime metrics defined in configuration
+// GenericRealtimeScraper is the scraper implementation for generic realtime metrics.
+// It includes a cache to avoid redundant API calls.
 type GenericRealtimeScraper struct {
 	metricsCache struct {
 		metrics   []maas.Metric
@@ -54,14 +65,16 @@ type GenericRealtimeScraper struct {
 	mu         sync.Mutex
 }
 
-// NewGenericRealtimeScraper constructs the scraper
+// NewGenericRealtimeScraper creates a new GenericRealtimeScraper.
 func NewGenericRealtimeScraper() *GenericRealtimeScraper {
 	return &GenericRealtimeScraper{
 		metricsTTL: 15 * time.Second, // Default cache TTL
 	}
 }
 
-// Scrape implements the Scraper interface
+// Scrape collects generic realtime metrics by fetching data from the AWS Connect
+// API based on the user's configuration. It uses a cache to avoid making
+// redundant API calls.
 func (s *GenericRealtimeScraper) Scrape(c maas.Connector) ([]maas.Metric, error) {
 	conn, ok := c.(*connectors.AWSConnectConnector)
 	if !ok {
@@ -112,7 +125,7 @@ func (s *GenericRealtimeScraper) Scrape(c maas.Connector) ([]maas.Metric, error)
 	return allMetrics, nil
 }
 
-// processCollectorConfig handles metrics collection for a single collector configuration
+// processCollectorConfig handles the metrics collection for a single collector configuration.
 func (s *GenericRealtimeScraper) processCollectorConfig(conn *connectors.AWSConnectConnector, queues []connectors.Queue, col connectors.GenericMetricConfig, cfg connectors.AWSConnectConfig) ([]maas.Metric, error) {
 	allMetrics := make([]maas.Metric, 0)
 
@@ -157,7 +170,7 @@ func (s *GenericRealtimeScraper) processCollectorConfig(conn *connectors.AWSConn
 	return allMetrics, nil
 }
 
-// processQueueBatch handles metrics collection for a batch of queues
+// processQueueBatch handles the metrics collection for a single batch of queues.
 func (s *GenericRealtimeScraper) processQueueBatch(conn *connectors.AWSConnectConnector, batchQueues []connectors.Queue, currentMetrics []types.CurrentMetric, groupings []types.Grouping, metricMap map[string]connectors.MetricDefinition, col connectors.GenericMetricConfig, cfg connectors.AWSConnectConfig) ([]maas.Metric, error) {
 	metrics := make([]maas.Metric, 0)
 	queueIDs := make([]string, len(batchQueues))

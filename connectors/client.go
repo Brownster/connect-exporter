@@ -1,3 +1,10 @@
+// Package connectors provides the interfaces and implementations for connecting to
+// external services like AWS Connect.
+//
+// This file contains the client-side logic for interacting with the AWS Connect API.
+// It wraps the AWS SDK calls in methods that are easy to use and test. By isolating
+// the API interaction, this file provides a clear separation of concerns and makes
+// the rest of the connector code more readable and maintainable.
 package connectors
 
 import (
@@ -11,9 +18,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// API wrapper methods extracted from aws_connect_connector.go
-
-// ListQueues retrieves all queues for the instance
+// ListQueues retrieves all queues for the AWS Connect instance. It handles
+// pagination automatically, collecting all queues into a single slice.
 func (c *AWSConnectConnector) ListQueues(ctx context.Context) ([]Queue, error) {
 	var queues []Queue
 	var nextToken *string
@@ -51,7 +57,8 @@ func (c *AWSConnectConnector) ListQueues(ctx context.Context) ([]Queue, error) {
 	return queues, nil
 }
 
-// GetCurrentMetricData retrieves current metrics for specified filters
+// GetCurrentMetricData retrieves current metrics for the specified filters.
+// This is a direct wrapper around the AWS SDK's GetCurrentMetricData method.
 func (c *AWSConnectConnector) GetCurrentMetricData(ctx context.Context, input *connect.GetCurrentMetricDataInput) (*connect.GetCurrentMetricDataOutput, error) {
 	output, err := c.client.GetCurrentMetricData(ctx, input)
 	if err != nil {
@@ -66,7 +73,8 @@ func (c *AWSConnectConnector) GetCurrentMetricData(ctx context.Context, input *c
 	return output, nil
 }
 
-// GetMetricDataV2 retrieves historical metrics using the V2 API
+// GetMetricDataV2 retrieves historical metrics using the V2 API. This is a
+// direct wrapper around the AWS SDK's GetMetricDataV2 method.
 func (c *AWSConnectConnector) GetMetricDataV2(ctx context.Context, input *connect.GetMetricDataV2Input) (*connect.GetMetricDataV2Output, error) {
 	output, err := c.client.GetMetricDataV2(ctx, input)
 	if err != nil {
@@ -81,7 +89,8 @@ func (c *AWSConnectConnector) GetMetricDataV2(ctx context.Context, input *connec
 	return output, nil
 }
 
-// GetCurrentUserData retrieves current user data including agent status
+// GetCurrentUserData retrieves current user data, including agent status.
+// It handles pagination and retries to ensure all user data is fetched.
 func (c *AWSConnectConnector) GetCurrentUserData(ctx context.Context, input *connect.GetCurrentUserDataInput) (*connect.GetCurrentUserDataOutput, error) {
 	instanceID := input.InstanceId
 	var err error
@@ -125,7 +134,7 @@ func (c *AWSConnectConnector) GetCurrentUserData(ctx context.Context, input *con
 	return nil, fmt.Errorf("error getting current user data: %w", err)
 }
 
-// ListAgentStatuses retrieves agent status information
+// ListAgentStatuses retrieves agent status information from the AWS Connect instance.
 func (c *AWSConnectConnector) ListAgentStatuses(ctx context.Context, input *connect.ListAgentStatusesInput) (*connect.ListAgentStatusesOutput, error) {
 	output, err := c.client.ListAgentStatuses(ctx, input)
 	if err != nil {
@@ -140,7 +149,8 @@ func (c *AWSConnectConnector) ListAgentStatuses(ctx context.Context, input *conn
 	return output, nil
 }
 
-// ListUsers retrieves user information
+// ListUsers retrieves user information from the AWS Connect instance. It handles
+// pagination and retries to ensure all users are fetched.
 func (c *AWSConnectConnector) ListUsers(ctx context.Context, input *connect.ListUsersInput) (*connect.ListUsersOutput, error) {
 	instanceID := input.InstanceId
 	var err error
@@ -179,7 +189,7 @@ func (c *AWSConnectConnector) ListUsers(ctx context.Context, input *connect.List
 	return nil, fmt.Errorf("error listing users: %w", err)
 }
 
-// ListRoutingProfileQueues retrieves queue IDs associated with a routing profile
+// ListRoutingProfileQueues retrieves the queue IDs associated with a routing profile.
 func (c *AWSConnectConnector) ListRoutingProfileQueues(ctx context.Context, input *connect.ListRoutingProfileQueuesInput) (*connect.ListRoutingProfileQueuesOutput, error) {
 	output, err := c.client.ListRoutingProfileQueues(ctx, input)
 	if err != nil {

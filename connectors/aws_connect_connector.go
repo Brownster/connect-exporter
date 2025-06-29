@@ -1,3 +1,11 @@
+// Package connectors provides the interfaces and implementations for connecting to
+// external services like AWS Connect.
+//
+// This file implements the maas.Connector interface for AWS Connect. It is
+// responsible for managing the connection to the AWS Connect API, handling
+// configuration, and providing a unified interface for the metric collectors.
+// The connector is designed to be modular, with its functionality broken down
+// into smaller, more focused files.
 package connectors
 
 import (
@@ -15,7 +23,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// AWSConnectConnector implements the maas.Connector interface for AWS Connect
+// AWSConnectConnector implements the maas.Connector interface for AWS Connect.
+// It holds the AWS Connect client, configuration, and managers for queues and agents.
 type AWSConnectConnector struct {
 	client      *connect.Client
 	region      string
@@ -39,7 +48,8 @@ type AWSConnectConnector struct {
 	rpQueueManager *RoutingProfileQueueManager
 }
 
-// NewConfigurableAWSConnectConnector creates a new AWS Connect connector with kingpin flags
+// NewConfigurableAWSConnectConnector creates a new AWS Connect connector and
+// defines the command-line flags used to configure it.
 func NewConfigurableAWSConnectConnector(app *kingpin.Application) (*AWSConnectConnector, error) {
 	connector := &AWSConnectConnector{
 		configured: false,
@@ -53,7 +63,9 @@ func NewConfigurableAWSConnectConnector(app *kingpin.Application) (*AWSConnectCo
 	return connector, nil
 }
 
-// NewAWSConnectConnector creates a new AWS Connect connector
+// NewAWSConnectConnector creates a new AWS Connect connector with the specified
+// region and instance ARN. This is used for testing and scenarios where the
+// configuration is provided programmatically.
 func NewAWSConnectConnector(region, instanceARN string) (*AWSConnectConnector, error) {
 	connector := &AWSConnectConnector{
 		region:      region,
@@ -91,7 +103,8 @@ func NewAWSConnectConnector(region, instanceARN string) (*AWSConnectConnector, e
 	return connector, nil
 }
 
-// Execute implements the maas.Connector interface
+// Execute implements the maas.Connector interface. It acts as a dispatcher,
+// forwarding commands to the appropriate API wrapper function.
 func (c *AWSConnectConnector) Execute(command interface{}) (interface{}, error) {
 	switch cmd := command.(type) {
 	case string:
@@ -117,7 +130,8 @@ func (c *AWSConnectConnector) Execute(command interface{}) (interface{}, error) 
 	}
 }
 
-// Connect implements the maas.Connector interface - validates AWS connection
+// Connect implements the maas.Connector interface. It configures the connector,
+// validates the connection to AWS, and initializes the queue and agent managers.
 func (c *AWSConnectConnector) Connect() error {
 	// Configure the connector if not already done
 	if !c.configured {
@@ -164,13 +178,15 @@ func (c *AWSConnectConnector) Connect() error {
 	return nil
 }
 
-// Flags implements the maas.Connector interface
+// Flags implements the maas.Connector interface. It is a placeholder for any
+// future AWS Connect-specific flags that might be needed.
 func (c *AWSConnectConnector) Flags(app *kingpin.Application) {
 	// AWS Connect specific flags could be added here if needed
 	// For now, we rely on config file and CLI flags in the exporter
 }
 
-// configure handles the configuration parsing after flags have been parsed
+// configure handles the parsing of the configuration file and command-line flags.
+// It also sets default values for any missing configuration options.
 func (c *AWSConnectConnector) configure() error {
 	// Load configuration from file
 	var cfg AWSConnectConfig
@@ -317,27 +333,27 @@ func (c *AWSConnectConnector) configure() error {
 	return nil
 }
 
-// GetConfig returns the full configuration for collectors to access
+// GetConfig returns the full configuration for collectors to access.
 func (c *AWSConnectConnector) GetConfig() AWSConnectConfig {
 	return c.config
 }
 
-// GetQueueManager exposes the shared QueueManager
+// GetQueueManager exposes the shared QueueManager.
 func (c *AWSConnectConnector) GetQueueManager() *QueueManager {
 	return c.queueManager
 }
 
-// GetAgentManager exposes the shared AgentManager
+// GetAgentManager exposes the shared AgentManager.
 func (c *AWSConnectConnector) GetAgentManager() *AgentManager {
 	return c.agentManager
 }
 
-// GetRoutingProfileQueueManager exposes the routing profile queue manager
+// GetRoutingProfileQueueManager exposes the routing profile queue manager.
 func (c *AWSConnectConnector) GetRoutingProfileQueueManager() *RoutingProfileQueueManager {
 	return c.rpQueueManager
 }
 
-// GetInstanceID extracts the instance ID from the ARN
+// GetInstanceID extracts the instance ID from the ARN.
 func (c *AWSConnectConnector) GetInstanceID() string {
 	// Extract instance ID from ARN
 	// ARN format: arn:aws:connect:region:account:instance/instance-id

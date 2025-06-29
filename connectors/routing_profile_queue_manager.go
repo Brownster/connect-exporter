@@ -1,3 +1,11 @@
+// Package connectors provides the interfaces and implementations for connecting to
+// external services like AWS Connect.
+//
+// This file defines the RoutingProfileQueueManager, a component that caches the
+// list of queues associated with each routing profile. This is a crucial
+// optimization, as it avoids repeatedly fetching the same data from the AWS
+// Connect API. The manager uses a time-to-live (TTL) cache to ensure the data
+// is periodically refreshed.
 package connectors
 
 import (
@@ -10,20 +18,22 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// RoutingProfileQueueLister defines the interface for listing queues for a routing profile
-// implemented by AWSConnectConnector
-// and useful for testing RoutingProfileQueueManager independently.
+// RoutingProfileQueueLister defines the interface for listing the queues for a
+// routing profile. It is implemented by AWSConnectConnector and allows the
+// RoutingProfileQueueManager to be tested independently.
 type RoutingProfileQueueLister interface {
 	ListRoutingProfileQueues(ctx context.Context, input *connect.ListRoutingProfileQueuesInput) (*connect.ListRoutingProfileQueuesOutput, error)
 	GetInstanceID() string
 }
 
+// rpqEntry represents a cached entry for a routing profile's queues.
 type rpqEntry struct {
 	queues  []string
 	expires time.Time
 }
 
-// RoutingProfileQueueManager caches queue lists per routing profile with TTL.
+// RoutingProfileQueueManager caches the list of queue IDs for each routing profile.
+// This is an important optimization to avoid redundant API calls.
 type RoutingProfileQueueManager struct {
 	lister RoutingProfileQueueLister
 	ttl    time.Duration
@@ -32,7 +42,7 @@ type RoutingProfileQueueManager struct {
 	cache map[string]*rpqEntry
 }
 
-// NewRoutingProfileQueueManager creates a new manager with the given TTL.
+// NewRoutingProfileQueueManager creates and initializes a new RoutingProfileQueueManager.
 func NewRoutingProfileQueueManager(lister RoutingProfileQueueLister, ttl time.Duration) *RoutingProfileQueueManager {
 	if ttl <= 0 {
 		ttl = 5 * time.Minute
@@ -44,8 +54,9 @@ func NewRoutingProfileQueueManager(lister RoutingProfileQueueLister, ttl time.Du
 	}
 }
 
-// GetQueuesForRoutingProfile returns queue IDs for the given routing profile.
-// Results are cached for the configured TTL.
+// GetQueuesForRoutingProfile returns the list of queue IDs for a given routing
+// profile. If the data is in the cache and has not expired, it is returned
+// immediately. Otherwise, it is fetched from the AWS Connect API.
 func (m *RoutingProfileQueueManager) GetQueuesForRoutingProfile(rpID string) ([]string, error) {
 	m.mu.RLock()
 	entry, ok := m.cache[rpID]
@@ -68,6 +79,8 @@ func (m *RoutingProfileQueueManager) GetQueuesForRoutingProfile(rpID string) ([]
 	return queues, nil
 }
 
+// fetchQueues retrieves the queue list for a routing profile from the AWS API.
+// It handles pagination and retries to ensure all data is fetched.
 func (m *RoutingProfileQueueManager) fetchQueues(rpID string) ([]string, error) {
 	instanceID := m.lister.GetInstanceID()
 	var err error
