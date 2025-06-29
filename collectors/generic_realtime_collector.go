@@ -31,7 +31,7 @@ const (
 	// genericDefaultRetryAttempts is the maximum number of retry attempts for failed API calls.
 	genericDefaultRetryAttempts = 3
 	// genericDefaultRetryDelay is the initial delay between retry attempts.
-	genericDefaultRetryDelay    = 1 * time.Second
+	genericDefaultRetryDelay = 1 * time.Second
 	// genericDefaultMaxRetryDelay is the maximum delay between retry attempts.
 	genericDefaultMaxRetryDelay = 5 * time.Second
 )
@@ -261,7 +261,7 @@ func (s *GenericRealtimeScraper) processQueueBatch(conn *connectors.AWSConnectCo
 
 			// Build base labels
 			labels := []string{
-				col.Name,       // collector name
+				col.Name,           // collector name
 				def.PrometheusName, // metric name
 				queue.ID,
 				queue.Name,
@@ -286,10 +286,10 @@ func (s *GenericRealtimeScraper) processQueueBatch(conn *connectors.AWSConnectCo
 			))
 
 			logrus.WithFields(logrus.Fields{
-				"collector":     col.Name,
-				"metric_name":   def.PrometheusName,
-				"metric_value":  *collection.Value,
-				"queue_name":    queue.Name,
+				"collector":    col.Name,
+				"metric_name":  def.PrometheusName,
+				"metric_value": *collection.Value,
+				"queue_name":   queue.Name,
 			}).Debug("Collected generic realtime metric")
 		}
 	}

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
 	"github.com/alecthomas/kingpin/v2"
+	"github.com/stretchr/testify/suite"
 )
 
 type ScheduledScraperTestSuite struct {

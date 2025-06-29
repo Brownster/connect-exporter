@@ -32,7 +32,7 @@ const (
 	// genericHistoricalDefaultRetryAttempts is the maximum number of retry attempts for failed API calls.
 	genericHistoricalDefaultRetryAttempts = 3
 	// genericHistoricalDefaultRetryDelay is the initial delay between retry attempts.
-	genericHistoricalDefaultRetryDelay    = 1 * time.Second
+	genericHistoricalDefaultRetryDelay = 1 * time.Second
 	// genericHistoricalDefaultMaxRetryDelay is the maximum delay between retry attempts.
 	genericHistoricalDefaultMaxRetryDelay = 5 * time.Second
 )

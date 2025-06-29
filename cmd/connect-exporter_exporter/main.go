@@ -20,7 +20,7 @@ func main() {
 
 	// Start all scheduled scrapers
 	exporter.Start()
-	
+
 	// Start HTTP server for metrics endpoint
 	exporter.Serve()
 

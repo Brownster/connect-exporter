@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alecthomas/kingpin/v2"
+	maas "github.com/mbrown007/monitoring-rss-exporter/monitoring-maas"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	maas "github.com/mbrown007/monitoring-rss-exporter/monitoring-maas"
 	"github.com/stretchr/testify/suite"
-	"github.com/alecthomas/kingpin/v2"
 )
 
 type MaaSTestSuite struct {
