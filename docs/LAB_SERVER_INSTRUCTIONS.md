@@ -118,7 +118,7 @@ curl -s http://127.0.0.1:8542/metrics | grep aws_connect_exporter | head -5
 
 ## Files Modified
 - `collectors/agent_realtime_status_collector.go` - Added required Agents filter
-- `connectors/aws_connect_connector.go` - HTTP fixes for development mode  
+- `connectors/client.go` - HTTP fixes for development mode  
 - `fix-lab-server-http.sh` - Automated lab server fix script
 
 The lab server should now work identically to your laptop for both development and production modes.
