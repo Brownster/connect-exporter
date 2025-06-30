@@ -15,7 +15,7 @@ require (
 
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
-	github.com/getsentry/sentry-go v0.33.0
+	github.com/getsentry/sentry-go v0.34.0
 	github.com/stretchr/testify v1.10.0
 )
 
