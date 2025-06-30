@@ -908,6 +908,73 @@ app.all('/{*path}', (req, res, next) => {
             QueueSummaryList: items,
             NextToken: newNextToken
         });
+    }
+    else if (action === 'ListUsers' || req.path.startsWith('/users-summary/')) {
+        console.log('\n=== Processing List Users Request ===');
+        
+        // Extract instanceId from either query or path
+        let instanceId;
+        if (req.path.startsWith('/users-summary/')) {
+            instanceId = req.path.split('/users-summary/')[1]?.split('?')[0];
+            console.log('📍 Extracted instanceId from path:', instanceId);
+        } else {
+            instanceId = req.body.InstanceId || req.query.InstanceId;
+            console.log('📍 Using instanceId from request:', instanceId);
+        }
+
+        // Validate instanceId
+        if (!instanceId) {
+            console.log('❌ Missing instanceId');
+            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
+        }
+
+        if (instanceId !== INSTANCE_ID) {
+            console.log('❌ Instance ID mismatch:', instanceId, '!==', INSTANCE_ID);
+            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+        }
+
+        // Validate nextToken if provided
+        const nextToken = req.query.nextToken || (req.body && req.body.NextToken);
+        if (nextToken && isNaN(parseInt(nextToken, 10))) {
+            console.log('❌ Invalid nextToken:', nextToken);
+            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
+        }
+
+        // Simulate random errors
+        const error = shouldError();
+        if (error) {
+            console.log('⚠️ Random error triggered:', error);
+            return res.status(500).json(error);
+        }
+
+        // Convert MOCK_USERS to AWS Connect UserSummary format
+        // Using pagination with smaller page size (4 users) to exercise pagination
+        const userSummaries = MOCK_USERS.map(user => ({
+            Id: user.Id,
+            Username: user.Username,
+            Arn: user.Arn,
+            RoutingProfileId: user.RoutingProfile.Id,
+            RoutingProfileArn: user.RoutingProfile.Arn,
+            HierarchyGroupId: null, // Not implemented in mock
+            Tags: {} // Not implemented in mock
+        }));
+
+        // Use custom pagination with page size of 4 to test pagination with 11 users
+        const pageSize = 4;
+        const startIndex = nextToken ? parseInt(nextToken, 10) : 0;
+        const endIndex = Math.min(startIndex + pageSize, userSummaries.length);
+        const items = userSummaries.slice(startIndex, endIndex);
+        const newNextToken = endIndex < userSummaries.length ? endIndex.toString() : null;
+
+        console.log(`📑 Paginating users: ${startIndex}-${endIndex-1} of ${userSummaries.length} total`);
+        console.log('📤 Returning users:', items.map(u => u.Username));
+        console.log('🔗 Next token:', newNextToken);
+
+        return res.json({
+            UserSummaryList: items,
+            NextToken: newNextToken,
+            ApproximateTotalCount: userSummaries.length
+        });
     } 
     else if (action === 'GetCurrentMetricData' || req.path.startsWith('/metrics/current/')) {
         console.log('\n=== Processing Metrics Request ===');
