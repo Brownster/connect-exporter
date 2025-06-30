@@ -1246,7 +1246,7 @@ app.all('/{*path}', (req, res, next) => {
             ApproximateTotalCount: MOCK_USERS.length
         });
     }
-    else if (action === 'ListRoutingProfileQueues' || req.path.startsWith('/routing-profile-queues/')) {
+    else if (action === 'ListRoutingProfileQueues' || req.path.startsWith('/routing-profile-queues/') || req.path.includes('/routing-profiles/')) {
         console.log('\n=== Processing Routing Profile Queues Request ===');
 
         let instanceId, rpId;
@@ -1255,6 +1255,14 @@ app.all('/{*path}', (req, res, next) => {
             instanceId = parts[0];
             rpId = parts[1]?.split('?')[0];
             console.log('📍 Extracted instanceId and rpId from path:', instanceId, rpId);
+        } else if (req.path.includes('/routing-profiles/')) {
+            // Handle AWS SDK URL pattern: /routing-profiles/{instanceId}/{routingProfileId}/queues
+            const match = req.path.match(/\/routing-profiles\/([^\/]+)\/([^\/]+)\/queues/);
+            if (match) {
+                instanceId = match[1];
+                rpId = match[2];
+                console.log('📍 Extracted instanceId and rpId from AWS SDK path:', instanceId, rpId);
+            }
         } else {
             instanceId = req.body.InstanceId || req.query.InstanceId;
             rpId = req.body.RoutingProfileId || req.query.RoutingProfileId;
