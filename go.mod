@@ -6,7 +6,7 @@ require (
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/aws/aws-sdk-go-v2 v1.36.5
 	github.com/aws/aws-sdk-go-v2/config v1.29.17
-	github.com/aws/aws-sdk-go-v2/service/connect v1.129.2
+	github.com/aws/aws-sdk-go-v2/service/connect v1.130.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/sabio-engineering-product/connect-exporter/monitoring-maas v0.0.0
 	github.com/sirupsen/logrus v1.9.3
