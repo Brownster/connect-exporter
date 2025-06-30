@@ -44,7 +44,7 @@ let currentErrors = 0;          // Counter for consecutive errors
 let maxConsecutiveErrors = 2;   // Max consecutive errors to allow before resetting
 
 // Pagination configuration (can be overridden via ITEMS_PER_PAGE)
-let itemsPerPage = 2;
+let itemsPerPage = 1000;  // Default to high value to avoid pagination issues
 if (process.env.ITEMS_PER_PAGE) {
     const envItemsPerPage = parseInt(process.env.ITEMS_PER_PAGE, 10);
     if (!isNaN(envItemsPerPage) && envItemsPerPage > 0) {
