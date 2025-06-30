@@ -96,9 +96,9 @@ collectors:
           - aws_name: "CONTACTS_HANDLED"
             prometheus_name: "connect_historical_contacts_handled_total"
             labels: {}
-          - aws_name: "CONTACTS_ABANDONED"
-            prometheus_name: "connect_historical_contacts_abandoned_total"
-            labels: {}
+  #        - aws_name: "CONTACTS_ABANDONED"
+  #          prometheus_name: "connect_historical_contacts_abandoned_total"
+  #          labels: {}
           - aws_name: "AVG_HANDLE_TIME"
             prometheus_name: "connect_historical_avg_handle_time_seconds"
             labels: {}
