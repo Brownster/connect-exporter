@@ -427,7 +427,7 @@ const MOCK_USERS = [
     },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
-      StatusName: 'Busy'
+      StatusName: 'On Call'
     }
   },
   {
@@ -440,7 +440,7 @@ const MOCK_USERS = [
     },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
-      StatusName: 'Busy'
+      StatusName: 'On Call'
     }
   },
   {
@@ -453,7 +453,7 @@ const MOCK_USERS = [
     },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
-      StatusName: 'Busy'
+      StatusName: 'On Call'
     }
   },
   // Agents in after contact work (2 users)
@@ -494,7 +494,21 @@ const MOCK_USERS = [
     },
     Status: {
       StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-004`,
-      StatusName: 'Custom Break'
+      StatusName: 'Lunch Break'
+    }
+  },
+  // Agent with error status
+  {
+    Id: 'b8f7c12e-4d3a-4f5c-bc23-1a8e7f9d2c4e',
+    Username: 'mike.wilson',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/b8f7c12e-4d3a-4f5c-bc23-1a8e7f9d2c4e`,
+    RoutingProfile: {
+      Arn: ROUTING_PROFILES['tf-support'].Arn,
+      Id: 'tf-support'
+    },
+    Status: {
+      StatusArn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-005`,
+      StatusName: 'Error'
     }
   }
 ];
@@ -1338,18 +1352,35 @@ app.all('/{*path}', (req, res, next) => {
             return res.status(500).json(error);
         }
 
-        // Build dynamic status objects for each agent in the roster
-        const statusList = agentRoster.map(agent => {
-            const status = agentStatuses.find(s => s.Id === agent.currentStatusId) || {};
+        // Return static status definitions (not agent-specific data)
+        // Map the predefined agent statuses to match the ARNs used in MOCK_USERS
+        const statusArns = {
+            'available-status-id': 'status-001',
+            'acw-status-id': 'status-003', 
+            'oncall-status-id': 'status-002',
+            'lunch-status-id': 'status-004',
+            'error-status-id': 'status-005'
+        };
+        
+        const statusList = agentStatuses.map(status => {
+            const statusArn = statusArns[status.Id] || status.Id;
             return {
-                Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/${agent.id}`,
-                Id: agent.id,
+                Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/${statusArn}`,
+                Id: status.Id,
                 Name: status.Name,
                 Type: status.Type
             };
         });
 
-        const { items, nextToken: newNextToken } = paginateResults(statusList, nextToken);
+        // Respect MaxResults from the request (AWS Connect collectors often set this to 1000)
+        const maxResults = (req.body && req.body.MaxResults) || req.query.MaxResults || ITEMS_PER_PAGE;
+        console.log(`Using MaxResults: ${maxResults} for ListAgentStatuses`);
+        
+        const startIndex = nextToken ? parseInt(nextToken, 10) : 0;
+        const endIndex = Math.min(startIndex + maxResults, statusList.length);
+        const items = statusList.slice(startIndex, endIndex);
+        const newNextToken = endIndex < statusList.length ? endIndex.toString() : null;
+        
         return res.json({
             AgentStatusSummaryList: items,
             NextToken: newNextToken
