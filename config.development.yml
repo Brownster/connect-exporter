@@ -1,5 +1,11 @@
 # AWS Connect Exporter - Development Configuration
-# Uses mock AWS Connect API for local development
+# 
+# Optimized for local development with mock AWS Connect API.
+# All legacy collectors are disabled - only generic collectors are used.
+# 
+# Quick Start:
+# 1. Start mock API: cd docs/tools/aws-mock-api-main && node server.js
+# 2. Run: ENV=development ./connect-exporter --config.file=config.development.yml
 
 # Server configuration
 web:
@@ -15,50 +21,19 @@ aws:
   instance_arn: "arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772"
 
 # Collector Configuration
+# Collector Configuration - Development optimized
 collectors:
-  # Realtime Queue Metrics Collector
-  realtime_queue:
-    enabled: false  # Replaced by generic_realtime collector
-    interval: 30  # Faster collection for development (30 seconds)
-    metrics_cache_ttl: 15s
-    queue_cache_ttl: 5m
-    queue_refresh_interval: 1m
-    queues_include_regex: ""
-    
-  # Agent Status Collector  
-  agent_status:
-    enabled: false  # Replaced by generic_realtime collector
-    interval: 60  # Faster collection for development (1 minute)
+  # Note: All legacy individual collectors are removed as they've been 
+  # replaced by the configurable generic collectors below
 
-  # Agent Realtime Status Collector
-  agent_realtime_status:
-    enabled: false  # Disabled due to missing mock API endpoints for /users-summary and /routing-profiles
-    interval: 30  # Faster collection for development (30 seconds)
-
-  # Historical Queue Metrics Collector
-  historical_queue:
-    enabled: false  # Replaced by generic_historical collector
-    interval: 60  # Faster collection for development (1 minute)
-
-  historical_calls:
-    enabled: false
-    interval: 60
-
-  historical_aht:
-    enabled: false  # Replaced by generic_historical collector
-    interval: 60
-
-  historical_acw:
-    enabled: false  # Replaced by generic_historical collector
-    interval: 60
-
+  # Real-time metrics - all agent states and queue metrics for development
   generic_realtime:
     enabled: true
-    interval: 30
+    interval: 30  # Fast refresh for development
     collectors:
-      # Replaces: realtime_queue_collector.go
       - name: "realtime_queue"
         metrics:
+          # Agent state metrics by queue
           - aws_name: "AGENTS_AVAILABLE"
             prometheus_name: "connect_queue_agents"
             labels:
@@ -83,6 +58,15 @@ collectors:
             prometheus_name: "connect_queue_agents"
             labels:
               state: "Error"
+          - aws_name: "AGENTS_ONLINE"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "Online"
+          - aws_name: "AGENTS_ON_CALL"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "OnCall"
+          # Queue metrics
           - aws_name: "SLOTS_AVAILABLE"
             prometheus_name: "connect_queue_slots_available"
             labels: {}
@@ -95,58 +79,10 @@ collectors:
           - aws_name: "OLDEST_CONTACT_AGE"
             prometheus_name: "connect_queue_oldest_contact_age_seconds"
             labels: {}
-          - aws_name: "AGENTS_ONLINE"
-            prometheus_name: "connect_queue_agents"
-            labels:
-              state: "Online"
-          - aws_name: "AGENTS_ON_CALL"
-            prometheus_name: "connect_queue_agents"
-            labels:
-              state: "OnCall"
           - aws_name: "CONTACTS_SCHEDULED"
             prometheus_name: "connect_queue_contacts_scheduled"
             labels: {}
-        groupings:
-          - "QUEUE"
-          - "CHANNEL"
-        filters: []
-      # Replaces: agent_state_collector.go (queue-aggregated agent states)
-      - name: "agent_state"
-        metrics:
-          - aws_name: "AGENTS_AVAILABLE"
-            prometheus_name: "agents"
-            labels:
-              state: "Available"
-          - aws_name: "AGENTS_STAFFED"
-            prometheus_name: "agents"
-            labels:
-              state: "Staffed"
-          - aws_name: "AGENTS_ON_CONTACT"
-            prometheus_name: "agents"
-            labels:
-              state: "OnContact"
-          - aws_name: "AGENTS_AFTER_CONTACT_WORK"
-            prometheus_name: "agents"
-            labels:
-              state: "AfterContactWork"
-          - aws_name: "AGENTS_NON_PRODUCTIVE"
-            prometheus_name: "agents"
-            labels:
-              state: "NonProductive"
-          - aws_name: "AGENTS_ERROR"
-            prometheus_name: "agents"
-            labels:
-              state: "Error"
-          - aws_name: "AGENTS_ONLINE"
-            prometheus_name: "agents"
-            labels:
-              state: "Online"
-          - aws_name: "AGENTS_ON_CALL"
-            prometheus_name: "agents"
-            labels:
-              state: "OnCall"
-        groupings:
-          - "QUEUE"
+        groupings: ["QUEUE", "CHANNEL"]
         filters: []
 
   # Generic Historical Metrics Collector (config-driven)
@@ -154,7 +90,7 @@ collectors:
     enabled: true
     interval: 300  # 5 minutes for historical data
     collectors:
-      # Replaces: historical_queue_collector.go
+      # Basic historical metrics for development testing
       - name: "historical_queue"
         metrics:
           - aws_name: "CONTACTS_HANDLED"
@@ -163,72 +99,10 @@ collectors:
           - aws_name: "CONTACTS_ABANDONED"
             prometheus_name: "connect_historical_contacts_abandoned_total"
             labels: {}
-        groupings:
-          - "QUEUE"
-          - "CHANNEL"
-        filters:
-          - key: "CHANNEL"
-            values: ["VOICE", "CHAT", "TASK"]
-      # Replaces: historical_calls_collector.go (direction-specific)
-      - name: "historical_calls_inbound"
-        metrics:
-          - aws_name: "CONTACTS_HANDLED"
-            prometheus_name: "connect_historical_contacts_handled_total"
-            labels:
-              direction: "inbound"
-            metric_filters:
-              - key: "INITIATION_METHOD"
-                values: ["INBOUND"]
-          - aws_name: "CONTACTS_ABANDONED"
-            prometheus_name: "connect_historical_contacts_abandoned_total"
-            labels:
-              direction: "inbound"
-            metric_filters:
-              - key: "INITIATION_METHOD"
-                values: ["INBOUND"]
-        groupings:
-          - "QUEUE"
-        filters: []
-      - name: "historical_calls_outbound"
-        metrics:
-          - aws_name: "CONTACTS_HANDLED"
-            prometheus_name: "connect_historical_contacts_handled_total"
-            labels:
-              direction: "outbound"
-            metric_filters:
-              - key: "INITIATION_METHOD"
-                values: ["OUTBOUND", "CALLBACK", "API"]
-          - aws_name: "CONTACTS_ABANDONED"
-            prometheus_name: "connect_historical_contacts_abandoned_total"
-            labels:
-              direction: "outbound"
-            metric_filters:
-              - key: "INITIATION_METHOD"
-                values: ["OUTBOUND", "CALLBACK", "API"]
-        groupings:
-          - "QUEUE"
-        filters: []
-      # Replaces: historical_avg_time_collector.go (AHT)
-      - name: "historical_aht"
-        metrics:
           - aws_name: "AVG_HANDLE_TIME"
             prometheus_name: "connect_historical_avg_handle_time_seconds"
             labels: {}
-        groupings:
-          - "QUEUE"
-          - "CHANNEL"
-        filters:
-          - key: "CHANNEL"
-            values: ["VOICE", "CHAT", "TASK"]
-      # Replaces: historical_avg_time_collector.go (ACW)
-      - name: "historical_acw"
-        metrics:
-          - aws_name: "AVG_AFTER_CONTACT_WORK_TIME"
-            prometheus_name: "connect_historical_avg_after_contact_work_time_seconds"
-            labels: {}
-        groupings:
-          - "QUEUE"
-          - "CHANNEL"
+        groupings: ["QUEUE", "CHANNEL"]
         filters:
           - key: "CHANNEL"
             values: ["VOICE", "CHAT", "TASK"]

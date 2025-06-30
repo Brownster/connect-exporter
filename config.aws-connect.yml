@@ -1,5 +1,13 @@
-# AWS Connect Exporter Configuration
-# Production configuration template for AWS Connect monitoring
+# AWS Connect Exporter - Production Configuration
+# 
+# This configuration template provides the essential metrics for monitoring
+# AWS Connect in a production environment. Only enable the metrics you need
+# to avoid unnecessary API calls and reduce AWS costs.
+#
+# Quick Start:
+# 1. Update instance_arn with your Connect instance ARN
+# 2. Enable only the collectors you need
+# 3. Uncomment additional metrics as required
 
 # Server configuration
 listen_address: 127.0.0.1
@@ -15,405 +23,127 @@ aws:
   instance_arn: "arn:aws:connect:us-east-1:123456789012:instance/your-instance-id"
 
 # Collector Configuration
+# Collector Configuration
+# Enable only the collectors you need for your monitoring requirements
 collectors:
-  # Generic collectors replace legacy hard-coded collectors
+  # Agent Status Collector - Individual agent status tracking
   agent_realtime_status:
     enabled: true
-    interval: 60
+    interval: 60  # seconds
 
+  # Real-time Queue Metrics - Core contact center metrics
   generic_realtime:
     enabled: true
-    interval: 30
+    interval: 30  # seconds - more frequent for real-time dashboards
     collectors:
       - name: "queue_realtime_metrics"
+        # Core metrics - always enabled for basic monitoring
         metrics:
           - aws_name: "AGENTS_AVAILABLE"
             prometheus_name: "connect_queue_agents"
             labels:
               state: "Available"
-          # - aws_name: "AGENTS_STAFFED"
-          #   prometheus_name: "connect_queue_agents"
-          #   labels:
-          #     state: "Staffed"
-          # - aws_name: "AGENTS_ON_CONTACT"
-          #   prometheus_name: "connect_queue_agents"
-          #   labels:
-          #     state: "OnContact"
-          # - aws_name: "AGENTS_AFTER_CONTACT_WORK"
-          #   prometheus_name: "connect_queue_agents"
-          #   labels:
-          #     state: "AfterContactWork"
-          # - aws_name: "AGENTS_NON_PRODUCTIVE"
-          #   prometheus_name: "connect_queue_agents"
-          #   labels:
-          #     state: "NonProductive"
-          # - aws_name: "AGENTS_ERROR"
-          #   prometheus_name: "connect_queue_agents"
-          #   labels:
-          #     state: "Error"
-          # - aws_name: "SLOTS_AVAILABLE"
-          #   prometheus_name: "connect_queue_slots_available"
-          #   labels: {}
-          # - aws_name: "SLOTS_ACTIVE"
-          #   prometheus_name: "connect_queue_slots_active"
-          #   labels: {}
-          # - aws_name: "CONTACTS_IN_QUEUE"
-          #   prometheus_name: "connect_queue_contacts_in_queue"
-          #   labels: {}
-          # - aws_name: "OLDEST_CONTACT_AGE"
-          #   prometheus_name: "connect_queue_oldest_contact_age_seconds"
-          #   labels: {}
-          # - aws_name: "AGENTS_ONLINE"
-          #   prometheus_name: "connect_queue_agents"
-          #   labels:
-          #     state: "Online"
-          # - aws_name: "AGENTS_ON_CALL"
-          #   prometheus_name: "connect_queue_agents"
-          #   labels:
-          #     state: "OnCall"
-          # - aws_name: "CONTACTS_SCHEDULED"
-          #   prometheus_name: "connect_queue_contacts_scheduled"
-          #   labels: {}
+          - aws_name: "CONTACTS_IN_QUEUE"
+            prometheus_name: "connect_queue_contacts_in_queue"
+            labels: {}
+          - aws_name: "OLDEST_CONTACT_AGE"
+            prometheus_name: "connect_queue_oldest_contact_age_seconds"
+            labels: {}
+        # Additional agent state metrics - uncomment as needed
+        # - aws_name: "AGENTS_STAFFED"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "Staffed"
+        # - aws_name: "AGENTS_ON_CONTACT"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "OnContact"
+        # - aws_name: "AGENTS_AFTER_CONTACT_WORK"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "AfterContactWork"
+        # - aws_name: "AGENTS_NON_PRODUCTIVE"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "NonProductive"
+        # - aws_name: "AGENTS_ERROR"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "Error"
+        # - aws_name: "AGENTS_ONLINE"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "Online"
+        # - aws_name: "AGENTS_ON_CALL"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "OnCall"
+        # 
+        # Queue capacity metrics - uncomment if monitoring queue capacity
+        # - aws_name: "SLOTS_AVAILABLE"
+        #   prometheus_name: "connect_queue_slots_available"
+        #   labels: {}
+        # - aws_name: "SLOTS_ACTIVE"
+        #   prometheus_name: "connect_queue_slots_active"
+        #   labels: {}
+        # - aws_name: "CONTACTS_SCHEDULED"
+        #   prometheus_name: "connect_queue_contacts_scheduled"
+        #   labels: {}
         groupings: ["QUEUE", "CHANNEL"]
         filters: []
 
+  # Historical Queue Metrics - Less frequent collection for trend analysis
   generic_historical:
     enabled: true
-    interval: 300
+    interval: 300  # 5 minutes - adequate for historical data
     collectors:
       - name: "historical_queue"
+        # Core historical metrics - enabled by default
         metrics:
           - aws_name: "CONTACTS_HANDLED"
             prometheus_name: "connect_historical_contacts_handled_total"
             labels: {}
-        # Additional available historical metrics (uncomment to enable)
+          - aws_name: "CONTACTS_ABANDONED"
+            prometheus_name: "connect_historical_contacts_abandoned_total"
+            labels: {}
+        # 
+        # Common additional metrics - uncomment as needed:
+        # 
+        # Service quality metrics:
         # - aws_name: "ABANDONMENT_RATE"
         #   prometheus_name: "connect_historical_abandonment_rate"
-        #   labels: {}
-        # - aws_name: "AGENT_ADHERENT_TIME"
-        #   prometheus_name: "connect_historical_agent_adherent_time"
-        #   labels: {}
-        # - aws_name: "AGENT_ANSWER_RATE"
-        #   prometheus_name: "connect_historical_agent_answer_rate"
-        #   labels: {}
-        # - aws_name: "AGENT_NON_ADHERENT_TIME"
-        #   prometheus_name: "connect_historical_agent_non_adherent_time"
-        #   labels: {}
-        # - aws_name: "AGENT_NON_RESPONSE"
-        #   prometheus_name: "connect_historical_agent_non_response"
-        #   labels: {}
-        # - aws_name: "AGENT_NON_RESPONSE_WITHOUT_CUSTOMER_ABANDONS"
-        #   prometheus_name: "connect_historical_agent_non_response_without_customer_abandons"
-        #   labels: {}
-        # - aws_name: "AGENT_OCCUPANCY"
-        #   prometheus_name: "connect_historical_agent_occupancy"
-        #   labels: {}
-        # - aws_name: "AGENT_SCHEDULE_ADHERENCE"
-        #   prometheus_name: "connect_historical_agent_schedule_adherence"
-        #   labels: {}
-        # - aws_name: "AGENT_SCHEDULED_TIME"
-        #   prometheus_name: "connect_historical_agent_scheduled_time"
-        #   labels: {}
-        # - aws_name: "AVG_ABANDON_TIME"
-        #   prometheus_name: "connect_historical_avg_abandon_time"
-        #   labels: {}
-        # - aws_name: "AVG_ACTIVE_TIME"
-        #   prometheus_name: "connect_historical_avg_active_time"
-        #   labels: {}
-        # - aws_name: "AVG_AFTER_CONTACT_WORK_TIME"
-        #   prometheus_name: "connect_historical_avg_after_contact_work_time"
-        #   labels: {}
-        # - aws_name: "AVG_AGENT_CONNECTING_TIME"
-        #   prometheus_name: "connect_historical_avg_agent_connecting_time"
-        #   labels: {}
-        # - aws_name: "AVG_AGENT_PAUSE_TIME"
-        #   prometheus_name: "connect_historical_avg_agent_pause_time"
-        #   labels: {}
-        # - aws_name: "AVG_BOT_CONVERSATION_TIME"
-        #   prometheus_name: "connect_historical_avg_bot_conversation_time"
-        #   labels: {}
-        # - aws_name: "AVG_BOT_CONVERSATION_TURNS"
-        #   prometheus_name: "connect_historical_avg_bot_conversation_turns"
-        #   labels: {}
-        # - aws_name: "AVG_CASE_RELATED_CONTACTS"
-        #   prometheus_name: "connect_historical_avg_case_related_contacts"
-        #   labels: {}
-        # - aws_name: "AVG_CASE_RESOLUTION_TIME"
-        #   prometheus_name: "connect_historical_avg_case_resolution_time"
-        #   labels: {}
-        # - aws_name: "AVG_CONTACT_DURATION"
-        #   prometheus_name: "connect_historical_avg_contact_duration"
-        #   labels: {}
-        # - aws_name: "AVG_CONVERSATION_DURATION"
-        #   prometheus_name: "connect_historical_avg_conversation_duration"
-        #   labels: {}
-        # - aws_name: "AVG_DIALS_PER_MINUTE"
-        #   prometheus_name: "connect_historical_avg_dials_per_minute"
-        #   labels: {}
-        # - aws_name: "AVG_EVALUATION_SCORE"
-        #   prometheus_name: "connect_historical_avg_evaluation_score"
-        #   labels: {}
-        # - aws_name: "AVG_FLOW_TIME"
-        #   prometheus_name: "connect_historical_avg_flow_time"
-        #   labels: {}
-        # - aws_name: "AVG_GREETING_TIME_AGENT"
-        #   prometheus_name: "connect_historical_avg_greeting_time_agent"
-        #   labels: {}
-        # - aws_name: "AVG_HANDLE_TIME"
-        #   prometheus_name: "connect_historical_avg_handle_time"
-        #   labels: {}
-        # - aws_name: "AVG_HOLD_TIME"
-        #   prometheus_name: "connect_historical_avg_hold_time"
-        #   labels: {}
-        # - aws_name: "AVG_HOLD_TIME_ALL_CONTACTS"
-        #   prometheus_name: "connect_historical_avg_hold_time_all_contacts"
-        #   labels: {}
-        # - aws_name: "AVG_HOLDS"
-        #   prometheus_name: "connect_historical_avg_holds"
-        #   labels: {}
-        # - aws_name: "AVG_INTERACTION_AND_HOLD_TIME"
-        #   prometheus_name: "connect_historical_avg_interaction_and_hold_time"
-        #   labels: {}
-        # - aws_name: "AVG_INTERACTION_TIME"
-        #   prometheus_name: "connect_historical_avg_interaction_time"
-        #   labels: {}
-        # - aws_name: "AVG_INTERRUPTIONS_AGENT"
-        #   prometheus_name: "connect_historical_avg_interruptions_agent"
-        #   labels: {}
-        # - aws_name: "AVG_INTERRUPTION_TIME_AGENT"
-        #   prometheus_name: "connect_historical_avg_interruption_time_agent"
-        #   labels: {}
-        # - aws_name: "AVG_NON_TALK_TIME"
-        #   prometheus_name: "connect_historical_avg_non_talk_time"
-        #   labels: {}
-        # - aws_name: "AVG_QUEUE_ANSWER_TIME"
-        #   prometheus_name: "connect_historical_avg_queue_answer_time"
-        #   labels: {}
-        # - aws_name: "AVG_RESOLUTION_TIME"
-        #   prometheus_name: "connect_historical_avg_resolution_time"
-        #   labels: {}
-        # - aws_name: "AVG_TALK_TIME"
-        #   prometheus_name: "connect_historical_avg_talk_time"
-        #   labels: {}
-        # - aws_name: "AVG_TALK_TIME_AGENT"
-        #   prometheus_name: "connect_historical_avg_talk_time_agent"
-        #   labels: {}
-        # - aws_name: "AVG_TALK_TIME_CUSTOMER"
-        #   prometheus_name: "connect_historical_avg_talk_time_customer"
-        #   labels: {}
-        # - aws_name: "AVG_WAIT_TIME_AFTER_CUSTOMER_CONNECTION"
-        #   prometheus_name: "connect_historical_avg_wait_time_after_customer_connection"
-        #   labels: {}
-        # - aws_name: "AVG_WEIGHTED_EVALUATION_SCORE"
-        #   prometheus_name: "connect_historical_avg_weighted_evaluation_score"
-        #   labels: {}
-        # - aws_name: "BOT_CONVERSATIONS_COMPLETED"
-        #   prometheus_name: "connect_historical_bot_conversations_completed"
-        #   labels: {}
-        # - aws_name: "BOT_INTENTS_COMPLETED"
-        #   prometheus_name: "connect_historical_bot_intents_completed"
-        #   labels: {}
-        # - aws_name: "CAMPAIGN_CONTACTS_ABANDONED_AFTER_X"
-        #   prometheus_name: "connect_historical_campaign_contacts_abandoned_after_x"
-        #   labels: {}
-        # - aws_name: "CAMPAIGN_CONTACTS_ABANDONED_AFTER_X_RATE"
-        #   prometheus_name: "connect_historical_campaign_contacts_abandoned_after_x_rate"
-        #   labels: {}
-        # - aws_name: "CAMPAIGN_INTERACTIONS"
-        #   prometheus_name: "connect_historical_campaign_interactions"
-        #   labels: {}
-        # - aws_name: "CAMPAIGN_PROGRESS_RATE"
-        #   prometheus_name: "connect_historical_campaign_progress_rate"
-        #   labels: {}
-        # - aws_name: "CAMPAIGN_SEND_ATTEMPTS"
-        #   prometheus_name: "connect_historical_campaign_send_attempts"
-        #   labels: {}
-        # - aws_name: "CAMPAIGN_SEND_EXCLUSIONS"
-        #   prometheus_name: "connect_historical_campaign_send_exclusions"
-        #   labels: {}
-        # - aws_name: "CASES_CREATED"
-        #   prometheus_name: "connect_historical_cases_created"
-        #   labels: {}
-        # - aws_name: "CONTACTS_CREATED"
-        #   prometheus_name: "connect_historical_contacts_created"
-        #   labels: {}
-        # - aws_name: "CONTACTS_HANDLED_BY_CONNECTED_TO_AGENT"
-        #   prometheus_name: "connect_historical_contacts_handled_by_connected_to_agent"
-        #   labels: {}
-        # - aws_name: "CONTACTS_HOLD_ABANDONS"
-        #   prometheus_name: "connect_historical_contacts_hold_abandons"
-        #   labels: {}
-        # - aws_name: "CONTACTS_ON_HOLD_AGENT_DISCONNECT"
-        #   prometheus_name: "connect_historical_contacts_on_hold_agent_disconnect"
-        #   labels: {}
-        # - aws_name: "CONTACTS_ON_HOLD_CUSTOMER_DISCONNECT"
-        #   prometheus_name: "connect_historical_contacts_on_hold_customer_disconnect"
-        #   labels: {}
-        # - aws_name: "CONTACTS_PUT_ON_HOLD"
-        #   prometheus_name: "connect_historical_contacts_put_on_hold"
-        #   labels: {}
-        # - aws_name: "CONTACTS_TRANSFERRED_OUT_EXTERNAL"
-        #   prometheus_name: "connect_historical_contacts_transferred_out_external"
-        #   labels: {}
-        # - aws_name: "CONTACTS_TRANSFERRED_OUT_INTERNAL"
-        #   prometheus_name: "connect_historical_contacts_transferred_out_internal"
-        #   labels: {}
-        # - aws_name: "CONTACTS_QUEUED"
-        #   prometheus_name: "connect_historical_contacts_queued"
-        #   labels: {}
-        # - aws_name: "CONTACTS_QUEUED_BY_ENQUEUE"
-        #   prometheus_name: "connect_historical_contacts_queued_by_enqueue"
-        #   labels: {}
-        # - aws_name: "CONTACTS_REMOVED_FROM_QUEUE_IN_X"
-        #   prometheus_name: "connect_historical_contacts_removed_from_queue_in_x"
-        #   labels: {}
-        # - aws_name: "CONTACTS_RESOLVED_IN_X"
-        #   prometheus_name: "connect_historical_contacts_resolved_in_x"
-        #   labels: {}
-        # - aws_name: "CONTACTS_TRANSFERRED_OUT"
-        #   prometheus_name: "connect_historical_contacts_transferred_out"
-        #   labels: {}
-        # - aws_name: "CONTACTS_TRANSFERRED_OUT_BY_AGENT"
-        #   prometheus_name: "connect_historical_contacts_transferred_out_by_agent"
-        #   labels: {}
-        # - aws_name: "CONTACTS_TRANSFERRED_OUT_FROM_QUEUE"
-        #   prometheus_name: "connect_historical_contacts_transferred_out_from_queue"
-        #   labels: {}
-        # - aws_name: "CURRENT_CASES"
-        #   prometheus_name: "connect_historical_current_cases"
-        #   labels: {}
-        # - aws_name: "DELIVERY_ATTEMPTS"
-        #   prometheus_name: "connect_historical_delivery_attempts"
-        #   labels: {}
-        # - aws_name: "DELIVERY_ATTEMPT_DISPOSITION_RATE"
-        #   prometheus_name: "connect_historical_delivery_attempt_disposition_rate"
-        #   labels: {}
-        # - aws_name: "EVALUATIONS_PERFORMED"
-        #   prometheus_name: "connect_historical_evaluations_performed"
-        #   labels: {}
-        # - aws_name: "FLOWS_OUTCOME"
-        #   prometheus_name: "connect_historical_flows_outcome"
-        #   labels: {}
-        # - aws_name: "FLOWS_STARTED"
-        #   prometheus_name: "connect_historical_flows_started"
-        #   labels: {}
-        # - aws_name: "HUMAN_ANSWERED_CALLS"
-        #   prometheus_name: "connect_historical_human_answered_calls"
-        #   labels: {}
-        # - aws_name: "MAX_FLOW_TIME"
-        #   prometheus_name: "connect_historical_max_flow_time"
-        #   labels: {}
-        # - aws_name: "MAX_QUEUED_TIME"
-        #   prometheus_name: "connect_historical_max_queued_time"
-        #   labels: {}
-        # - aws_name: "MIN_FLOW_TIME"
-        #   prometheus_name: "connect_historical_min_flow_time"
-        #   labels: {}
-        # - aws_name: "PERCENT_AUTOMATIC_FAILS"
-        #   prometheus_name: "connect_historical_percent_automatic_fails"
-        #   labels: {}
-        # - aws_name: "PERCENT_BOT_CONVERSATIONS_OUTCOME"
-        #   prometheus_name: "connect_historical_percent_bot_conversations_outcome"
-        #   labels: {}
-        # - aws_name: "PERCENT_BOT_INTENTS_OUTCOME"
-        #   prometheus_name: "connect_historical_percent_bot_intents_outcome"
-        #   labels: {}
-        # - aws_name: "PERCENT_CASES_FIRST_CONTACT_RESOLVED"
-        #   prometheus_name: "connect_historical_percent_cases_first_contact_resolved"
-        #   labels: {}
-        # - aws_name: "PERCENT_CONTACTS_STEP_EXPIRED"
-        #   prometheus_name: "connect_historical_percent_contacts_step_expired"
-        #   labels: {}
-        # - aws_name: "PERCENT_CONTACTS_STEP_JOINED"
-        #   prometheus_name: "connect_historical_percent_contacts_step_joined"
-        #   labels: {}
-        # - aws_name: "PERCENT_FLOWS_OUTCOME"
-        #   prometheus_name: "connect_historical_percent_flows_outcome"
-        #   labels: {}
-        # - aws_name: "PERCENT_NON_TALK_TIME"
-        #   prometheus_name: "connect_historical_percent_non_talk_time"
-        #   labels: {}
-        # - aws_name: "PERCENT_TALK_TIME"
-        #   prometheus_name: "connect_historical_percent_talk_time"
-        #   labels: {}
-        # - aws_name: "PERCENT_TALK_TIME_AGENT"
-        #   prometheus_name: "connect_historical_percent_talk_time_agent"
-        #   labels: {}
-        # - aws_name: "PERCENT_TALK_TIME_CUSTOMER"
-        #   prometheus_name: "connect_historical_percent_talk_time_customer"
-        #   labels: {}
-        # - aws_name: "RECIPIENTS_ATTEMPTED"
-        #   prometheus_name: "connect_historical_recipients_attempted"
-        #   labels: {}
-        # - aws_name: "RECIPIENTS_INTERACTED"
-        #   prometheus_name: "connect_historical_recipients_interacted"
-        #   labels: {}
-        # - aws_name: "RECIPIENTS_TARGETED"
-        #   prometheus_name: "connect_historical_recipients_targeted"
-        #   labels: {}
-        # - aws_name: "REOPENED_CASE_ACTIONS"
-        #   prometheus_name: "connect_historical_reopened_case_actions"
-        #   labels: {}
-        # - aws_name: "RESOLVED_CASE_ACTIONS"
-        #   prometheus_name: "connect_historical_resolved_case_actions"
         #   labels: {}
         # - aws_name: "SERVICE_LEVEL"
         #   prometheus_name: "connect_historical_service_level"
         #   labels: {}
-        # - aws_name: "STEP_CONTACTS_QUEUED"
-        #   prometheus_name: "connect_historical_step_contacts_queued"
+        # 
+        # Timing metrics:
+        # - aws_name: "AVG_HANDLE_TIME"
+        #   prometheus_name: "connect_historical_avg_handle_time_seconds"
         #   labels: {}
-        # - aws_name: "SUM_AFTER_CONTACT_WORK_TIME"
-        #   prometheus_name: "connect_historical_sum_after_contact_work_time"
+        # - aws_name: "AVG_AFTER_CONTACT_WORK_TIME"
+        #   prometheus_name: "connect_historical_avg_after_contact_work_time_seconds"
         #   labels: {}
-        # - aws_name: "SUM_CONNECTING_TIME_AGENT"
-        #   prometheus_name: "connect_historical_sum_connecting_time_agent"
+        # - aws_name: "AVG_QUEUE_ANSWER_TIME"
+        #   prometheus_name: "connect_historical_avg_queue_answer_time_seconds"
         #   labels: {}
-        # - aws_name: "CONTACTS_ABANDONED"
-        #   prometheus_name: "connect_historical_contacts_abandoned_total"
+        # 
+        # Agent performance metrics:
+        # - aws_name: "AGENT_OCCUPANCY"
+        #   prometheus_name: "connect_historical_agent_occupancy_rate"
         #   labels: {}
-        # - aws_name: "SUM_CONTACTS_ABANDONED_IN_X"
-        #   prometheus_name: "connect_historical_sum_contacts_abandoned_in_x"
+        # - aws_name: "AGENT_ANSWER_RATE"
+        #   prometheus_name: "connect_historical_agent_answer_rate"
         #   labels: {}
-        # - aws_name: "SUM_CONTACTS_ANSWERED_IN_X"
-        #   prometheus_name: "connect_historical_sum_contacts_answered_in_x"
-        #   labels: {}
-        # - aws_name: "SUM_CONTACT_FLOW_TIME"
-        #   prometheus_name: "connect_historical_sum_contact_flow_time"
-        #   labels: {}
-        # - aws_name: "SUM_CONTACT_TIME_AGENT"
-        #   prometheus_name: "connect_historical_sum_contact_time_agent"
-        #   labels: {}
-        # - aws_name: "SUM_CONTACTS_DISCONNECTED"
-        #   prometheus_name: "connect_historical_sum_contacts_disconnected"
-        #   labels: {}
-        # - aws_name: "SUM_ERROR_STATUS_TIME_AGENT"
-        #   prometheus_name: "connect_historical_sum_error_status_time_agent"
-        #   labels: {}
-        # - aws_name: "SUM_HANDLE_TIME"
-        #   prometheus_name: "connect_historical_sum_handle_time"
-        #   labels: {}
-        # - aws_name: "SUM_HOLD_TIME"
-        #   prometheus_name: "connect_historical_sum_hold_time"
-        #   labels: {}
-        # - aws_name: "SUM_IDLE_TIME_AGENT"
-        #   prometheus_name: "connect_historical_sum_idle_time_agent"
-        #   labels: {}
-        # - aws_name: "SUM_INTERACTION_AND_HOLD_TIME"
-        #   prometheus_name: "connect_historical_sum_interaction_and_hold_time"
-        #   labels: {}
-        # - aws_name: "SUM_INTERACTION_TIME"
-        #   prometheus_name: "connect_historical_sum_interaction_time"
-        #   labels: {}
-        # - aws_name: "SUM_NON_PRODUCTIVE_TIME_AGENT"
-        #   prometheus_name: "connect_historical_sum_non_productive_time_agent"
-        #   labels: {}
-        # - aws_name: "SUM_ONLINE_TIME_AGENT"
-        #   prometheus_name: "connect_historical_sum_online_time_agent"
-        #   labels: {}
-        # - aws_name: "SUM_RETRY_CALLBACK_ATTEMPTS"
-        #   prometheus_name: "connect_historical_sum_retry_callback_attempts"
-        #   labels: {}
+        # 
+        # NOTE: AWS Connect supports 100+ historical metrics. 
+        # Only enable metrics you actively monitor to:
+        # - Reduce AWS API costs
+        # - Improve collection performance  
+        # - Simplify configuration management
+        # 
+        # For a complete list of available metrics, see:
+        # https://docs.aws.amazon.com/connect/latest/adminguide/historical-metrics-definitions.html
         groupings: ["QUEUE", "CHANNEL"]
         filters: []
 
