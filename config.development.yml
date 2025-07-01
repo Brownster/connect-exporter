@@ -96,9 +96,9 @@ collectors:
           - aws_name: "CONTACTS_HANDLED"
             prometheus_name: "connect_historical_contacts_handled_total"
             labels: {}
-  #        - aws_name: "CONTACTS_ABANDONED"
-  #          prometheus_name: "connect_historical_contacts_abandoned_total"
-  #          labels: {}
+          - aws_name: "CONTACTS_ABANDONED"
+            prometheus_name: "connect_historical_contacts_abandoned_total"
+            labels: {}
           - aws_name: "AVG_HANDLE_TIME"
             prometheus_name: "connect_historical_avg_handle_time_seconds"
             labels: {}
@@ -106,6 +106,31 @@ collectors:
         filters:
           - key: "CHANNEL"
             values: ["VOICE", "CHAT", "TASK"]
+
+      # Separate collectors for inbound/outbound contacts
+      - name: "historical_queue_inbound"
+        metrics:
+          - aws_name: "CONTACTS_HANDLED"
+            prometheus_name: "connect_historical_contacts_handled_inbound_total"
+            labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters:
+          - key: "CHANNEL"
+            values: ["VOICE", "CHAT", "TASK"]
+          - key: "INITIATION_METHOD"
+            values: ["INBOUND"]
+
+      - name: "historical_queue_outbound"
+        metrics:
+          - aws_name: "CONTACTS_HANDLED"
+            prometheus_name: "connect_historical_contacts_handled_outbound_total"
+            labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters:
+          - key: "CHANNEL"
+            values: ["VOICE", "CHAT", "TASK"]
+          - key: "INITIATION_METHOD"
+            values: ["OUTBOUND"]
 
 # Global settings
 global:

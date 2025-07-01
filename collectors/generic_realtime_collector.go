@@ -274,7 +274,7 @@ func (s *GenericRealtimeScraper) processQueueBatch(conn *connectors.AWSConnectCo
 			if state, hasState := def.Labels["state"]; hasState {
 				labels = append(labels, state)
 			} else {
-				labels = append(labels, "")
+				labels = append(labels, "all")
 			}
 
 			// Create the metric

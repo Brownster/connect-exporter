@@ -569,7 +569,7 @@ class MetricGenerator {
 }
 
 // Helper for historical metrics (GetMetricDataV2)
-function generateMetricsV2(queue, metricDefs) {
+function generateMetricsV2(queue, metricDefs, direction = null) {
   const baseValues = {};
   for (const def of metricDefs) {
     const name = def.Name;
@@ -589,6 +589,16 @@ function generateMetricsV2(queue, metricDefs) {
     }
 
     if (metricValue) {
+      // Apply direction-based adjustments for contact metrics
+      if (direction && name === 'CONTACTS_HANDLED') {
+        // Split contacts handled roughly 70% inbound, 30% outbound for realistic simulation
+        if (direction === 'INBOUND') {
+          metricValue = { ...metricValue, value: Math.floor(metricValue.value * 0.7) };
+        } else if (direction === 'OUTBOUND') {
+          metricValue = { ...metricValue, value: Math.floor(metricValue.value * 0.3) };
+        }
+      }
+
       const metric = { Name: name, Unit: metricValue.unit };
       if (def.MetricFilters) {
         metric.MetricFilters = def.MetricFilters;
@@ -705,9 +715,24 @@ function validateFiltersV2(filters) {
         console.log('✅ Channel validation passed');
     }
 
-    // 5. Final result
+    let directionsValid = true;
+
+    // 5. Validate INITIATION_METHOD filter if present  
+    const initiationFilter = filters.find(f => f.FilterKey === "INITIATION_METHOD");
+    if (initiationFilter) {
+        console.log('\n📞 Validating Initiation Method filter:', initiationFilter.FilterValues);
+        const validInitiationMethods = ["INBOUND", "OUTBOUND"];
+        directionsValid = initiationFilter.FilterValues.every(method => validInitiationMethods.includes(method));
+        if (!directionsValid) {
+            console.log('❌ Invalid initiation methods. Valid methods are:', validInitiationMethods);
+            return false;
+        }
+        console.log('✅ Initiation Method validation passed');
+    }
+
+    // 6. Final result
     console.log('\n=== FilterV2 Validation Result ===');
-    const result = validQueues && channelsValid;
+    const result = validQueues && channelsValid && directionsValid;
     console.log(result ? '✅ All validations passed' : '❌ Validation failed');
 
     return result;
@@ -1180,6 +1205,10 @@ app.all('/{*path}', (req, res, next) => {
             const channelFilter = body.Filters.find(f => f.FilterKey === "CHANNEL");
             const channelFilters = channelFilter ? channelFilter.FilterValues : [];
 
+            // Extract initiation method filters from FilterV2 structure
+            const initiationFilter = body.Filters.find(f => f.FilterKey === "INITIATION_METHOD");
+            const initiationFilters = initiationFilter ? initiationFilter.FilterValues : [];
+
             queueIds.forEach(queueId => {
                 const queue = Object.values(MOCK_QUEUES).find(q => q.Id === queueId);
                 if (queue) {
@@ -1188,9 +1217,13 @@ app.all('/{*path}', (req, res, next) => {
                         return;
                     }
                     console.log(`Generating historical metrics for queue: ${queue.Name} (${queue.Id})`);
+                    
+                    // Generate metrics with initiation method info if present
+                    const direction = initiationFilters.length > 0 ? initiationFilters[0] : null;
                     const metrics = generateMetricsV2(
                         queue,
-                        body.Metrics
+                        body.Metrics,
+                        direction
                     );
                     console.log('Generated metrics:', JSON.stringify(metrics, null, 2));
                     allMetricResults.push(...metrics);

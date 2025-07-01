@@ -285,7 +285,7 @@ func (s *GenericHistoricalScraper) processQueueBatch(conn *connectors.AWSConnect
 			if direction, hasDirection := def.Labels["direction"]; hasDirection {
 				labels = append(labels, direction)
 			} else {
-				labels = append(labels, "")
+				labels = append(labels, "all")
 			}
 
 			// Create the metric

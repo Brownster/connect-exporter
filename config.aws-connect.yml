@@ -102,7 +102,18 @@ collectors:
         metrics:
           - aws_name: "CONTACTS_HANDLED"
             prometheus_name: "connect_historical_contacts_handled_total"
-            labels: {}
+            labels:
+              direction: "inbound"
+            metric_filters:
+              - key: "INITIATION_METHOD"
+                values: ["INBOUND"]
+          - aws_name: "CONTACTS_HANDLED"
+            prometheus_name: "connect_historical_contacts_handled_total"
+            labels:
+              direction: "outbound"
+            metric_filters:
+              - key: "INITIATION_METHOD"
+                values: ["OUTBOUND"]
           - aws_name: "CONTACTS_ABANDONED"
             prometheus_name: "connect_historical_contacts_abandoned_total"
             labels: {}
