@@ -90,8 +90,8 @@ collectors:
     enabled: true
     interval: 300  # 5 minutes for historical data
     collectors:
-      # Basic historical metrics for development testing
-      - name: "historical_queue"
+      # Legacy-compatible metrics for Grafana dashboards
+      - name: "historical_calls"
         metrics:
           - aws_name: "CONTACTS_HANDLED"
             prometheus_name: "connect_historical_contacts_handled_total"
@@ -99,6 +99,14 @@ collectors:
           - aws_name: "CONTACTS_ABANDONED"
             prometheus_name: "connect_historical_contacts_abandoned_total"
             labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters:
+          - key: "CHANNEL"
+            values: ["VOICE", "CHAT", "TASK"]
+
+      # Average Handle Time collector
+      - name: "historical_aht"
+        metrics:
           - aws_name: "AVG_HANDLE_TIME"
             prometheus_name: "connect_historical_avg_handle_time_seconds"
             labels: {}

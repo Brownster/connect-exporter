@@ -17,10 +17,10 @@ log_level: info
 # AWS Configuration
 aws:
   # AWS region where your Connect instance is located
-  region: "us-east-1"
+  region: "eu-west-2"
   # AWS Connect Instance ARN - REQUIRED
   # Format: arn:aws:connect:region:account-id:instance/instance-id
-  instance_arn: "arn:aws:connect:us-east-1:123456789012:instance/your-instance-id"
+  instance_arn: "arn:aws:connect:eu-west-2:851725229028:instance/2e7403e8-86b6-4681-8e9e-aca78b607eb2"
 
 # Collector Configuration
 # Collector Configuration
@@ -48,6 +48,7 @@ collectors:
             labels: {}
           - aws_name: "OLDEST_CONTACT_AGE"
             prometheus_name: "connect_queue_oldest_contact_age_seconds"
+            unit: "SECONDS"
             labels: {}
         # Additional agent state metrics - uncomment as needed
         # - aws_name: "AGENTS_STAFFED"

@@ -133,7 +133,7 @@ func (s *GenericHistoricalScraper) processHistoricalCollectorConfig(conn *connec
 
 	// Convert metric definitions to AWS types
 	metricsToFetch := make([]types.MetricV2, len(col.Metrics))
-	metricMap := make(map[string]connectors.HistoricalMetricDefinition)
+	metricMap := make(map[string]connectors.MetricDefinition)
 	for i, m := range col.Metrics {
 		metricsToFetch[i] = types.MetricV2{Name: aws.String(m.AWSName)}
 		// Add MetricFilters if specified
@@ -179,7 +179,7 @@ func (s *GenericHistoricalScraper) processHistoricalCollectorConfig(conn *connec
 }
 
 // processQueueBatch handles the metrics collection for a single batch of queues.
-func (s *GenericHistoricalScraper) processQueueBatch(conn *connectors.AWSConnectConnector, batchQueues []connectors.Queue, metricsToFetch []types.MetricV2, metricMap map[string]connectors.HistoricalMetricDefinition, col connectors.GenericHistoricalMetricConfig, cfg connectors.AWSConnectConfig, startTime, endTime time.Time) ([]maas.Metric, error) {
+func (s *GenericHistoricalScraper) processQueueBatch(conn *connectors.AWSConnectConnector, batchQueues []connectors.Queue, metricsToFetch []types.MetricV2, metricMap map[string]connectors.MetricDefinition, col connectors.GenericHistoricalMetricConfig, cfg connectors.AWSConnectConfig, startTime, endTime time.Time) ([]maas.Metric, error) {
 	metrics := make([]maas.Metric, 0)
 	batchIDs := make([]string, len(batchQueues))
 	queueMap := make(map[string]connectors.Queue)
@@ -264,7 +264,8 @@ func (s *GenericHistoricalScraper) processQueueBatch(conn *connectors.AWSConnect
 			}
 
 			awsMetricName := aws.ToString(md.Metric.Name)
-			def, exists := metricMap[awsMetricName]
+			// Find the specific metric definition that matches the filters
+			def, exists := s.findMetricDefinition(awsMetricName, md.Metric.MetricFilters, col.Metrics)
 			if !exists {
 				logrus.WithField("metric_name", awsMetricName).Debug("Metric not in configuration, skipping")
 				continue
@@ -306,4 +307,18 @@ func (s *GenericHistoricalScraper) processQueueBatch(conn *connectors.AWSConnect
 	}
 
 	return metrics, nil
+}
+
+func (s *GenericHistoricalScraper) findMetricDefinition(awsMetricName string, filters []types.MetricFilterV2, definitions []connectors.MetricDefinition) (connectors.MetricDefinition, bool) {
+	for _, def := range definitions {
+		if def.AWSName == awsMetricName {
+			if len(def.MetricFilters) == 0 && len(filters) == 0 {
+				return def, true
+			}
+			if len(def.MetricFilters) > 0 && len(filters) > 0 && def.MetricFilters[0].Key == *filters[0].MetricFilterKey && def.MetricFilters[0].Values[0] == filters[0].MetricFilterValues[0] {
+				return def, true
+			}
+		}
+	}
+	return connectors.MetricDefinition{}, false
 }

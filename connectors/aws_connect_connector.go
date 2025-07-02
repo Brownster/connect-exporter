@@ -57,7 +57,7 @@ func NewConfigurableAWSConnectConnector(app *kingpin.Application) (*AWSConnectCo
 
 	// Define CLI flags for AWS Connect
 	connector.instanceARNFlag = app.Flag("instance-arn", "AWS Connect Instance ARN").String()
-	connector.regionFlag = app.Flag("region", "AWS region for AWS Connect").Default("us-east-1").String()
+	connector.regionFlag = app.Flag("region", "AWS region for AWS Connect").String()
 	connector.configFileFlag = app.Flag("config.file", "Configuration file path").Default("config.yml").String()
 
 	return connector, nil

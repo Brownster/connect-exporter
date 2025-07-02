@@ -133,9 +133,13 @@ func (s *GenericRealtimeScraper) processCollectorConfig(conn *connectors.AWSConn
 	currentMetrics := make([]types.CurrentMetric, len(col.Metrics))
 	metricMap := make(map[string]connectors.MetricDefinition)
 	for i, m := range col.Metrics {
+		unit := types.UnitCount // Default to COUNT
+		if m.Unit != "" {
+			unit = types.Unit(m.Unit)
+		}
 		currentMetrics[i] = types.CurrentMetric{
 			Name: types.CurrentMetricName(m.AWSName),
-			Unit: types.UnitCount, // Default to count, could be configurable
+			Unit: unit,
 		}
 		metricMap[m.AWSName] = m
 	}

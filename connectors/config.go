@@ -110,9 +110,11 @@ type FilterConfig struct {
 // MetricDefinition maps a specific AWS Connect metric to a Prometheus metric,
 // including any additional labels that should be applied.
 type MetricDefinition struct {
-	AWSName        string            `yaml:"aws_name"`
-	PrometheusName string            `yaml:"prometheus_name"`
-	Labels         map[string]string `yaml:"labels"`
+	AWSName         string            `yaml:"aws_name"`
+	PrometheusName  string            `yaml:"prometheus_name"`
+	Labels          map[string]string `yaml:"labels"`
+	MetricFilters   []MetricFilter    `yaml:"metric_filters"`
+	Unit            string            `yaml:"unit,omitempty"`
 }
 
 // GenericMetricConfig defines a flexible, user-configurable metric query.
@@ -132,15 +134,6 @@ type GenericRealtimeConfig struct {
 	Collectors []GenericMetricConfig `yaml:"collectors"`
 }
 
-// HistoricalMetricDefinition extends MetricDefinition to include metric-specific
-// filters for historical data queries.
-type HistoricalMetricDefinition struct {
-	AWSName        string            `yaml:"aws_name"`
-	PrometheusName string            `yaml:"prometheus_name"`
-	Labels         map[string]string `yaml:"labels"`
-	MetricFilters  []MetricFilter    `yaml:"metric_filters"`
-}
-
 // MetricFilter defines AWS Connect metric filters, such as filtering by call
 // direction (INBOUND/OUTBOUND).
 type MetricFilter struct {
@@ -150,10 +143,10 @@ type MetricFilter struct {
 
 // GenericHistoricalMetricConfig defines a user-configurable historical metric query.
 type GenericHistoricalMetricConfig struct {
-	Name      string                       `yaml:"name"`
-	Metrics   []HistoricalMetricDefinition `yaml:"metrics"`
-	Groupings []string                     `yaml:"groupings"`
-	Filters   []FilterConfig               `yaml:"filters"`
+	Name      string             `yaml:"name"`
+	Metrics   []MetricDefinition `yaml:"metrics"`
+	Groupings []string           `yaml:"groupings"`
+	Filters   []FilterConfig     `yaml:"filters"`
 }
 
 // GenericHistoricalConfig configures the generic_historical collector, which

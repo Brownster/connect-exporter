@@ -638,7 +638,8 @@ function validateMetrics(metrics) {
         console.log('Checking metric:', JSON.stringify(metric));
         const isValid = metric && 
             typeof metric.Name === 'string' && 
-            VALID_METRICS[metric.Name] !== undefined;
+            VALID_METRICS[metric.Name] !== undefined &&
+            (!metric.Unit || metric.Unit === VALID_METRICS[metric.Name]);
         console.log('Metric validation result:', isValid);
         return isValid;
     });
