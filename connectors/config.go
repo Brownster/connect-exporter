@@ -107,6 +107,13 @@ type FilterConfig struct {
 	Values []string `yaml:"values"`
 }
 
+// MetricThreshold defines threshold parameters for AWS Connect metrics that require them
+type MetricThreshold struct {
+	Name       string  `yaml:"name"`        // Unique identifier for this threshold
+	Comparison string  `yaml:"comparison"`  // "LT", "LTE", or "GT"
+	Value      float64 `yaml:"value"`       // Threshold value (1-604800 seconds for time-based thresholds)
+}
+
 // MetricDefinition maps a specific AWS Connect metric to a Prometheus metric,
 // including any additional labels that should be applied.
 type MetricDefinition struct {
@@ -115,6 +122,7 @@ type MetricDefinition struct {
 	Labels          map[string]string `yaml:"labels"`
 	MetricFilters   []MetricFilter    `yaml:"metric_filters"`
 	Unit            string            `yaml:"unit,omitempty"`
+	ThresholdRef    string            `yaml:"threshold_ref,omitempty"` // Reference to a named threshold
 }
 
 // GenericMetricConfig defines a flexible, user-configurable metric query.
@@ -143,10 +151,11 @@ type MetricFilter struct {
 
 // GenericHistoricalMetricConfig defines a user-configurable historical metric query.
 type GenericHistoricalMetricConfig struct {
-	Name      string             `yaml:"name"`
-	Metrics   []MetricDefinition `yaml:"metrics"`
-	Groupings []string           `yaml:"groupings"`
-	Filters   []FilterConfig     `yaml:"filters"`
+	Name       string             `yaml:"name"`
+	Metrics    []MetricDefinition `yaml:"metrics"`
+	Groupings  []string           `yaml:"groupings"`
+	Filters    []FilterConfig     `yaml:"filters"`
+	Thresholds []MetricThreshold  `yaml:"thresholds,omitempty"` // Optional threshold definitions
 }
 
 // GenericHistoricalConfig configures the generic_historical collector, which

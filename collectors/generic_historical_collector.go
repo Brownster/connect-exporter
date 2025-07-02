@@ -131,11 +131,18 @@ func (s *GenericHistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, erro
 func (s *GenericHistoricalScraper) processHistoricalCollectorConfig(conn *connectors.AWSConnectConnector, queues []connectors.Queue, col connectors.GenericHistoricalMetricConfig, cfg connectors.AWSConnectConfig) ([]maas.Metric, error) {
 	allMetrics := make([]maas.Metric, 0)
 
+	// Build threshold lookup map
+	thresholdMap := make(map[string]connectors.MetricThreshold)
+	for _, threshold := range col.Thresholds {
+		thresholdMap[threshold.Name] = threshold
+	}
+
 	// Convert metric definitions to AWS types
 	metricsToFetch := make([]types.MetricV2, len(col.Metrics))
 	metricMap := make(map[string]connectors.MetricDefinition)
 	for i, m := range col.Metrics {
 		metricsToFetch[i] = types.MetricV2{Name: aws.String(m.AWSName)}
+		
 		// Add MetricFilters if specified
 		if len(m.MetricFilters) > 0 {
 			filters := make([]types.MetricFilterV2, len(m.MetricFilters))
@@ -147,6 +154,19 @@ func (s *GenericHistoricalScraper) processHistoricalCollectorConfig(conn *connec
 			}
 			metricsToFetch[i].MetricFilters = filters
 		}
+		
+		// Add Threshold if referenced
+		if m.ThresholdRef != "" {
+			if threshold, exists := thresholdMap[m.ThresholdRef]; exists {
+				metricsToFetch[i].Threshold = []types.ThresholdV2{
+					{
+						Comparison:     aws.String(threshold.Comparison),
+						ThresholdValue: aws.Float64(threshold.Value),
+					},
+				}
+			}
+		}
+		
 		metricMap[m.AWSName] = m
 	}
 

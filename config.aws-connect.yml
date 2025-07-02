@@ -50,7 +50,7 @@ collectors:
             prometheus_name: "connect_queue_oldest_contact_age_seconds"
             unit: "SECONDS"
             labels: {}
-        # Additional agent state metrics - uncomment as needed
+        # Additional agent state metrics - skip for now
         # - aws_name: "AGENTS_STAFFED"
         #   prometheus_name: "connect_queue_agents"
         #   labels:
@@ -80,7 +80,7 @@ collectors:
         #   labels:
         #     state: "OnCall"
         # 
-        # Queue capacity metrics - uncomment if monitoring queue capacity
+        # Queue capacity metrics - skip for now
         # - aws_name: "SLOTS_AVAILABLE"
         #   prometheus_name: "connect_queue_slots_available"
         #   labels: {}
@@ -121,13 +121,14 @@ collectors:
         # 
         # Common additional metrics - uncomment as needed:
         # 
-        # Service quality metrics:
-        # - aws_name: "ABANDONMENT_RATE"
-        #   prometheus_name: "connect_historical_abandonment_rate"
-        #   labels: {}
+        # Service quality metrics (with threshold examples):
+        - aws_name: "ABANDONMENT_RATE"
+          prometheus_name: "connect_historical_abandonment_rate"
+          labels: {}
         # - aws_name: "SERVICE_LEVEL"
         #   prometheus_name: "connect_historical_service_level"
         #   labels: {}
+        #   threshold_ref: "service_level_20s"  # Reference to threshold defined below
         # 
         # Timing metrics:
         # - aws_name: "AVG_HANDLE_TIME"
@@ -158,6 +159,14 @@ collectors:
         # https://docs.aws.amazon.com/connect/latest/adminguide/historical-metrics-definitions.html
         groupings: ["QUEUE", "CHANNEL"]
         filters: []
+        # Optional threshold definitions for metrics that require them
+        thresholds:
+          - name: "service_level_20s"
+            comparison: "LT"  # Less Than
+            value: 20.0       # 20 seconds
+          # - name: "service_level_30s"
+          #   comparison: "LT"
+          #   value: 30.0       # 30 seconds
 
 # Global settings
 global:

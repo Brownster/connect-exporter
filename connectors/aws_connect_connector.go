@@ -211,9 +211,11 @@ func (c *AWSConnectConnector) configure() error {
 		cfg.AWS.Region = *c.regionFlag
 	}
 
-	// Set defaults if not configured
+	// Set region from environment if not configured
 	if cfg.AWS.Region == "" {
-		cfg.AWS.Region = "us-east-1"
+		if region := os.Getenv("AWS_REGION"); region != "" {
+			cfg.AWS.Region = region
+		}
 	}
 	if cfg.Collectors.RealtimeQueue.Interval <= 0 {
 		cfg.Collectors.RealtimeQueue.Interval = 60 // Default 1 minute
