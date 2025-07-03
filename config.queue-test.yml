@@ -1,0 +1,68 @@
+# Queue Correlation Test Configuration
+# Test with 29 queues and pagination to reproduce the issue
+
+web:
+  listen_address: 127.0.0.1
+  listen_port: 9092
+log_level: debug
+
+aws:
+  region: "eu-west-2"
+  instance_arn: "arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772"
+
+labels:
+  fqdn: "mock-test.example.com"
+  location: "Test Lab"
+  country: "UK"
+  ip-address: "127.0.0.1"
+
+collectors:
+  # Agent status - TEST FIXED queue correlation with queue_name
+  agent_realtime_status:
+    enabled: true
+    interval: 60
+
+  # Generic realtime - re-enabled with SLOTS_AVAILABLE
+  generic_realtime:
+    enabled: true
+    interval: 30
+    collectors:
+      - name: "queue_correlation_test"
+        metrics:
+          - aws_name: "SLOTS_AVAILABLE"
+            prometheus_name: "connect_queue_slots_available"
+            labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
+  
+  # Generic historical - re-enabled 
+  generic_historical:
+    enabled: true
+    interval: 300
+    collectors:
+      - name: "queue_basic_historical"
+        metrics:
+          - aws_name: "CONTACTS_QUEUED"
+            prometheus_name: "connect_contacts_queued_total"
+            labels: {}
+          - aws_name: "CONTACTS_HANDLED"
+            prometheus_name: "connect_contacts_handled_total" 
+            labels: {}
+          - aws_name: "CONTACTS_ABANDONED"
+            prometheus_name: "connect_contacts_abandoned_total"
+            labels: {}
+        groupings: ["QUEUE"]
+        filters: []
+        start_time: "PT24H"
+        end_time: "PT0H"
+        period: "PT1H"
+
+global:
+  timeout: 30s
+  labels:
+    environment: "development"
+    service: "aws-connect"
+  retry:
+    max_attempts: 3
+    backoff_duration: 1s
+    max_backoff_duration: 5s

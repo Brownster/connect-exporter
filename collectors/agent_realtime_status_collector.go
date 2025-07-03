@@ -34,7 +34,7 @@ func NewAgentRealtimeStatusCollector(app *kingpin.Application, config connectors
 			maas.WithFrequency(interval),
 			maas.WithTimeout(timeout),
 		)),
-		maas.WithDescription(app, "connect_agent_status_state", "Realtime status for each agent", []string{"agent_id", "username", "routing_profile_id", "routing_profile_name", "queue_id", "queue_name", "status_id", "status_name", "status_type", "region"}),
+		maas.WithDescription(app, "connect_agent_status_state", "Realtime status for each agent", []string{"agent_id", "username", "first_name", "last_name", "routing_profile_id", "routing_profile_name", "queue_id", "queue_name", "status_id", "status_name", "status_type", "region"}),
 	)
 }
 
@@ -102,8 +102,12 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 			agentID = aws.ToString(user.User.Id)
 		}
 		username := ""
+		firstName := ""
+		lastName := ""
 		if agent, exists := agentMap[agentID]; exists {
 			username = agent.Username
+			firstName = agent.FirstName
+			lastName = agent.LastName
 		}
 		rpID := ""
 		rpName := ""
@@ -147,7 +151,7 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 		}
 
 		for _, queue := range agentQueues {
-			labels := []string{agentID, username, rpID, rpName, queue.ID, queue.Name, statusID, statusName, statusType, cfg.AWS.Region}
+			labels := []string{agentID, username, firstName, lastName, rpID, rpName, queue.ID, queue.Name, statusID, statusName, statusType, cfg.AWS.Region}
 			perAgent = append(perAgent, maas.NewMetric("connect_agent_status_state", prometheus.GaugeValue, 1, labels))
 		}
 	}

@@ -19,15 +19,18 @@ import (
 
 // Agent represents essential metadata about an AWS Connect agent.
 type Agent struct {
-	ID       string
-	Username string
-	Arn      string
+	ID        string
+	Username  string
+	Arn       string
+	FirstName string
+	LastName  string
 }
 
 // AgentLister defines the interface for listing agents. It is implemented by
 // AWSConnectConnector and allows the AgentManager to be tested independently.
 type AgentLister interface {
 	ListUsers(ctx context.Context, input *connect.ListUsersInput) (*connect.ListUsersOutput, error)
+	DescribeUser(ctx context.Context, input *connect.DescribeUserInput) (*connect.DescribeUserOutput, error)
 	GetInstanceID() string
 }
 
@@ -100,6 +103,29 @@ func (m *AgentManager) Refresh() {
 			if u.Username != nil {
 				agent.Username = aws.ToString(u.Username)
 			}
+
+			// Fetch detailed user information including first and last name
+			userID := aws.ToString(u.Id)
+			describeInput := &connect.DescribeUserInput{
+				InstanceId: &instanceID,
+				UserId:     &userID,
+			}
+			
+			userDetails, err := m.lister.DescribeUser(context.Background(), describeInput)
+			if err != nil {
+				logrus.WithError(err).WithField("user_id", userID).Debug("failed to describe user, continuing without first/last name")
+				// Continue without first/last name if DescribeUser fails
+			} else if userDetails.User != nil {
+				if userDetails.User.IdentityInfo != nil {
+					if userDetails.User.IdentityInfo.FirstName != nil {
+						agent.FirstName = aws.ToString(userDetails.User.IdentityInfo.FirstName)
+					}
+					if userDetails.User.IdentityInfo.LastName != nil {
+						agent.LastName = aws.ToString(userDetails.User.IdentityInfo.LastName)
+					}
+				}
+			}
+			
 			agents = append(agents, agent)
 		}
 	}
@@ -108,7 +134,7 @@ func (m *AgentManager) Refresh() {
 	m.agents = agents
 	m.mu.Unlock()
 
-	logrus.WithField("agent_count", len(agents)).Debug("Refreshed agent list")
+	logrus.WithField("agent_count", len(agents)).Debug("Refreshed agent list with detailed information")
 }
 
 // GetAgents returns a thread-safe copy of the current cached agent list.

@@ -219,3 +219,18 @@ func (c *AWSConnectConnector) ListRoutingProfiles(ctx context.Context, input *co
 
 	return output, nil
 }
+
+// DescribeUser retrieves detailed information about a specific user/agent.
+func (c *AWSConnectConnector) DescribeUser(ctx context.Context, input *connect.DescribeUserInput) (*connect.DescribeUserOutput, error) {
+	output, err := c.client.DescribeUser(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("error describing user: %w", err)
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"user_id":      aws.ToString(input.UserId),
+		"instance_arn": c.instanceARN,
+	}).Debug("Successfully described user")
+
+	return output, nil
+}

@@ -751,6 +751,8 @@ const MOCK_USERS = [
   {
     Id: '6aed748d-3a99-410c-9e3a-afe3fda0af82',
     Username: 'alice.smith',
+    FirstName: 'Alice',
+    LastName: 'Smith',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/6aed748d-3a99-410c-9e3a-afe3fda0af82`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-sales'].Arn,
@@ -764,6 +766,8 @@ const MOCK_USERS = [
   {
     Id: '762903b8-0d23-4076-8b5f-8d8f633161fe',
     Username: 'bob.jones',
+    FirstName: 'Bob',
+    LastName: 'Jones',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/762903b8-0d23-4076-8b5f-8d8f633161fe`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-sales'].Arn,
@@ -817,6 +821,8 @@ const MOCK_USERS = [
   {
     Id: '15d897b4-ce68-4cb8-aa5b-4e34baeca3dc',
     Username: 'frank.taylor',
+    FirstName: 'Frank',
+    LastName: 'Taylor',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/15d897b4-ce68-4cb8-aa5b-4e34baeca3dc`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-support'].Arn,
@@ -830,6 +836,8 @@ const MOCK_USERS = [
   {
     Id: '55a65983-30c8-4492-bb07-708a9c30d729',
     Username: 'grace.anderson',
+    FirstName: 'Grace',
+    LastName: 'Anderson',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent/55a65983-30c8-4492-bb07-708a9c30d729`,
     RoutingProfile: {
       Arn: ROUTING_PROFILES['rp-support'].Arn,
@@ -1869,6 +1877,75 @@ app.all('/{*path}', (req, res, next) => {
             AgentStatusSummaryList: items,
             NextToken: newNextToken
         });
+    }
+    else if (action === 'DescribeUser' || req.path.startsWith('/describe-user/')) {
+        console.log('\n=== Processing Describe User Request ===');
+
+        let instanceId, userId;
+        if (req.path.startsWith('/describe-user/')) {
+            const parts = req.path.split('/describe-user/')[1]?.split('/') || [];
+            instanceId = parts[0];
+            userId = parts[1];
+            console.log('📍 Extracted instanceId from path:', instanceId);
+            console.log('📍 Extracted userId from path:', userId);
+        } else {
+            instanceId = req.body && req.body.InstanceId;
+            userId = req.body && req.body.UserId;
+            console.log('📍 Using instanceId from body:', instanceId);
+            console.log('📍 Using userId from body:', userId);
+        }
+
+        if (!instanceId || instanceId !== INSTANCE_ID) {
+            console.log('❌ Invalid instanceId:', instanceId);
+            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+        }
+
+        if (!userId) {
+            console.log('❌ Missing userId parameter');
+            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
+        }
+
+        const error = shouldError();
+        if (error) {
+            console.log('Random error triggered:', error);
+            return res.status(500).json(error);
+        }
+
+        // Find user in MOCK_USERS
+        const user = MOCK_USERS.find(u => u.Id === userId);
+        if (!user) {
+            console.log('❌ User not found:', userId);
+            return res.status(404).json({
+                __type: 'ResourceNotFoundException',
+                message: `User ${userId} does not exist.`
+            });
+        }
+
+        // Return detailed user information in AWS DescribeUser format
+        const response = {
+            User: {
+                Id: user.Id,
+                Arn: user.Arn,
+                Username: user.Username,
+                IdentityInfo: {
+                    FirstName: user.FirstName || '',
+                    LastName: user.LastName || ''
+                },
+                PhoneConfig: {
+                    PhoneType: 'SOFT_PHONE',
+                    AutoAccept: false,
+                    AfterContactWorkTimeLimit: 300
+                },
+                DirectoryUserId: user.Id,
+                SecurityProfileIds: ['security-profile-agent'],
+                RoutingProfileId: user.RoutingProfile?.Id || '',
+                HierarchyGroupId: null,
+                Tags: {}
+            }
+        };
+
+        console.log('✅ Successfully described user:', userId);
+        return res.json(response);
     }
     
     // If not an AWS SDK request, continue to other routes
