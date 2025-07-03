@@ -11,8 +11,8 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
-// Parse JSON bodies for POST requests
-app.use(bodyParser.json());
+// Parse JSON bodies for POST requests - Use Express built-in parser for Express 5.x
+app.use(express.json());
 
 // Add CORS headers for local testing
 app.use((req, res, next) => {
@@ -1293,8 +1293,8 @@ function paginateResults(items, nextToken) {
  ****************************************************/
 // Express 5.x no longer supports using `*` as a catch-all route
 // and will throw a `Missing parameter name` error via path-to-regexp.
-// Use a named wildcard parameter instead which also matches the root path.
-app.all('/{*path}', (req, res, next) => {
+// Use POST route for root path to handle AWS SDK requests
+app.post('/', (req, res, next) => {
     console.log('\n=== Incoming Request ===');
     console.log('Method:', req.method);
     console.log('Path:', req.path);
@@ -1880,6 +1880,9 @@ app.all('/{*path}', (req, res, next) => {
     }
     else if (action === 'DescribeUser' || req.path.startsWith('/describe-user/')) {
         console.log('\n=== Processing Describe User Request ===');
+        console.log('🔍 DEBUG - req.body:', req.body);
+        console.log('🔍 DEBUG - req.query:', req.query);
+        console.log('🔍 DEBUG - action:', action);
 
         let instanceId, userId;
         if (req.path.startsWith('/describe-user/')) {
@@ -1889,10 +1892,10 @@ app.all('/{*path}', (req, res, next) => {
             console.log('📍 Extracted instanceId from path:', instanceId);
             console.log('📍 Extracted userId from path:', userId);
         } else {
-            instanceId = req.body && req.body.InstanceId;
-            userId = req.body && req.body.UserId;
-            console.log('📍 Using instanceId from body:', instanceId);
-            console.log('📍 Using userId from body:', userId);
+            instanceId = req.body && req.body.InstanceId || req.query.InstanceId;
+            userId = req.body && req.body.UserId || req.query.UserId;
+            console.log('📍 Using instanceId from body/query:', instanceId);
+            console.log('📍 Using userId from body/query:', userId);
         }
 
         if (!instanceId || instanceId !== INSTANCE_ID) {
