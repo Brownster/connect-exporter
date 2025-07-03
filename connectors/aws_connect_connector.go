@@ -46,6 +46,8 @@ type AWSConnectConnector struct {
 	agentManager *AgentManager
 	// Routing profile -> queues mapping with caching
 	rpQueueManager *RoutingProfileQueueManager
+	// Routing profile manager for shared routing profile discovery
+	routingProfileManager *RoutingProfileManager
 }
 
 // NewConfigurableAWSConnectConnector creates a new AWS Connect connector and
@@ -174,6 +176,12 @@ func (c *AWSConnectConnector) Connect() error {
 
 	if c.rpQueueManager == nil {
 		c.rpQueueManager = NewRoutingProfileQueueManager(c, c.config.Collectors.RealtimeQueue.QueueCacheTTL)
+	}
+
+	if c.routingProfileManager == nil {
+		rpm := NewRoutingProfileManager(c, c.config.Collectors.RealtimeQueue.QueueRefreshInterval)
+		c.routingProfileManager = rpm
+		rpm.Start()
 	}
 	return nil
 }
@@ -353,6 +361,11 @@ func (c *AWSConnectConnector) GetAgentManager() *AgentManager {
 // GetRoutingProfileQueueManager exposes the routing profile queue manager.
 func (c *AWSConnectConnector) GetRoutingProfileQueueManager() *RoutingProfileQueueManager {
 	return c.rpQueueManager
+}
+
+// GetRoutingProfileManager exposes the shared RoutingProfileManager.
+func (c *AWSConnectConnector) GetRoutingProfileManager() *RoutingProfileManager {
+	return c.routingProfileManager
 }
 
 // GetInstanceID extracts the instance ID from the ARN.

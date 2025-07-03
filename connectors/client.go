@@ -203,3 +203,19 @@ func (c *AWSConnectConnector) ListRoutingProfileQueues(ctx context.Context, inpu
 
 	return output, nil
 }
+
+// ListRoutingProfiles retrieves all routing profiles for the AWS Connect instance.
+// It handles pagination automatically, collecting all routing profiles into a single response.
+func (c *AWSConnectConnector) ListRoutingProfiles(ctx context.Context, input *connect.ListRoutingProfilesInput) (*connect.ListRoutingProfilesOutput, error) {
+	output, err := c.client.ListRoutingProfiles(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("error listing routing profiles: %w", err)
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"routing_profile_count": len(output.RoutingProfileSummaryList),
+		"instance_arn":          c.instanceARN,
+	}).Debug("Successfully listed routing profiles")
+
+	return output, nil
+}

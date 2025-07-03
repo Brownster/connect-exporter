@@ -28,7 +28,7 @@ type RoutingProfileQueueLister interface {
 
 // rpqEntry represents a cached entry for a routing profile's queues.
 type rpqEntry struct {
-	queues  []string
+	queues  []Queue
 	expires time.Time
 }
 
@@ -54,14 +54,14 @@ func NewRoutingProfileQueueManager(lister RoutingProfileQueueLister, ttl time.Du
 	}
 }
 
-// GetQueuesForRoutingProfile returns the list of queue IDs for a given routing
+// GetQueuesForRoutingProfile returns the list of queues for a given routing
 // profile. If the data is in the cache and has not expired, it is returned
 // immediately. Otherwise, it is fetched from the AWS Connect API.
-func (m *RoutingProfileQueueManager) GetQueuesForRoutingProfile(rpID string) ([]string, error) {
+func (m *RoutingProfileQueueManager) GetQueuesForRoutingProfile(rpID string) ([]Queue, error) {
 	m.mu.RLock()
 	entry, ok := m.cache[rpID]
 	if ok && time.Now().Before(entry.expires) {
-		out := make([]string, len(entry.queues))
+		out := make([]Queue, len(entry.queues))
 		copy(out, entry.queues)
 		m.mu.RUnlock()
 		return out, nil
@@ -81,10 +81,10 @@ func (m *RoutingProfileQueueManager) GetQueuesForRoutingProfile(rpID string) ([]
 
 // fetchQueues retrieves the queue list for a routing profile from the AWS API.
 // It handles pagination and retries to ensure all data is fetched.
-func (m *RoutingProfileQueueManager) fetchQueues(rpID string) ([]string, error) {
+func (m *RoutingProfileQueueManager) fetchQueues(rpID string) ([]Queue, error) {
 	instanceID := m.lister.GetInstanceID()
 	var err error
-	var queues []string
+	var queues []Queue
 	for attempt := 0; attempt < 3; attempt++ {
 		queues = queues[:0]
 		var nextToken *string
@@ -100,7 +100,12 @@ func (m *RoutingProfileQueueManager) fetchQueues(rpID string) ([]string, error) 
 			}
 			for _, q := range out.RoutingProfileQueueConfigSummaryList {
 				if q.QueueId != nil {
-					queues = append(queues, aws.ToString(q.QueueId))
+					queue := Queue{
+						ID:   aws.ToString(q.QueueId),
+						Name: aws.ToString(q.QueueName), // Capture the queue name!
+						Type: "STANDARD", // Default type - could be enhanced to detect AGENT vs STANDARD
+					}
+					queues = append(queues, queue)
 				}
 			}
 			if out.NextToken == nil {

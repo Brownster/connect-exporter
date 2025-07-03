@@ -44,7 +44,8 @@ let currentErrors = 0;          // Counter for consecutive errors
 let maxConsecutiveErrors = 2;   // Max consecutive errors to allow before resetting
 
 // Pagination configuration (can be overridden via ITEMS_PER_PAGE)
-let itemsPerPage = 1000;  // Default to high value to avoid pagination issues
+// Default to 10 to test pagination with larger queue lists
+let itemsPerPage = 10;  // Lower default to force pagination testing
 if (process.env.ITEMS_PER_PAGE) {
     const envItemsPerPage = parseInt(process.env.ITEMS_PER_PAGE, 10);
     if (!isNaN(envItemsPerPage) && envItemsPerPage > 0) {
@@ -172,22 +173,116 @@ const MOCK_QUEUE_SUMMARIES = [
 const ROUTING_PROFILES = {
   'rp-sales': {
     Id: 'rp-sales',
+    Name: 'Sales Team',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-sales`,
     Queues: ['queue-sales-01']
   },
   'rp-support': {
     Id: 'rp-support',
+    Name: 'Customer Support',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-support`,
     Queues: ['queue-support-01']
   },
   'tf-support': {
     Id: 'tf-support',
+    Name: 'Technical Support',
     Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/tf-support`,
     Queues: ['queue-support-999', 'queue-chat-999', 'queue-task-999']
+  },
+  'rp-billing': {
+    Id: 'rp-billing',
+    Name: 'Billing Team',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-billing`,
+    Queues: ['queue-billing-001']
+  },
+  'rp-compliance': {
+    Id: 'rp-compliance',
+    Name: 'Compliance Team',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-compliance`,
+    Queues: ['queue-compliance-001']
+  },
+  'rp-enterprise': {
+    Id: 'rp-enterprise',
+    Name: 'Enterprise Support',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-enterprise`,
+    Queues: ['queue-enterprise-001']
+  },
+  'rp-escalation': {
+    Id: 'rp-escalation',
+    Name: 'Escalation Team',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-escalation`,
+    Queues: ['queue-escalation-001']
+  },
+  'rp-finance': {
+    Id: 'rp-finance',
+    Name: 'Finance Team',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-finance`,
+    Queues: ['queue-finance-001']
+  },
+  'rp-hr': {
+    Id: 'rp-hr',
+    Name: 'Human Resources',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-hr`,
+    Queues: ['queue-hr-001']
+  },
+  'rp-it': {
+    Id: 'rp-it',
+    Name: 'IT Support',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-it`,
+    Queues: ['queue-it-001']
+  },
+  'rp-marketing': {
+    Id: 'rp-marketing',
+    Name: 'Marketing Team',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-marketing`,
+    Queues: ['queue-marketing-001']
+  },
+  'rp-multilingual': {
+    Id: 'rp-multilingual',
+    Name: 'Multilingual Support',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-multilingual`,
+    Queues: ['queue-multilingual-001']
+  },
+  'rp-overflow': {
+    Id: 'rp-overflow',
+    Name: 'Overflow Support',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-overflow`,
+    Queues: ['queue-overflow-001']
+  },
+  'rp-retention': {
+    Id: 'rp-retention',
+    Name: 'Customer Retention',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-retention`,
+    Queues: ['queue-retention-001']
+  },
+  'rp-supervisor': {
+    Id: 'rp-supervisor',
+    Name: 'Supervisor Team',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-supervisor`,
+    Queues: ['queue-supervisor-001']
+  },
+  'rp-survey': {
+    Id: 'rp-survey',
+    Name: 'Survey Team',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-survey`,
+    Queues: ['queue-survey-001']
+  },
+  'rp-training': {
+    Id: 'rp-training',
+    Name: 'Training Team',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-training`,
+    Queues: ['queue-training-001']
+  },
+  'rp-vip': {
+    Id: 'rp-vip',
+    Name: 'VIP Support',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/routing-profile/rp-vip`,
+    Queues: ['queue-vip-001']
   }
 };
 
 const MOCK_QUEUES = {
+  // Original queues
   'sales': {
     Id: 'queue-sales-01',
     Name: 'Sales Queue',
@@ -247,6 +342,308 @@ const MOCK_QUEUES = {
     Priority: 2,
     HoursOfOperation: 'ExtendedHours',
     OutboundCallerId: '+987654321'
+  },
+
+  // Additional Standard Queues - Customer Service
+  'technical_support': {
+    Id: 'queue-tech-001',
+    Name: 'Technical_Support_L1',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-tech-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-support',
+    StaffingTarget: { min: 8, max: 20 },
+    Channel: 'VOICE',
+    Priority: 1,
+    HoursOfOperation: 'TechSupport24x7',
+    OutboundCallerId: '+1234567891'
+  },
+  'technical_support_l2': {
+    Id: 'queue-tech-002',
+    Name: 'Technical_Support_L2',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-tech-002`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-support',
+    StaffingTarget: { min: 5, max: 12 },
+    Channel: 'VOICE',
+    Priority: 1,
+    HoursOfOperation: 'TechSupport24x7',
+    OutboundCallerId: '+1234567892'
+  },
+  'billing_inquiries': {
+    Id: 'queue-billing-001',
+    Name: 'Billing_Inquiries',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-billing-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-billing',
+    StaffingTarget: { min: 6, max: 15 },
+    Channel: 'VOICE',
+    Priority: 2,
+    HoursOfOperation: 'BusinessHours',
+    OutboundCallerId: '+1234567893'
+  },
+  'sales_inbound': {
+    Id: 'queue-sales-inbound-001',
+    Name: 'Sales_Inbound_Premium',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-sales-inbound-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-sales',
+    StaffingTarget: { min: 12, max: 30 },
+    Channel: 'VOICE',
+    Priority: 1,
+    HoursOfOperation: 'ExtendedHours',
+    OutboundCallerId: '+1234567894'
+  },
+  'sales_outbound': {
+    Id: 'queue-sales-outbound-001',
+    Name: 'Sales_Outbound_Campaign',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-sales-outbound-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-sales',
+    StaffingTarget: { min: 15, max: 40 },
+    Channel: 'VOICE',
+    Priority: 3,
+    HoursOfOperation: 'BusinessHours',
+    OutboundCallerId: '+1234567895'
+  },
+
+  // Chat Queues
+  'customer_service_chat': {
+    Id: 'queue-cs-chat-001',
+    Name: 'Customer_Service_Chat',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-cs-chat-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-support',
+    StaffingTarget: { min: 8, max: 25 },
+    Channel: 'CHAT',
+    Priority: 2,
+    HoursOfOperation: 'Chat24x7',
+    OutboundCallerId: '+1234567896'
+  },
+  'technical_chat': {
+    Id: 'queue-tech-chat-001',
+    Name: 'Technical_Support_Chat',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-tech-chat-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-support',
+    StaffingTarget: { min: 6, max: 18 },
+    Channel: 'CHAT',
+    Priority: 1,
+    HoursOfOperation: 'Chat24x7',
+    OutboundCallerId: '+1234567897'
+  },
+  'sales_chat': {
+    Id: 'queue-sales-chat-001',
+    Name: 'Sales_Inquiry_Chat',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-sales-chat-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-sales',
+    StaffingTarget: { min: 10, max: 20 },
+    Channel: 'CHAT',
+    Priority: 2,
+    HoursOfOperation: 'ExtendedHours',
+    OutboundCallerId: '+1234567898'
+  },
+
+  // Task Queues
+  'escalation_tasks': {
+    Id: 'queue-escalation-001',
+    Name: 'Escalation_Tasks',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-escalation-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-escalation',
+    StaffingTarget: { min: 3, max: 8 },
+    Channel: 'TASK',
+    Priority: 1,
+    HoursOfOperation: 'BusinessHours',
+    OutboundCallerId: '+1234567899'
+  },
+  'follow_up_tasks': {
+    Id: 'queue-followup-001',
+    Name: 'Follow_Up_Tasks',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-followup-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-support',
+    StaffingTarget: { min: 5, max: 12 },
+    Channel: 'TASK',
+    Priority: 3,
+    HoursOfOperation: 'BusinessHours',
+    OutboundCallerId: '+1234567900'
+  },
+  'compliance_tasks': {
+    Id: 'queue-compliance-001',
+    Name: 'Compliance_Review_Tasks',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-compliance-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-compliance',
+    StaffingTarget: { min: 2, max: 6 },
+    Channel: 'TASK',
+    Priority: 1,
+    HoursOfOperation: 'BusinessHours',
+    OutboundCallerId: '+1234567901'
+  },
+
+  // Specialized Queues
+  'vip_customers': {
+    Id: 'queue-vip-001',
+    Name: 'VIP_Customer_Priority',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-vip-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-vip',
+    StaffingTarget: { min: 4, max: 10 },
+    Channel: 'VOICE',
+    Priority: 1,
+    HoursOfOperation: 'VIP24x7',
+    OutboundCallerId: '+1234567902'
+  },
+  'enterprise_support': {
+    Id: 'queue-enterprise-001',
+    Name: 'Enterprise_Support_Dedicated',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-enterprise-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-enterprise',
+    StaffingTarget: { min: 6, max: 15 },
+    Channel: 'VOICE',
+    Priority: 1,
+    HoursOfOperation: 'Enterprise24x7',
+    OutboundCallerId: '+1234567903'
+  },
+  'multilingual_spanish': {
+    Id: 'queue-spanish-001',
+    Name: 'Multilingual_Spanish_Support',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-spanish-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-multilingual',
+    StaffingTarget: { min: 5, max: 12 },
+    Channel: 'VOICE',
+    Priority: 2,
+    HoursOfOperation: 'ExtendedHours',
+    OutboundCallerId: '+1234567904'
+  },
+  'multilingual_french': {
+    Id: 'queue-french-001',
+    Name: 'Multilingual_French_Support',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-french-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-multilingual',
+    StaffingTarget: { min: 3, max: 8 },
+    Channel: 'VOICE',
+    Priority: 2,
+    HoursOfOperation: 'ExtendedHours',
+    OutboundCallerId: '+1234567905'
+  },
+
+  // Additional Agent Queues  
+  'agent_training': {
+    Id: 'queue-agent-training-001',
+    Name: 'Agent_Training_Queue',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-agent-training-001`,
+    QueueType: 'AGENT',
+    RoutingProfile: 'rp-training',
+    StaffingTarget: { min: 2, max: 8 },
+    Channel: 'VOICE',
+    Priority: 3,
+    HoursOfOperation: 'BusinessHours',
+    OutboundCallerId: '+1234567906'
+  },
+  'agent_overflow': {
+    Id: 'queue-agent-overflow-001',
+    Name: 'Agent_Overflow_Backup',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-agent-overflow-001`,
+    QueueType: 'AGENT',
+    RoutingProfile: 'rp-overflow',
+    StaffingTarget: { min: 1, max: 5 },
+    Channel: 'VOICE',
+    Priority: 5,
+    HoursOfOperation: 'BasicHours',
+    OutboundCallerId: '+1234567907'
+  },
+  'supervisor_escalation': {
+    Id: 'queue-supervisor-001',
+    Name: 'Supervisor_Escalation_Queue',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-supervisor-001`,
+    QueueType: 'AGENT',
+    RoutingProfile: 'rp-supervisor',
+    StaffingTarget: { min: 2, max: 5 },
+    Channel: 'VOICE',
+    Priority: 1,
+    HoursOfOperation: 'ExtendedHours',
+    OutboundCallerId: '+1234567908'
+  },
+
+  // Department-specific Queues
+  'finance_department': {
+    Id: 'queue-finance-001',
+    Name: 'Finance_Department_Internal',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-finance-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-finance',
+    StaffingTarget: { min: 4, max: 10 },
+    Channel: 'VOICE',
+    Priority: 2,
+    HoursOfOperation: 'BusinessHours',
+    OutboundCallerId: '+1234567909'
+  },
+  'hr_department': {
+    Id: 'queue-hr-001',
+    Name: 'HR_Department_Employee_Support',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-hr-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-hr',
+    StaffingTarget: { min: 3, max: 8 },
+    Channel: 'VOICE',
+    Priority: 2,
+    HoursOfOperation: 'BusinessHours',
+    OutboundCallerId: '+1234567910'
+  },
+  'it_helpdesk': {
+    Id: 'queue-it-001',
+    Name: 'IT_Helpdesk_Internal',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-it-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-it',
+    StaffingTarget: { min: 6, max: 15 },
+    Channel: 'VOICE',
+    Priority: 2,
+    HoursOfOperation: 'IT24x7',
+    OutboundCallerId: '+1234567911'
+  },
+
+  // Campaign and Marketing Queues
+  'marketing_campaigns': {
+    Id: 'queue-marketing-001',
+    Name: 'Marketing_Campaign_Outbound',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-marketing-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-marketing',
+    StaffingTarget: { min: 8, max: 20 },
+    Channel: 'VOICE',
+    Priority: 4,
+    HoursOfOperation: 'MarketingHours',
+    OutboundCallerId: '+1234567912'
+  },
+  'survey_callback': {
+    Id: 'queue-survey-001',
+    Name: 'Customer_Survey_Callback',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-survey-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-survey',
+    StaffingTarget: { min: 3, max: 8 },
+    Channel: 'VOICE',
+    Priority: 5,
+    HoursOfOperation: 'SurveyHours',
+    OutboundCallerId: '+1234567913'
+  },
+  'retention_team': {
+    Id: 'queue-retention-001',
+    Name: 'Customer_Retention_Specialist',
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/queue-retention-001`,
+    QueueType: 'STANDARD',
+    RoutingProfile: 'rp-retention',
+    StaffingTarget: { min: 5, max: 12 },
+    Channel: 'VOICE',
+    Priority: 2,
+    HoursOfOperation: 'ExtendedHours',
+    OutboundCallerId: '+1234567914'
   }
 };
 
@@ -1015,6 +1412,59 @@ app.all('/{*path}', (req, res, next) => {
             NextToken: newNextToken,
             ApproximateTotalCount: userSummaries.length
         });
+    }
+    else if (action === 'ListRoutingProfiles' || req.path.startsWith('/routing-profiles-summary/')) {
+        console.log('\n=== Processing List Routing Profiles Request ===');
+        
+        // Extract instanceId from either query or path
+        let instanceId;
+        if (req.path.startsWith('/routing-profiles-summary/')) {
+            instanceId = req.path.split('/routing-profiles-summary/')[1]?.split('?')[0];
+            console.log('📍 Extracted instanceId from path:', instanceId);
+        } else {
+            instanceId = req.body.InstanceId || req.query.InstanceId;
+            console.log('📍 Using instanceId from request:', instanceId);
+        }
+
+        // Validate instanceId
+        if (!instanceId) {
+            console.log('❌ Missing instanceId');
+            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
+        }
+
+        if (instanceId !== INSTANCE_ID) {
+            console.log('❌ Instance ID mismatch:', instanceId, '!==', INSTANCE_ID);
+            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+        }
+
+        // Convert ROUTING_PROFILES to RoutingProfileSummaryList format
+        const routingProfileSummaries = Object.values(ROUTING_PROFILES).map(rp => ({
+            Id: rp.Id,
+            Name: rp.Name,
+            Arn: rp.Arn,
+            LastModifiedTime: new Date(Date.now() - Math.random() * 86400000).toISOString(), // Random time in last 24h
+            LastModifiedRegion: REGION
+        }));
+
+        // Handle pagination
+        const nextToken = req.query.nextToken || (req.body && req.body.NextToken);
+        const maxResults = parseInt(req.query.maxResults || req.body?.MaxResults || '1000', 10);
+        const startIndex = nextToken ? parseInt(nextToken, 10) : 0;
+        const endIndex = Math.min(startIndex + maxResults, routingProfileSummaries.length);
+        const items = routingProfileSummaries.slice(startIndex, endIndex);
+        const newNextToken = endIndex < routingProfileSummaries.length ? endIndex.toString() : null;
+
+        console.log(`📋 Returning ${items.length} routing profiles (${startIndex}-${endIndex} of ${routingProfileSummaries.length})`);
+        if (newNextToken) {
+            console.log(`🔄 NextToken: ${newNextToken}`);
+        }
+
+        return res.json({
+            RoutingProfileSummaryList: items,
+            NextToken: newNextToken,
+            LastModifiedRegion: REGION,
+            LastModifiedTime: new Date().toISOString()
+        });
     } 
     else if (action === 'GetCurrentMetricData' || req.path.startsWith('/metrics/current/')) {
         console.log('\n=== Processing Metrics Request ===');
@@ -1456,6 +1906,43 @@ app.post('/admin/resetTotals', (req, res) => {
 // Basic liveness check
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
+});
+
+// Debug endpoint to check queue correlation
+app.get('/debug/queues', (req, res) => {
+    const queueSummary = Object.values(MOCK_QUEUES).map(q => ({
+        id: q.Id,
+        name: q.Name,
+        type: q.QueueType,
+        channel: q.Channel,
+        priority: q.Priority
+    }));
+    
+    res.json({
+        total_queues: Object.keys(MOCK_QUEUES).length,
+        pagination_size: ITEMS_PER_PAGE,
+        expected_pages: Math.ceil(Object.keys(MOCK_QUEUES).length / ITEMS_PER_PAGE),
+        queue_types: {
+            standard: queueSummary.filter(q => q.type === 'STANDARD').length,
+            agent: queueSummary.filter(q => q.type === 'AGENT').length
+        },
+        channels: {
+            voice: queueSummary.filter(q => q.channel === 'VOICE').length,
+            chat: queueSummary.filter(q => q.channel === 'CHAT').length,
+            task: queueSummary.filter(q => q.channel === 'TASK').length
+        },
+        queue_list: queueSummary
+    });
+});
+
+// Debug endpoint for queue correlation stats
+app.get('/debug/correlation', (req, res) => {
+    res.json({
+        message: "Queue correlation tracking endpoint",
+        note: "This will track queue lookup success/failure rates in future implementation",
+        current_queue_count: Object.keys(MOCK_QUEUES).length,
+        pagination_enabled: ITEMS_PER_PAGE < Object.keys(MOCK_QUEUES).length
+    });
 });
 
 //OPTIONS handler for CORS preflight requests

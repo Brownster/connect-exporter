@@ -19,6 +19,14 @@ type Queue struct {
 	Type string
 }
 
+// RoutingProfile represents routing profile metadata. This struct is used to hold
+// essential information about an AWS Connect routing profile, such as its ID and name.
+// It is populated by the ListRoutingProfiles API call and used by various collectors.
+type RoutingProfile struct {
+	ID   string
+	Name string
+}
+
 // AWSConnectConfig is the top-level configuration structure for the exporter.
 // It encapsulates all AWS-specific settings and collector configurations.
 type AWSConnectConfig struct {
