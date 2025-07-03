@@ -99,10 +99,24 @@ collectors:
           - aws_name: "CONTACTS_ABANDONED"
             prometheus_name: "connect_historical_contacts_abandoned_total"
             labels: {}
+          - aws_name: "SERVICE_LEVEL"
+            prometheus_name: "connect_historical_service_level"
+            labels: {}
+            threshold_ref: "service_level_20s"
+          - aws_name: "ABANDONMENT_RATE"
+            prometheus_name: "connect_historical_abandonment_rate"
+            labels: {}
+          - aws_name: "AVG_QUEUE_ANSWER_TIME"
+            prometheus_name: "connect_historical_avg_queue_answer_time_seconds"
+            labels: {}
         groupings: ["QUEUE", "CHANNEL"]
         filters:
           - key: "CHANNEL"
             values: ["VOICE", "CHAT", "TASK"]
+        thresholds:
+          - name: "service_level_20s"
+            comparison: "LT"
+            value: 20.0
 
       # Average Handle Time collector
       - name: "historical_aht"

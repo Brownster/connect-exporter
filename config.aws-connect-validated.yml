@@ -1,0 +1,150 @@
+# AWS Connect Exporter - Validated Production Configuration
+# 
+# This configuration contains only metrics that have been tested and validated
+# against real AWS Connect instances. All metrics use QUEUE/CHANNEL groupings.
+#
+# Validated against: arn:aws:connect:eu-west-2:851725229028:instance/2e7403e8-86b6-4681-8e9e-aca78b607eb2
+
+# Server configuration  
+listen_address: 127.0.0.1
+listen_port: 9090
+log_level: info
+
+# AWS Configuration
+aws:
+  region: "eu-west-2"
+  instance_arn: "arn:aws:connect:eu-west-2:851725229028:instance/2e7403e8-86b6-4681-8e9e-aca78b607eb2"
+
+# Collector Configuration - All tested and working
+collectors:
+  # Agent Status Collector - Real agent tracking
+  agent_realtime_status:
+    enabled: true
+    interval: 60
+
+  # Real-time Queue Metrics - Live queue monitoring
+  generic_realtime:
+    enabled: true
+    interval: 30
+    collectors:
+      - name: "queue_realtime_metrics"
+        metrics:
+          - aws_name: "AGENTS_AVAILABLE"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "Available"
+          - aws_name: "CONTACTS_IN_QUEUE"
+            prometheus_name: "connect_queue_contacts_in_queue"
+            labels: {}
+          - aws_name: "OLDEST_CONTACT_AGE"
+            prometheus_name: "connect_queue_oldest_contact_age_seconds"
+            unit: "SECONDS"
+            labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
+
+  # Historical Queue Metrics - Comprehensive contact center analytics
+  generic_historical:
+    enabled: true
+    interval: 300
+    collectors:
+      - name: "validated_historical"
+        metrics:
+          # Contact Volume Metrics
+          - aws_name: "CONTACTS_HANDLED"
+            prometheus_name: "connect_historical_contacts_handled_total"
+            labels: {}
+          - aws_name: "CONTACTS_ABANDONED"
+            prometheus_name: "connect_historical_contacts_abandoned_total"
+            labels: {}
+          - aws_name: "CONTACTS_QUEUED"
+            prometheus_name: "connect_historical_contacts_queued_total"
+            labels: {}
+          
+          # Service Quality Metrics
+          - aws_name: "SERVICE_LEVEL"
+            prometheus_name: "connect_historical_service_level"
+            labels: {}
+            threshold_ref: "service_level_20s"
+          - aws_name: "ABANDONMENT_RATE"
+            prometheus_name: "connect_historical_abandonment_rate"
+            labels: {}
+          
+          # Timing Metrics
+          - aws_name: "AVG_HANDLE_TIME"
+            prometheus_name: "connect_historical_avg_handle_time_seconds"
+            labels: {}
+          - aws_name: "AVG_QUEUE_ANSWER_TIME"
+            prometheus_name: "connect_historical_avg_queue_answer_time_seconds"
+            labels: {}
+          - aws_name: "AVG_AFTER_CONTACT_WORK_TIME"
+            prometheus_name: "connect_historical_avg_after_contact_work_time_seconds"
+            labels: {}
+          
+          # Phase 1 Additional Metrics - High Priority
+          # Contact Volume Metrics
+          - aws_name: "CONTACTS_CREATED"
+            prometheus_name: "connect_historical_contacts_created_total"
+            labels: {}
+          - aws_name: "CONTACTS_HOLD_ABANDONS"
+            prometheus_name: "connect_historical_contacts_hold_abandons_total"
+            labels: {}
+          
+          # Service Quality Metrics
+          - aws_name: "AGENT_ANSWER_RATE"
+            prometheus_name: "connect_historical_agent_answer_rate"
+            labels: {}
+          - aws_name: "AVG_RESOLUTION_TIME"
+            prometheus_name: "connect_historical_avg_resolution_time_seconds"
+            labels: {}
+          
+          # Enhanced Timing Metrics
+          - aws_name: "AVG_ABANDON_TIME"
+            prometheus_name: "connect_historical_avg_abandon_time_seconds"
+            labels: {}
+          - aws_name: "AVG_CONTACT_DURATION"
+            prometheus_name: "connect_historical_avg_contact_duration_seconds"
+            labels: {}
+          - aws_name: "AVG_HOLD_TIME"
+            prometheus_name: "connect_historical_avg_hold_time_seconds"
+            labels: {}
+          - aws_name: "MAX_QUEUED_TIME"
+            prometheus_name: "connect_historical_max_queued_time_seconds"
+            labels: {}
+            
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
+        thresholds:
+          - name: "service_level_20s"
+            comparison: "LT"
+            value: 20.0
+
+# Global settings
+global:
+  timeout: 30s
+  labels:
+    environment: "production"
+    service: "aws-connect"
+  retry:
+    max_attempts: 3
+    backoff_duration: 1s
+    max_backoff_duration: 5s
+
+# Validated Metrics Summary:
+# - Agent Realtime Status: 3+ agents with real status tracking
+# - Queue Realtime: 3 metrics per queue (agents available, contacts in queue, oldest contact age)
+# - Historical: 16 comprehensive metrics covering volume, quality, and timing
+#   * Original 8: CONTACTS_HANDLED, CONTACTS_ABANDONED, CONTACTS_QUEUED, SERVICE_LEVEL, ABANDONMENT_RATE, AVG_HANDLE_TIME, AVG_QUEUE_ANSWER_TIME, AVG_AFTER_CONTACT_WORK_TIME
+#   * Phase 1 additions: CONTACTS_CREATED, CONTACTS_HOLD_ABANDONS, AGENT_ANSWER_RATE, AVG_RESOLUTION_TIME, AVG_ABANDON_TIME, AVG_CONTACT_DURATION, AVG_HOLD_TIME, MAX_QUEUED_TIME
+#
+# Total: ~80+ metrics from real AWS Connect instance
+#
+# Usage:
+# AWS_PROFILE=your-profile AWS_REGION=eu-west-2 ./connect-exporter \
+#   --config.file=config.aws-connect-validated.yml \
+#   --instance-arn=your-instance-arn \
+#   --labels.fqdn=your-fqdn \
+#   --labels.location=your-location \
+#   --labels.country=your-country \
+#   --labels.ip-address=your-ip \
+#   --no-advertise

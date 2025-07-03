@@ -1,0 +1,185 @@
+# AWS Connect Exporter - Production Configuration
+# 
+# This configuration template provides the essential metrics for monitoring
+# AWS Connect in a production environment. Only enable the metrics you need
+# to avoid unnecessary API calls and reduce AWS costs.
+#
+# Quick Start:
+# 1. Update instance_arn with your Connect instance ARN
+# 2. Enable only the collectors you need
+# 3. Uncomment additional metrics as required
+
+# Server configuration
+listen_address: 127.0.0.1
+listen_port: 9090
+log_level: info
+
+# AWS Configuration
+aws:
+  # AWS region where your Connect instance is located
+  region: "eu-west-2"
+  # AWS Connect Instance ARN - REQUIRED
+  # Format: arn:aws:connect:region:account-id:instance/instance-id
+  instance_arn: "arn:aws:connect:eu-west-2:851725229028:instance/2e7403e8-86b6-4681-8e9e-aca78b607eb2"
+
+# Collector Configuration
+# Collector Configuration
+# Enable only the collectors you need for your monitoring requirements
+collectors:
+  # Agent Status Collector - Individual agent status tracking
+  agent_realtime_status:
+    enabled: true
+    interval: 60  # seconds
+
+  # Real-time Queue Metrics - Core contact center metrics
+  generic_realtime:
+    enabled: true
+    interval: 30  # seconds - more frequent for real-time dashboards
+    collectors:
+      - name: "queue_realtime_metrics"
+        # Core metrics - always enabled for basic monitoring
+        metrics:
+          - aws_name: "AGENTS_AVAILABLE"
+            prometheus_name: "connect_queue_agents"
+            labels:
+              state: "Available"
+          - aws_name: "CONTACTS_IN_QUEUE"
+            prometheus_name: "connect_queue_contacts_in_queue"
+            labels: {}
+          - aws_name: "OLDEST_CONTACT_AGE"
+            prometheus_name: "connect_queue_oldest_contact_age_seconds"
+            unit: "SECONDS"
+            labels: {}
+        # Additional agent state metrics - skip for now
+        # - aws_name: "AGENTS_STAFFED"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "Staffed"
+        # - aws_name: "AGENTS_ON_CONTACT"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "OnContact"
+        # - aws_name: "AGENTS_AFTER_CONTACT_WORK"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "AfterContactWork"
+        # - aws_name: "AGENTS_NON_PRODUCTIVE"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "NonProductive"
+        # - aws_name: "AGENTS_ERROR"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "Error"
+        # - aws_name: "AGENTS_ONLINE"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "Online"
+        # - aws_name: "AGENTS_ON_CALL"
+        #   prometheus_name: "connect_queue_agents"
+        #   labels:
+        #     state: "OnCall"
+        # 
+        # Queue capacity metrics - skip for now
+        # - aws_name: "SLOTS_AVAILABLE"
+        #   prometheus_name: "connect_queue_slots_available"
+        #   labels: {}
+        # - aws_name: "SLOTS_ACTIVE"
+        #   prometheus_name: "connect_queue_slots_active"
+        #   labels: {}
+        # - aws_name: "CONTACTS_SCHEDULED"
+        #   prometheus_name: "connect_queue_contacts_scheduled"
+        #   labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
+
+  # Historical Queue Metrics - Basic configuration
+  generic_historical:
+    enabled: true
+    interval: 300
+    collectors:
+      - name: "basic_historical"
+        metrics:
+          - aws_name: "CONTACTS_HANDLED"
+            prometheus_name: "connect_historical_contacts_handled_total"
+            labels: {}
+          - aws_name: "CONTACTS_ABANDONED"
+            prometheus_name: "connect_historical_contacts_abandoned_total"
+            labels: {}
+          - aws_name: "SERVICE_LEVEL"
+            prometheus_name: "connect_historical_service_level"
+            labels: {}
+            threshold_ref: "service_level_20s"
+          - aws_name: "AVG_HANDLE_TIME"
+            prometheus_name: "connect_historical_avg_handle_time_seconds"
+            labels: {}
+          - aws_name: "ABANDONMENT_RATE"
+            prometheus_name: "connect_historical_abandonment_rate"
+            labels: {}
+          - aws_name: "AVG_QUEUE_ANSWER_TIME"
+            prometheus_name: "connect_historical_avg_queue_answer_time_seconds"
+            labels: {}
+          - aws_name: "AVG_AFTER_CONTACT_WORK_TIME"
+            prometheus_name: "connect_historical_avg_after_contact_work_time_seconds"
+            labels: {}
+          - aws_name: "CONTACTS_QUEUED"
+            prometheus_name: "connect_historical_contacts_queued_total"
+            labels: {}
+        groupings: ["QUEUE", "CHANNEL"]
+        filters: []
+        thresholds:
+          - name: "service_level_20s"
+            comparison: "LT"
+            value: 20.0
+      
+
+# Global settings
+global:
+  # Default timeout for all operations
+  timeout: 30s
+  
+  # Default labels to add to all metrics
+  labels:
+    environment: "production"
+    service: "aws-connect"
+    
+  # Retry configuration
+  retry:
+    max_attempts: 3
+    backoff_duration: 1s
+    max_backoff_duration: 5s
+
+# Optional: Custom metric configurations
+metrics:
+  # Metric filtering (disable unwanted metrics)
+  disabled_metrics: []
+  
+  # Custom metric labels (applied to all metrics)
+  custom_labels:
+    team: "contact-center"
+    cost_center: "customer-service"
+
+# AWS IAM Permissions Required:
+# - connect:ListQueues
+# - connect:GetCurrentMetricData
+# - connect:GetMetricDataV2
+# - connect:ListAgentStatuses
+# - connect:GetCurrentUserData
+#
+# Example IAM Policy:
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [
+#     {
+#       "Effect": "Allow",
+#       "Action": [
+#         "connect:ListQueues",
+#         "connect:GetCurrentMetricData",
+#         "connect:GetMetricDataV2",
+#         "connect:ListAgentStatuses",
+#         "connect:GetCurrentUserData"
+#       ],
+#       "Resource": "arn:aws:connect:*:*:instance/your-instance-id"
+#     }
+#   ]
+# }
