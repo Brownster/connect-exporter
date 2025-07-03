@@ -48,13 +48,14 @@ func NewRoutingProfileManager(lister RoutingProfileLister, interval time.Duratio
 }
 
 // Start begins the periodic refresh of routing profiles. This method should be called
-// once the RoutingProfileManager is created.
-func (m *RoutingProfileManager) Start() {
+// once the RoutingProfileManager is created. Returns an error if the initial refresh fails.
+func (m *RoutingProfileManager) Start() error {
 	logrus.WithField("interval", m.refreshInterval).Info("Starting routing profile manager")
 	
-	// Initial fetch
+	// Initial fetch - fail startup if this fails
 	if err := m.refresh(); err != nil {
 		logrus.WithError(err).Error("Failed initial routing profile refresh")
+		return err
 	}
 
 	// Start periodic refresh
@@ -74,6 +75,8 @@ func (m *RoutingProfileManager) Start() {
 			}
 		}
 	}()
+	
+	return nil
 }
 
 // Stop gracefully stops the RoutingProfileManager.

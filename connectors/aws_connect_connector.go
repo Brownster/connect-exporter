@@ -126,7 +126,9 @@ func (c *AWSConnectConnector) Execute(command interface{}) (interface{}, error) 
 	case *connect.GetCurrentUserDataInput:
 		return c.GetCurrentUserData(context.Background(), cmd)
 	case *connect.ListUsersInput:
-		return c.ListUsers(context.Background(), cmd)
+        return c.ListUsers(context.Background(), cmd)
+    case *connect.ListRoutingProfilesInput:
+        return c.ListRoutingProfiles(context.Background(), cmd)
 	default:
 		return nil, fmt.Errorf("unsupported command type: %T", command)
 	}
@@ -181,7 +183,9 @@ func (c *AWSConnectConnector) Connect() error {
 	if c.routingProfileManager == nil {
 		rpm := NewRoutingProfileManager(c, c.config.Collectors.RealtimeQueue.QueueRefreshInterval)
 		c.routingProfileManager = rpm
-		rpm.Start()
+		if err := rpm.Start(); err != nil {
+			return fmt.Errorf("failed to start routing profile manager: %w", err)
+		}
 	}
 	return nil
 }
@@ -377,4 +381,28 @@ func (c *AWSConnectConnector) GetInstanceID() string {
 		return parts[len(parts)-1]
 	}
 	return c.instanceARN
+}
+
+// ListRoutingProfiles retrieves routing profiles for the AWS Connect instance.
+// This method is required by the RoutingProfileLister interface.
+func (c *AWSConnectConnector) ListRoutingProfiles(ctx context.Context, input *connect.ListRoutingProfilesInput) (*connect.ListRoutingProfilesOutput, error) {
+	// In development mode, we need to manually set the endpoint to match our mock API
+	if c.developmentMode {
+		return c.client.ListRoutingProfiles(ctx, input, func(o *connect.Options) {
+			o.BaseEndpoint = aws.String(c.mockEndpoint)
+		})
+	}
+	return c.client.ListRoutingProfiles(ctx, input)
+}
+
+// ListUsers retrieves users for the AWS Connect instance.
+// This method is required by the AgentLister interface.
+func (c *AWSConnectConnector) ListUsers(ctx context.Context, input *connect.ListUsersInput) (*connect.ListUsersOutput, error) {
+	return c.client.ListUsers(ctx, input)
+}
+
+// DescribeUser retrieves detailed information about a specific user.
+// This method is required by the AgentLister interface.
+func (c *AWSConnectConnector) DescribeUser(ctx context.Context, input *connect.DescribeUserInput) (*connect.DescribeUserOutput, error) {
+	return c.client.DescribeUser(ctx, input)
 }

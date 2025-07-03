@@ -44,7 +44,7 @@
     },
     {
       "name": "OLDEST_CONTACT_AGE",
-      "unit": "SECONDS",
+      "unit": "COUNT",
       "type": "ratio",
       "base": "CONTACTS_IN_QUEUE",
       "ratio": 15

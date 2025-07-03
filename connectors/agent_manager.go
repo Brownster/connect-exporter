@@ -9,12 +9,14 @@ package connectors
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/connect"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/time/rate"
 )
 
 // Agent represents essential metadata about an AWS Connect agent.
@@ -24,6 +26,13 @@ type Agent struct {
 	Arn       string
 	FirstName string
 	LastName  string
+}
+
+// AgentNames represents cached first and last names for an agent.
+type AgentNames struct {
+	FirstName string
+	LastName  string
+	UpdatedAt time.Time
 }
 
 // AgentLister defines the interface for listing agents. It is implemented by
@@ -40,9 +49,19 @@ type AgentManager struct {
 	lister          AgentLister
 	refreshInterval time.Duration
 
+	// Agent list cache
 	mu     sync.RWMutex
 	agents []Agent
 	stopCh chan struct{}
+
+	// Agent names cache and configuration
+	agentNames           map[string]AgentNames
+	namesMutex           sync.RWMutex
+	rateLimiter          *rate.Limiter
+	nameRefreshInterval  time.Duration
+	nameRefreshTicker    *time.Ticker
+	lastNameRefresh      time.Time
+	namesEnabled         bool
 }
 
 // NewAgentManager creates and initializes a new AgentManager.
@@ -51,15 +70,21 @@ func NewAgentManager(lister AgentLister, interval time.Duration) *AgentManager {
 		interval = 5 * time.Minute
 	}
 	return &AgentManager{
-		lister:          lister,
-		refreshInterval: interval,
-		stopCh:          make(chan struct{}),
+		lister:              lister,
+		refreshInterval:     interval,
+		stopCh:              make(chan struct{}),
+		agentNames:          make(map[string]AgentNames),
+		rateLimiter:         rate.NewLimiter(rate.Limit(2), 5), // 2 calls/sec with burst of 5
+		nameRefreshInterval: 6 * time.Hour,                     // Default 6 hours
+		namesEnabled:        true,                              // Enable by default
 	}
 }
 
 // Start begins the periodic refresh loop in a separate goroutine.
 func (m *AgentManager) Start() {
 	m.Refresh()
+	
+	// Start periodic agent list refresh
 	ticker := time.NewTicker(m.refreshInterval)
 	go func() {
 		for {
@@ -72,6 +97,26 @@ func (m *AgentManager) Start() {
 			}
 		}
 	}()
+	
+	// Start initial agent names fetch and periodic refresh
+	if m.namesEnabled {
+		go m.fetchAllAgentNames()
+		
+		m.nameRefreshTicker = time.NewTicker(m.nameRefreshInterval)
+		go func() {
+			for {
+				select {
+				case <-m.nameRefreshTicker.C:
+					go m.fetchAllAgentNames()
+				case <-m.stopCh:
+					if m.nameRefreshTicker != nil {
+						m.nameRefreshTicker.Stop()
+					}
+					return
+				}
+			}
+		}()
+	}
 }
 
 // Stop terminates the background refresh loop.
@@ -103,28 +148,14 @@ func (m *AgentManager) Refresh() {
 			if u.Username != nil {
 				agent.Username = aws.ToString(u.Username)
 			}
-
-			// Fetch detailed user information including first and last name
-			userID := aws.ToString(u.Id)
-			describeInput := &connect.DescribeUserInput{
-				InstanceId: &instanceID,
-				UserId:     &userID,
-			}
 			
-			userDetails, err := m.lister.DescribeUser(context.Background(), describeInput)
-			if err != nil {
-				logrus.WithError(err).WithField("user_id", userID).Debug("failed to describe user, continuing without first/last name")
-				// Continue without first/last name if DescribeUser fails
-			} else if userDetails.User != nil {
-				if userDetails.User.IdentityInfo != nil {
-					if userDetails.User.IdentityInfo.FirstName != nil {
-						agent.FirstName = aws.ToString(userDetails.User.IdentityInfo.FirstName)
-					}
-					if userDetails.User.IdentityInfo.LastName != nil {
-						agent.LastName = aws.ToString(userDetails.User.IdentityInfo.LastName)
-					}
-				}
+			// Add cached names if available
+			m.namesMutex.RLock()
+			if names, exists := m.agentNames[agent.ID]; exists {
+				agent.FirstName = names.FirstName
+				agent.LastName = names.LastName
 			}
+			m.namesMutex.RUnlock()
 			
 			agents = append(agents, agent)
 		}
@@ -134,7 +165,7 @@ func (m *AgentManager) Refresh() {
 	m.agents = agents
 	m.mu.Unlock()
 
-	logrus.WithField("agent_count", len(agents)).Debug("Refreshed agent list with detailed information")
+	logrus.WithField("agent_count", len(agents)).Debug("Refreshed agent list")
 }
 
 // GetAgents returns a thread-safe copy of the current cached agent list.
@@ -167,4 +198,166 @@ func (m *AgentManager) GetAgentMap() map[string]Agent {
 		agentMap[agent.ID] = agent
 	}
 	return agentMap
+}
+
+// fetchAllAgentNames fetches first and last names for all agents with smart throttling.
+func (m *AgentManager) fetchAllAgentNames() {
+	if !m.namesEnabled {
+		return
+	}
+	
+	logrus.Info("Starting agent names collection")
+	startTime := time.Now()
+	
+	// Get current agent IDs
+	m.mu.RLock()
+	agentIDs := make([]string, 0, len(m.agents))
+	for _, agent := range m.agents {
+		agentIDs = append(agentIDs, agent.ID)
+	}
+	m.mu.RUnlock()
+	
+	if len(agentIDs) == 0 {
+		logrus.Debug("No agents to fetch names for")
+		return
+	}
+	
+	successCount := 0
+	errorCount := 0
+	throttleEvents := 0
+	
+	for _, agentID := range agentIDs {
+		// Check if we need to rate limit
+		if !m.rateLimiter.Allow() {
+			throttleEvents++
+			logrus.WithField("agent_id", agentID).Debug("Rate limiting agent name fetch")
+			
+			// Wait for the rate limiter
+			reservation := m.rateLimiter.Reserve()
+			if !reservation.OK() {
+				logrus.WithField("agent_id", agentID).Warn("Rate limiter reservation failed")
+				continue
+			}
+			time.Sleep(reservation.Delay())
+		}
+		
+		if names := m.fetchAgentName(agentID); names != nil {
+			m.namesMutex.Lock()
+			m.agentNames[agentID] = *names
+			m.namesMutex.Unlock()
+			successCount++
+		} else {
+			errorCount++
+		}
+	}
+	
+	m.lastNameRefresh = time.Now()
+	duration := time.Since(startTime)
+	
+	logrus.WithFields(logrus.Fields{
+		"total_agents":     len(agentIDs),
+		"success_count":    successCount,
+		"error_count":      errorCount,
+		"throttle_events":  throttleEvents,
+		"duration_seconds": duration.Seconds(),
+		"rate_per_second":  float64(len(agentIDs)) / duration.Seconds(),
+	}).Info("Agent names collection completed")
+}
+
+// fetchAgentName fetches the first and last name for a specific agent.
+func (m *AgentManager) fetchAgentName(agentID string) *AgentNames {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	
+	output, err := m.lister.DescribeUser(ctx, &connect.DescribeUserInput{
+		InstanceId: aws.String(m.lister.GetInstanceID()),
+		UserId:     aws.String(agentID),
+	})
+	
+	if err != nil {
+		if isRateLimitError(err) {
+			logrus.WithFields(logrus.Fields{
+				"agent_id": agentID,
+				"error":    err.Error(),
+			}).Debug("Rate limited on DescribeUser")
+		} else {
+			logrus.WithFields(logrus.Fields{
+				"agent_id": agentID,
+				"error":    err.Error(),
+			}).Warn("Failed to describe user")
+		}
+		return nil
+	}
+	
+	if output.User == nil {
+		logrus.WithField("agent_id", agentID).Warn("DescribeUser returned nil user")
+		return nil
+	}
+	
+	var firstName, lastName string
+	if output.User.IdentityInfo != nil {
+		firstName = aws.ToString(output.User.IdentityInfo.FirstName)
+		lastName = aws.ToString(output.User.IdentityInfo.LastName)
+		logrus.WithFields(logrus.Fields{
+			"agent_id": agentID,
+			"identity_info_present": true,
+			"raw_first_name": output.User.IdentityInfo.FirstName,
+			"raw_last_name": output.User.IdentityInfo.LastName,
+			"parsed_first_name": firstName,
+			"parsed_last_name": lastName,
+		}).Debug("DescribeUser IdentityInfo details")
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"agent_id": agentID,
+			"identity_info_present": false,
+			"user_present": output.User != nil,
+		}).Debug("DescribeUser IdentityInfo missing")
+	}
+	
+	logrus.WithFields(logrus.Fields{
+		"agent_id":   agentID,
+		"first_name": firstName,
+		"last_name":  lastName,
+	}).Debug("Successfully fetched agent names")
+	
+	return &AgentNames{
+		FirstName: firstName,
+		LastName:  lastName,
+		UpdatedAt: time.Now(),
+	}
+}
+
+// isRateLimitError checks if an error is due to API rate limiting.
+func isRateLimitError(err error) bool {
+	if err == nil {
+		return false
+	}
+	
+	errStr := err.Error()
+	return errors.New(errStr).Error() == "Throttling" ||
+		errors.New(errStr).Error() == "TooManyRequestsException" ||
+		errors.New(errStr).Error() == "ThrottlingException"
+}
+
+// SetNamesEnabled allows enabling or disabling agent name collection.
+func (m *AgentManager) SetNamesEnabled(enabled bool) {
+	m.namesEnabled = enabled
+	if !enabled {
+		logrus.Info("Agent name collection disabled")
+	} else {
+		logrus.Info("Agent name collection enabled")
+	}
+}
+
+// GetNamesCacheStats returns statistics about the agent names cache.
+func (m *AgentManager) GetNamesCacheStats() map[string]interface{} {
+	m.namesMutex.RLock()
+	defer m.namesMutex.RUnlock()
+	
+	return map[string]interface{}{
+		"cached_names_count": len(m.agentNames),
+		"last_refresh":       m.lastNameRefresh,
+		"names_enabled":      m.namesEnabled,
+		"cache_age_hours":    time.Since(m.lastNameRefresh).Hours(),
+	}
 }

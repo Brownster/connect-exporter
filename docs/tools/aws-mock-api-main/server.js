@@ -12,7 +12,15 @@ const bodyParser = require('body-parser');
 const app = express();
 
 // Parse JSON bodies for POST requests - Use Express built-in parser for Express 5.x
-app.use(express.json());
+// Handle AWS SDK content-type specifically
+app.use(express.json({ type: ['application/json', 'application/x-amz-json-1.1'] }));
+
+// Add debugging middleware to log body parsing
+app.use((req, res, next) => {
+    console.log('🔍 MIDDLEWARE DEBUG - Content-Type:', req.get('Content-Type'));
+    console.log('🔍 MIDDLEWARE DEBUG - Body before parsing:', req.body);
+    next();
+});
 
 // Add CORS headers for local testing
 app.use((req, res, next) => {
@@ -1289,6 +1297,434 @@ function paginateResults(items, nextToken) {
 }
 
 /****************************************************
+ * PATH-BASED ROUTE HANDLERS
+ ****************************************************/
+// Add specific GET routes for path-based API calls used by the exporter
+app.get('/queues-summary/:instanceId', (req, res) => {
+    console.log('\n🚀 HIT: GET /queues-summary/:instanceId');
+    console.log('\n=== Processing Queues Summary (GET) ===');
+    const instanceId = req.params.instanceId;
+    console.log('📍 Instance ID from path:', instanceId);
+    
+    if (instanceId !== INSTANCE_ID) {
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    const queueSummaries = Object.values(MOCK_QUEUES).map(queue => ({
+        Id: queue.Id,
+        Name: queue.Name,
+        Arn: queue.Arn,
+        QueueType: queue.QueueType || 'STANDARD',
+        HoursOfOperationId: 'hours-basic',
+        Status: 'ENABLED'
+    }));
+    
+    const { items, nextToken } = paginateResults(queueSummaries, req.query.nextToken);
+    return res.json({
+        QueueSummaryList: items,
+        NextToken: nextToken
+    });
+});
+
+app.get('/users-summary/:instanceId', (req, res) => {
+    console.log('\n🚀 HIT: GET /users-summary/:instanceId');
+    console.log('\n=== Processing Users Summary (GET) ===');
+    const instanceId = req.params.instanceId;
+    console.log('📍 Instance ID from path:', instanceId);
+    
+    if (instanceId !== INSTANCE_ID) {
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    const userSummaries = MOCK_USERS.map(user => ({
+        Id: user.Id,
+        Username: user.Username,
+        Arn: user.Arn,
+        RoutingProfileId: user.RoutingProfile?.Id,
+        RoutingProfileArn: user.RoutingProfile?.Arn,
+        HierarchyGroupId: null,
+        Tags: {}
+    }));
+    
+    const { items, nextToken } = paginateResults(userSummaries, req.query.nextToken);
+    return res.json({
+        UserSummaryList: items,
+        NextToken: nextToken,
+        ApproximateTotalCount: userSummaries.length
+    });
+});
+
+app.get('/routing-profiles-summary/:instanceId', (req, res) => {
+    console.log('\n🚀 HIT: GET /routing-profiles-summary/:instanceId');
+    console.log('\n=== Processing Routing Profiles Summary (GET) ===');
+    const instanceId = req.params.instanceId;
+    console.log('📍 Instance ID from path:', instanceId);
+    
+    if (instanceId !== INSTANCE_ID) {
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    const routingProfileSummaries = Object.values(ROUTING_PROFILES).map(rp => ({
+        Id: rp.Id,
+        Name: rp.Name,
+        Arn: rp.Arn,
+        LastModifiedTime: Math.floor(Date.now() / 1000),
+        LastModifiedRegion: REGION
+    }));
+    
+    const { items, nextToken } = paginateResults(routingProfileSummaries, req.query.nextToken);
+    return res.json({
+        RoutingProfileSummaryList: items,
+        NextToken: nextToken
+    });
+});
+
+app.get('/users/:instanceId/:userId', (req, res) => {
+    console.log('\n=== Processing Describe User (GET) ===');
+    const { instanceId, userId } = req.params;
+    console.log('📍 Instance ID from path:', instanceId);
+    console.log('👤 User ID from path:', userId);
+    
+    if (instanceId !== INSTANCE_ID) {
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    const user = MOCK_USERS.find(u => u.Id === userId);
+    if (!user) {
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    return res.json({ User: user });
+});
+
+// Add GET routes for metrics endpoints
+app.get('/metrics/userdata/:instanceId', (req, res) => {
+    console.log('\n🚀 HIT: GET /metrics/userdata/:instanceId');
+    console.log('\n=== Processing User Data (GET) ===');
+    const instanceId = req.params.instanceId;
+    console.log('📍 Instance ID from path:', instanceId);
+    
+    if (instanceId !== INSTANCE_ID) {
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    // Return formatted user data for agent realtime status
+    const formatted = MOCK_USERS.map(u => ({
+        User: { Id: u.Id, Arn: u.Arn, Username: u.Username },
+        Status: u.Status,
+        RoutingProfile: u.RoutingProfile
+    }));
+    
+    return res.json({
+        UserDataList: formatted,
+        NextToken: null,
+        ApproximateTotalCount: MOCK_USERS.length
+    });
+});
+
+app.get('/metrics/current/:instanceId', (req, res) => {
+    console.log('\n🚀 HIT: GET /metrics/current/:instanceId');
+    console.log('\n=== Processing Current Metrics (GET) ===');
+    const instanceId = req.params.instanceId;
+    console.log('📍 Instance ID from path:', instanceId);
+    
+    if (instanceId !== INSTANCE_ID) {
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    // Simple response for GetCurrentMetricData
+    return res.json({
+        MetricResults: [
+            {
+                Collections: [
+                    { Metric: { Name: 'CONTACTS_IN_QUEUE', Unit: 'COUNT' }, Value: 5 },
+                    { Metric: { Name: 'AGENTS_STAFFED', Unit: 'COUNT' }, Value: 12 }
+                ],
+                Dimensions: { Queue: { Id: 'queue-sales-01', Name: 'Sales Queue' } }
+            }
+        ],
+        NextToken: null
+    });
+});
+
+app.get('/metrics/data', (req, res) => {
+    console.log('\n🚀 HIT: GET /metrics/data');
+    console.log('\n=== Processing Historical Metrics (GET) ===');
+    
+    // Simple response for GetMetricDataV2
+    return res.json({
+        MetricResults: [],
+        NextToken: null
+    });
+});
+
+// Add routing profile queues endpoint
+app.get('/routing-profiles/:instanceId/:routingProfileId/queues', (req, res) => {
+    console.log('\n🚀 HIT: GET /routing-profiles/:instanceId/:routingProfileId/queues');
+    const instanceId = req.params.instanceId;
+    const routingProfileId = req.params.routingProfileId;
+    console.log('📍 Instance ID:', instanceId);
+    console.log('📍 Routing Profile ID:', routingProfileId);
+    
+    if (instanceId !== INSTANCE_ID) {
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    // Find the routing profile
+    const routingProfile = Object.values(ROUTING_PROFILES).find(rp => rp.Id === routingProfileId);
+    if (!routingProfile) {
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    // Return queue configuration for this routing profile
+    const queueConfigs = routingProfile.Queues.map(queueId => {
+        const queue = Object.values(MOCK_QUEUES).find(q => q.Id === queueId);
+        return {
+            QueueReference: {
+                QueueId: queueId,
+                Channel: queue ? queue.Channel : 'VOICE'
+            },
+            Priority: 1,
+            Delay: 0
+        };
+    });
+    
+    return res.json({
+        RoutingProfileQueueConfigSummaryList: queueConfigs,
+        NextToken: null
+    });
+});
+
+// Add agent statuses endpoint
+app.get('/agent-status/:instanceId', (req, res) => {
+    console.log('\n🚀 HIT: GET /agent-status/:instanceId');
+    const instanceId = req.params.instanceId;
+    console.log('📍 Instance ID:', instanceId);
+    
+    if (instanceId !== INSTANCE_ID) {
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    // Return mock agent statuses
+    const agentStatuses = [
+        {
+            AgentStatusId: 'status-001',
+            AgentStatusARN: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-001`,
+            Name: 'Available',
+            Description: 'Agent is available to take calls',
+            Type: 'ROUTABLE',
+            DisplayOrder: 1,
+            State: 'ENABLED'
+        },
+        {
+            AgentStatusId: 'status-002', 
+            AgentStatusARN: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-002`,
+            Name: 'On Call',
+            Description: 'Agent is currently on a call',
+            Type: 'CUSTOM',
+            DisplayOrder: 2,
+            State: 'ENABLED'
+        },
+        {
+            AgentStatusId: 'status-003',
+            AgentStatusARN: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-003`, 
+            Name: 'After Contact Work',
+            Description: 'Agent is doing after contact work',
+            Type: 'CUSTOM',
+            DisplayOrder: 3,
+            State: 'ENABLED'
+        },
+        {
+            AgentStatusId: 'status-004',
+            AgentStatusARN: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-004`,
+            Name: 'Lunch Break', 
+            Description: 'Agent is on lunch break',
+            Type: 'OFFLINE',
+            DisplayOrder: 4,
+            State: 'ENABLED'
+        },
+        {
+            AgentStatusId: 'status-005',
+            AgentStatusARN: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/agent-state/status-005`,
+            Name: 'Error',
+            Description: 'Agent status error',
+            Type: 'OFFLINE', 
+            DisplayOrder: 5,
+            State: 'ENABLED'
+        }
+    ];
+    
+    return res.json({
+        AgentStatusSummaryList: agentStatuses,
+        NextToken: null
+    });
+});
+
+// Add POST route for historical metrics (GetMetricDataV2)
+app.post('/metrics/data', (req, res) => {
+    console.log('\n🚀 HIT: POST /metrics/data');
+    console.log('\n=== Processing Historical Metrics (POST) ===');
+    
+    try {
+        const body = req.body;
+        console.log('\n📦 Request body:', JSON.stringify(body, null, 2));
+        
+        // Simple response for GetMetricDataV2 - historical metrics
+        const response = {
+            MetricResults: [],
+            NextToken: null
+        };
+        
+        console.log('\n✅ Sending response:', JSON.stringify(response, null, 2));
+        return res.json(response);
+        
+    } catch (error) {
+        console.error('\n❌ Internal error:', error);
+        return res.status(500).json(AWS_ERRORS.INTERNAL_SERVICE_ERROR);
+    }
+});
+
+// Add POST route for current metrics with instanceId parameter
+app.post('/metrics/current/:instanceId', (req, res) => {
+    console.log('\n🚀 HIT: POST /metrics/current/:instanceId');
+    console.log('\n=== Processing Current Metrics (POST) ===');
+    const instanceId = req.params.instanceId;
+    console.log('📍 Instance ID from path:', instanceId);
+    
+    if (instanceId !== INSTANCE_ID) {
+        console.log('❌ Invalid instanceId:', instanceId);
+        console.log('Expected:', INSTANCE_ID);
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    try {
+        const body = req.body;
+        console.log('\n📦 Request body:', JSON.stringify(body, null, 2));
+        
+        // Validate request structure
+        if (!body.Filters || !body.CurrentMetrics) {
+            console.log('❌ Missing required fields. Filters or CurrentMetrics not found');
+            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
+        }
+
+        // Validate metrics
+        console.log('\n🔍 Validating metrics...');
+        const metricsValid = validateMetrics(body.CurrentMetrics);
+        if (!metricsValid) {
+            console.log('❌ Metric validation failed');
+            return res.status(400).json(AWS_ERRORS.VALIDATION_EXCEPTION);
+        }
+        console.log('✅ Metrics validation passed');
+
+        // Validate filters
+        console.log('\n🔍 Validating filters...');
+        const filtersValid = validateFilters(body.Filters);
+        if (!filtersValid) {
+            console.log('❌ Filter validation failed');
+            return res.status(400).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+        }
+        console.log('✅ Filters validation passed');
+
+        // Check for random errors
+        const error = shouldError();
+        if (error) {
+            console.log('⚠️ Random error triggered:', error);
+            return res.status(500).json(error);
+        }
+
+        // Generate metrics
+        console.log('\n📊 Generating metrics...');
+        const allMetricResults = [];
+        const queueIds = body.Filters.Queues;
+
+        const channelFilters = [];
+        if (body.Filters.Channel) {
+            channelFilters.push(body.Filters.Channel);
+        }
+        if (Array.isArray(body.Filters.Channels)) {
+            channelFilters.push(...body.Filters.Channels);
+        }
+
+        queueIds.forEach(queueId => {
+            const queue = Object.values(MOCK_QUEUES).find(q => q.Id === queueId);
+            if (queue) {
+                if (channelFilters.length > 0 && !channelFilters.includes(queue.Channel)) {
+                    console.log(`Skipping queue ${queue.Id} due to channel filter`);
+                    return;
+                }
+                console.log(`Generating metrics for queue: ${queue.Name} (${queue.Id})`);
+                const generator = new MetricGenerator(queue);
+                const metrics = generator.generateMetrics(
+                    body.CurrentMetrics.map(m => m.Name)
+                );
+                console.log('Generated metrics:', JSON.stringify(metrics, null, 2));
+                allMetricResults.push(...metrics);
+            }
+        });
+
+        // Paginate results
+        console.log('\n📑 Paginating results...');
+        const { items, nextToken: newNextToken } = paginateResults(
+            allMetricResults, 
+            body.NextToken
+        );
+
+        // Send response
+        const response = {
+            MetricResults: items,
+            NextToken: newNextToken,
+            DataSnapshotTime: Math.floor(Date.now() / 1000)
+        };
+
+        console.log('\n✅ Sending response:', JSON.stringify(response, null, 2));
+        return res.json(response);
+
+    } catch (error) {
+        console.error('\n❌ Internal error:', error);
+        return res.status(500).json(AWS_ERRORS.INTERNAL_SERVICE_ERROR);
+    }
+});
+
+// Add POST route for userdata with instanceId parameter
+app.post('/metrics/userdata/:instanceId', (req, res) => {
+    console.log('\n🚀 HIT: POST /metrics/userdata/:instanceId');
+    console.log('\n=== Processing User Data (POST) ===');
+    const instanceId = req.params.instanceId;
+    console.log('📍 Instance ID from path:', instanceId);
+    
+    if (instanceId !== INSTANCE_ID) {
+        console.log('❌ Invalid instanceId:', instanceId);
+        console.log('Expected:', INSTANCE_ID);
+        return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
+    }
+    
+    try {
+        const body = req.body;
+        console.log('\n📦 Request body:', JSON.stringify(body, null, 2));
+        
+        // Return formatted user data for agent realtime status
+        const formatted = MOCK_USERS.map(u => ({
+            User: { Id: u.Id, Arn: u.Arn, Username: u.Username },
+            Status: u.Status,
+            RoutingProfile: u.RoutingProfile
+        }));
+        
+        const response = {
+            UserDataList: formatted,
+            NextToken: null,
+            ApproximateTotalCount: MOCK_USERS.length
+        };
+        
+        console.log('\n✅ Sending response:', JSON.stringify(response, null, 2));
+        return res.json(response);
+        
+    } catch (error) {
+        console.error('\n❌ Internal error:', error);
+        return res.status(500).json(AWS_ERRORS.INTERNAL_SERVICE_ERROR);
+    }
+});
+
+/****************************************************
  * MAIN ROUTE HANDLER
  ****************************************************/
 // Express 5.x no longer supports using `*` as a catch-all route
@@ -1306,175 +1742,7 @@ app.post('/', (req, res, next) => {
     console.log('Action:', action);
 
     // Check if this is an AWS SDK style request
-    if (action === 'ListQueues' || req.path.startsWith('/queues-summary/')) {
-        // Extract instanceId from either query or path
-        let instanceId;
-        if (req.path.startsWith('/queues-summary/')) {
-            instanceId = req.path.split('/queues-summary/')[1]?.split('?')[0];
-            console.log('Extracted instanceId from path:', instanceId);
-        } else {
-            instanceId = req.body.InstanceId || req.query.InstanceId;
-            console.log('Using instanceId from request:', instanceId);
-        }
-        
-        // Validate instanceId
-        if (!instanceId) {
-            console.log('Missing instanceId');
-            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
-        }
-
-        if (instanceId !== INSTANCE_ID) {
-            console.log('Instance ID mismatch:', instanceId, '!==', INSTANCE_ID);
-            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
-        }
-
-        // Validate nextToken if provided
-        const nextToken = req.query.nextToken;
-        if (nextToken && isNaN(parseInt(nextToken, 10))) {
-            console.log('Invalid nextToken:', nextToken);
-            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
-        }
-
-        // Simulate random errors
-        const error = shouldError();
-        if (error) {
-            console.log('Random error triggered:', error);
-            return res.status(500).json(error);
-        }
-
-        // Get queue list and paginate
-        const queueList = Object.values(MOCK_QUEUES);
-        const { items, nextToken: newNextToken } = paginateResults(queueList, nextToken);
-
-        console.log('Returning queues:', items);
-        console.log('Next token:', newNextToken);
-        
-        return res.json({
-            QueueSummaryList: items,
-            NextToken: newNextToken
-        });
-    }
-    else if (action === 'ListUsers' || req.path.startsWith('/users-summary/')) {
-        console.log('\n=== Processing List Users Request ===');
-        
-        // Extract instanceId from either query or path
-        let instanceId;
-        if (req.path.startsWith('/users-summary/')) {
-            instanceId = req.path.split('/users-summary/')[1]?.split('?')[0];
-            console.log('📍 Extracted instanceId from path:', instanceId);
-        } else {
-            instanceId = req.body.InstanceId || req.query.InstanceId;
-            console.log('📍 Using instanceId from request:', instanceId);
-        }
-
-        // Validate instanceId
-        if (!instanceId) {
-            console.log('❌ Missing instanceId');
-            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
-        }
-
-        if (instanceId !== INSTANCE_ID) {
-            console.log('❌ Instance ID mismatch:', instanceId, '!==', INSTANCE_ID);
-            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
-        }
-
-        // Validate nextToken if provided
-        const nextToken = req.query.nextToken || (req.body && req.body.NextToken);
-        if (nextToken && isNaN(parseInt(nextToken, 10))) {
-            console.log('❌ Invalid nextToken:', nextToken);
-            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
-        }
-
-        // Simulate random errors
-        const error = shouldError();
-        if (error) {
-            console.log('⚠️ Random error triggered:', error);
-            return res.status(500).json(error);
-        }
-
-        // Convert MOCK_USERS to AWS Connect UserSummary format
-        // Using pagination with smaller page size (4 users) to exercise pagination
-        const userSummaries = MOCK_USERS.map(user => ({
-            Id: user.Id,
-            Username: user.Username,
-            Arn: user.Arn,
-            RoutingProfileId: user.RoutingProfile.Id,
-            RoutingProfileArn: user.RoutingProfile.Arn,
-            HierarchyGroupId: null, // Not implemented in mock
-            Tags: {} // Not implemented in mock
-        }));
-
-        // Use custom pagination with page size of 4 to test pagination with 11 users
-        const pageSize = 4;
-        const startIndex = nextToken ? parseInt(nextToken, 10) : 0;
-        const endIndex = Math.min(startIndex + pageSize, userSummaries.length);
-        const items = userSummaries.slice(startIndex, endIndex);
-        const newNextToken = endIndex < userSummaries.length ? endIndex.toString() : null;
-
-        console.log(`📑 Paginating users: ${startIndex}-${endIndex-1} of ${userSummaries.length} total`);
-        console.log('📤 Returning users:', items.map(u => u.Username));
-        console.log('🔗 Next token:', newNextToken);
-
-        return res.json({
-            UserSummaryList: items,
-            NextToken: newNextToken,
-            ApproximateTotalCount: userSummaries.length
-        });
-    }
-    else if (action === 'ListRoutingProfiles' || req.path.startsWith('/routing-profiles-summary/')) {
-        console.log('\n=== Processing List Routing Profiles Request ===');
-        
-        // Extract instanceId from either query or path
-        let instanceId;
-        if (req.path.startsWith('/routing-profiles-summary/')) {
-            instanceId = req.path.split('/routing-profiles-summary/')[1]?.split('?')[0];
-            console.log('📍 Extracted instanceId from path:', instanceId);
-        } else {
-            instanceId = req.body.InstanceId || req.query.InstanceId;
-            console.log('📍 Using instanceId from request:', instanceId);
-        }
-
-        // Validate instanceId
-        if (!instanceId) {
-            console.log('❌ Missing instanceId');
-            return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
-        }
-
-        if (instanceId !== INSTANCE_ID) {
-            console.log('❌ Instance ID mismatch:', instanceId, '!==', INSTANCE_ID);
-            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
-        }
-
-        // Convert ROUTING_PROFILES to RoutingProfileSummaryList format
-        const routingProfileSummaries = Object.values(ROUTING_PROFILES).map(rp => ({
-            Id: rp.Id,
-            Name: rp.Name,
-            Arn: rp.Arn,
-            LastModifiedTime: new Date(Date.now() - Math.random() * 86400000).toISOString(), // Random time in last 24h
-            LastModifiedRegion: REGION
-        }));
-
-        // Handle pagination
-        const nextToken = req.query.nextToken || (req.body && req.body.NextToken);
-        const maxResults = parseInt(req.query.maxResults || req.body?.MaxResults || '1000', 10);
-        const startIndex = nextToken ? parseInt(nextToken, 10) : 0;
-        const endIndex = Math.min(startIndex + maxResults, routingProfileSummaries.length);
-        const items = routingProfileSummaries.slice(startIndex, endIndex);
-        const newNextToken = endIndex < routingProfileSummaries.length ? endIndex.toString() : null;
-
-        console.log(`📋 Returning ${items.length} routing profiles (${startIndex}-${endIndex} of ${routingProfileSummaries.length})`);
-        if (newNextToken) {
-            console.log(`🔄 NextToken: ${newNextToken}`);
-        }
-
-        return res.json({
-            RoutingProfileSummaryList: items,
-            NextToken: newNextToken,
-            LastModifiedRegion: REGION,
-            LastModifiedTime: new Date().toISOString()
-        });
-    } 
-    else if (action === 'GetCurrentMetricData' || req.path.startsWith('/metrics/current/')) {
+    if (action === 'GetCurrentMetricData' || req.path.startsWith('/metrics/current/')) {
         console.log('\n=== Processing Metrics Request ===');
         
         // 1. Extract and validate instanceId
@@ -1752,7 +2020,7 @@ app.post('/', (req, res, next) => {
             ApproximateTotalCount: MOCK_USERS.length
         });
     }
-    else if (action === 'ListRoutingProfileQueues' || req.path.startsWith('/routing-profile-queues/') || req.path.includes('/routing-profiles/')) {
+    else if (action === 'ListRoutingProfileQueues' || (req.path.includes('/routing-profiles/') && req.path.includes('/queues'))) {
         console.log('\n=== Processing Routing Profile Queues Request ===');
 
         let instanceId, rpId;
@@ -1878,79 +2146,61 @@ app.post('/', (req, res, next) => {
             NextToken: newNextToken
         });
     }
-    else if (action === 'DescribeUser' || req.path.startsWith('/describe-user/')) {
-        console.log('\n=== Processing Describe User Request ===');
-        console.log('🔍 DEBUG - req.body:', req.body);
-        console.log('🔍 DEBUG - req.query:', req.query);
-        console.log('🔍 DEBUG - action:', action);
-
-        let instanceId, userId;
-        if (req.path.startsWith('/describe-user/')) {
-            const parts = req.path.split('/describe-user/')[1]?.split('/') || [];
-            instanceId = parts[0];
-            userId = parts[1];
-            console.log('📍 Extracted instanceId from path:', instanceId);
-            console.log('📍 Extracted userId from path:', userId);
-        } else {
-            instanceId = req.body && req.body.InstanceId || req.query.InstanceId;
-            userId = req.body && req.body.UserId || req.query.UserId;
-            console.log('📍 Using instanceId from body/query:', instanceId);
-            console.log('📍 Using userId from body/query:', userId);
-        }
-
-        if (!instanceId || instanceId !== INSTANCE_ID) {
-            console.log('❌ Invalid instanceId:', instanceId);
-            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
-        }
-
-        if (!userId) {
-            console.log('❌ Missing userId parameter');
+    else if (action === 'DescribeUser') {
+        console.log('\n=== Processing DescribeUser Request ===');
+        
+        const body = req.body;
+        console.log('\n📦 Request body:', JSON.stringify(body, null, 2));
+        
+        // Validate required fields
+        if (!body.InstanceId || !body.UserId) {
+            console.log('❌ Missing required fields: InstanceId or UserId');
             return res.status(400).json(AWS_ERRORS.INVALID_PARAMETER);
         }
-
-        const error = shouldError();
-        if (error) {
-            console.log('Random error triggered:', error);
-            return res.status(500).json(error);
+        
+        // Validate instance ID
+        if (body.InstanceId !== INSTANCE_ID) {
+            console.log('❌ Invalid instance ID:', body.InstanceId);
+            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
         }
-
-        // Find user in MOCK_USERS
-        const user = MOCK_USERS.find(u => u.Id === userId);
+        
+        // Find the user by ID
+        const user = MOCK_USERS.find(u => u.Id === body.UserId);
         if (!user) {
-            console.log('❌ User not found:', userId);
-            return res.status(404).json({
-                __type: 'ResourceNotFoundException',
-                message: `User ${userId} does not exist.`
-            });
+            console.log('❌ User not found:', body.UserId);
+            return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
         }
-
-        // Return detailed user information in AWS DescribeUser format
+        
+        // Create the DescribeUser response according to AWS Connect API format
         const response = {
             User: {
                 Id: user.Id,
                 Arn: user.Arn,
                 Username: user.Username,
                 IdentityInfo: {
-                    FirstName: user.FirstName || '',
-                    LastName: user.LastName || ''
+                    FirstName: user.FirstName || user.Username.split('.')[0] || 'Unknown',
+                    LastName: user.LastName || user.Username.split('.')[1] || 'User',
+                    Email: `${user.Username}@example.com`
                 },
                 PhoneConfig: {
                     PhoneType: 'SOFT_PHONE',
                     AutoAccept: false,
-                    AfterContactWorkTimeLimit: 300
+                    AfterContactWorkTimeLimit: 120,
+                    DeskPhoneNumber: null
                 },
                 DirectoryUserId: user.Id,
-                SecurityProfileIds: ['security-profile-agent'],
-                RoutingProfileId: user.RoutingProfile?.Id || '',
+                SecurityProfileIds: ['security-profile-001'],
+                RoutingProfileId: user.RoutingProfile.Id,
                 HierarchyGroupId: null,
-                Tags: {}
+                Tags: {},
+                LastModifiedTime: Math.floor(Date.now() / 1000),
+                LastModifiedRegion: REGION
             }
         };
-
-        console.log('✅ Successfully described user:', userId);
+        
+        console.log('\n✅ Sending DescribeUser response:', JSON.stringify(response, null, 2));
         return res.json(response);
     }
-    
     // If not an AWS SDK request, continue to other routes
     next();
 });

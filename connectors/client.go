@@ -149,45 +149,6 @@ func (c *AWSConnectConnector) ListAgentStatuses(ctx context.Context, input *conn
 	return output, nil
 }
 
-// ListUsers retrieves user information from the AWS Connect instance. It handles
-// pagination and retries to ensure all users are fetched.
-func (c *AWSConnectConnector) ListUsers(ctx context.Context, input *connect.ListUsersInput) (*connect.ListUsersOutput, error) {
-	instanceID := input.InstanceId
-	var err error
-	var users []types.UserSummary
-
-	for attempt := 0; attempt < 3; attempt++ {
-		users = users[:0]
-		var nextToken *string
-		for {
-			var out *connect.ListUsersOutput
-			out, err = c.client.ListUsers(ctx, &connect.ListUsersInput{
-				InstanceId: instanceID,
-				MaxResults: input.MaxResults,
-				NextToken:  nextToken,
-			})
-			if err != nil {
-				break
-			}
-			users = append(users, out.UserSummaryList...)
-			if out.NextToken == nil {
-				break
-			}
-			nextToken = out.NextToken
-		}
-		if err == nil {
-			logrus.WithFields(logrus.Fields{
-				"user_count":   len(users),
-				"instance_arn": c.instanceARN,
-			}).Debug("Successfully listed users")
-
-			return &connect.ListUsersOutput{UserSummaryList: users}, nil
-		}
-		time.Sleep(time.Duration(attempt+1) * time.Second)
-	}
-	logrus.WithError(err).Warn("failed to list users")
-	return nil, fmt.Errorf("error listing users: %w", err)
-}
 
 // ListRoutingProfileQueues retrieves the queue IDs associated with a routing profile.
 func (c *AWSConnectConnector) ListRoutingProfileQueues(ctx context.Context, input *connect.ListRoutingProfileQueuesInput) (*connect.ListRoutingProfileQueuesOutput, error) {
@@ -204,33 +165,4 @@ func (c *AWSConnectConnector) ListRoutingProfileQueues(ctx context.Context, inpu
 	return output, nil
 }
 
-// ListRoutingProfiles retrieves all routing profiles for the AWS Connect instance.
-// It handles pagination automatically, collecting all routing profiles into a single response.
-func (c *AWSConnectConnector) ListRoutingProfiles(ctx context.Context, input *connect.ListRoutingProfilesInput) (*connect.ListRoutingProfilesOutput, error) {
-	output, err := c.client.ListRoutingProfiles(ctx, input)
-	if err != nil {
-		return nil, fmt.Errorf("error listing routing profiles: %w", err)
-	}
 
-	logrus.WithFields(logrus.Fields{
-		"routing_profile_count": len(output.RoutingProfileSummaryList),
-		"instance_arn":          c.instanceARN,
-	}).Debug("Successfully listed routing profiles")
-
-	return output, nil
-}
-
-// DescribeUser retrieves detailed information about a specific user/agent.
-func (c *AWSConnectConnector) DescribeUser(ctx context.Context, input *connect.DescribeUserInput) (*connect.DescribeUserOutput, error) {
-	output, err := c.client.DescribeUser(ctx, input)
-	if err != nil {
-		return nil, fmt.Errorf("error describing user: %w", err)
-	}
-
-	logrus.WithFields(logrus.Fields{
-		"user_id":      aws.ToString(input.UserId),
-		"instance_arn": c.instanceARN,
-	}).Debug("Successfully described user")
-
-	return output, nil
-}

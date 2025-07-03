@@ -39,7 +39,7 @@ func isDevelopmentMode() bool {
 func getMockEndpoint() string {
 	endpoint := os.Getenv("AWS_CONNECT_MOCK_ENDPOINT")
 	if endpoint == "" {
-		endpoint = "http://localhost:3000"
+		endpoint = "http://127.0.0.1:3000"
 	}
 	return endpoint
 }
