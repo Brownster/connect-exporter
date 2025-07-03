@@ -1,4 +1,4 @@
-![Untitled diagram _ Mermaid Chart-2025-07-03-225925](https://github.com/user-attachments/assets/942e64b3-25ba-4b43-ab4e-bb399b956672)# AWS Connect Exporter
+# AWS Connect Exporter
 
 Prometheus exporter that collects metrics from AWS Connect using the monitoring-maas framework.
 
