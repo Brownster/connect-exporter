@@ -12,7 +12,13 @@ Prometheus exporter that collects metrics from AWS Connect using the monitoring-
 ```bash
 go build -o aws-connect-exporter ./cmd/connect-exporter_exporter
 ```
-![Uploading Untitled diagram _ Mermaid Chart-2025-07-03-225925.svg…]()
+
+![connect exporter _ Mermaid Chart-2025-07-03-230709](https://github.com/user-attachments/assets/42617ddc-84a4-4a0f-9bd7-8d4c5456e9ea)
+
+![Untitled diagram _ Mermaid Chart-2025-07-03-230653](https://github.com/user-attachments/assets/1fdd0e82-b31f-4ef6-97ad-8669e9ab3594)
+
+
+
 
 ## Minimal Configuration
 
