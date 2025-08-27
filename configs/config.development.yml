@@ -1,0 +1,99 @@
+# AWS Connect Exporter - Development Configuration
+# Uses mock AWS Connect API for local development
+
+# Server configuration
+listen_address: 127.0.0.1
+listen_port: 9090
+log_level: debug
+
+# AWS Configuration (for development with mock API)
+aws:
+  # Mock AWS region
+  region: "eu-west-2"
+  # Mock AWS Connect Instance ARN (matches mock API data)
+  instance_arn: "arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772"
+
+# Collector Configuration
+collectors:
+  # Realtime Queue Metrics Collector
+  realtime_queue:
+    enabled: true
+    interval: 30  # Faster collection for development (30 seconds)
+    metrics_cache_ttl: 15s
+    queue_cache_ttl: 5m
+    queue_refresh_interval: 1m
+    queues_include_regex: ""
+    # Available real-time metrics via GetCurrentMetricData
+    # Uncomment any extra metrics you wish to collect. Each entry
+    # maps the AWS metric name to the Prometheus metric output.
+    # - AGENTS_AFTER_CONTACT_WORK -> connect_queue_agents{state="AfterContactWork"}
+    # - AGENTS_AVAILABLE         -> connect_queue_agents{state="Available"}
+    # - AGENTS_ERROR             -> connect_queue_agents{state="Error"}
+    # - AGENTS_NON_PRODUCTIVE    -> connect_queue_agents{state="NonProductive"}
+    # - AGENTS_ON_CALL           -> connect_queue_agents{state="OnCall"}
+    # - AGENTS_ON_CONTACT        -> connect_queue_agents{state="OnContact"}
+    # - AGENTS_ONLINE            -> connect_queue_agents{state="Online"}
+    # - AGENTS_STAFFED           -> connect_queue_agents{state="Staffed"}
+    # - CONTACTS_IN_QUEUE        -> connect_queue_contacts_in_queue
+    # - CONTACTS_SCHEDULED       -> connect_queue_contacts_scheduled
+    # - OLDEST_CONTACT_AGE       -> connect_queue_oldest_contact_age_seconds
+    # - SLOTS_ACTIVE             -> connect_queue_slots_active
+    # - SLOTS_AVAILABLE          -> connect_queue_slots_available
+    
+  # Agent Status Collector  
+  agent_status:
+    enabled: true
+    interval: 60  # Faster collection for development (1 minute)
+
+  # Agent Realtime Status Collector
+  agent_realtime_status:
+    enabled: true
+    interval: 30  # Faster collection for development (30 seconds)
+
+  # Historical Queue Metrics Collector
+  historical_queue:
+    enabled: true
+    interval: 60  # Faster collection for development (1 minute)
+
+  historical_calls:
+    enabled: false
+    interval: 60
+
+  historical_aht:
+    enabled: true
+    interval: 60
+
+  historical_acw:
+    enabled: true
+    interval: 60
+
+# Global settings
+global:
+  # Shorter timeout for development
+  timeout: 10s
+  
+  # Development labels
+  labels:
+    environment: "development"
+    service: "aws-connect"
+    
+  # Aggressive retry for testing
+  retry:
+    max_attempts: 3
+    backoff_duration: 1s
+    max_backoff_duration: 3s
+
+# Development Environment Variables:
+# ENV=development (enables mock API mode)
+# AWS_CONNECT_MOCK_ENDPOINT=http://localhost:3000 (optional, defaults to localhost:3000)
+#
+# To use this configuration:
+# 1. Start the mock API server: cd docs/tools/aws-mock-api-main && node server.js
+# 2. Set environment: export ENV=development
+# 3. Run exporter: ./aws-connect-exporter --config.file=config.development.yml
+#
+# Mock API provides:
+# - 4 predefined queues (Sales, Support, Monitoring Voice/Chat)
+# - Realistic metric simulation with configurable error rates
+# - AWS-like pagination and error responses
+# - Admin endpoint for error rate adjustment: curl -X POST http://localhost:3000/admin/errorRate -d '{"rate": 0.1}'

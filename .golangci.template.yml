@@ -1,0 +1,183 @@
+# Template golangci-lint configuration
+# Copy this to .golangci.yml and customize for your project
+
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+  skip-dirs:
+    - vendor
+    - testdata
+    - .github
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*_generated\\.go$"
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  gocyclo:
+    min-complexity: 15
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: github.com/TEMPLATE_ORG/TEMPLATE_REPO_NAME
+
+  golint:
+    min-confidence: 0.8
+
+  govet:
+    enable-all: true
+    disable:
+      - shadow
+
+  revive:
+    rules:
+      - name: exported
+        arguments:
+          - "checkPrivateReceivers"
+          - "sayRepetitiveInsteadOfStutters"
+
+  staticcheck:
+    checks: ["all"]
+
+  unused:
+    check-exported: false
+
+  misspell:
+    locale: US
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+
+linters:
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - exportloopref
+    - exhaustive
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - rowserrcheck
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace
+    - revive
+
+  disable:
+    - funlen      # Too strict for some cases
+    - gochecknoglobals  # Globals are sometimes necessary
+    - gocognit    # Cognitive complexity can be subjective
+    - godot       # Not always necessary
+    - godox       # Allow TODO/FIXME comments
+    - goerr113    # Sometimes wrapped errors are fine
+    - gofumpt     # Conflicts with gofmt sometimes
+    - goheader    # License headers handled separately
+    - gomodguard  # Module restrictions not needed
+    - lll         # Line length checked by other tools
+    - maligned    # Struct alignment not critical for most cases
+    - nestif      # Nesting sometimes unavoidable
+    - nlreturn    # Return formatting can be flexible
+    - prealloc    # Premature optimization
+    - testpackage # Tests in same package often useful
+    - wrapcheck   # Error wrapping can be context-dependent
+    - wsl         # Whitespace rules too strict
+
+issues:
+  exclude-use-default: false
+  exclude:
+    # Ignore missing comments for exported types/functions in test files
+    - "exported (type|method|function) .* should have comment or be unexported"
+    - "should have a package comment, unless it's in another file for this package"
+    
+    # Ignore certain staticcheck warnings
+    - "SA9003:"
+    - "SA1019:" # Ignore deprecation warnings
+    
+    # Ignore gosec warnings in test files
+    - "G404:" # Weak random number generator
+    - "G101:" # Look for hard coded credentials
+    
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - gomnd
+        
+    # Exclude some linters from running on testdata
+    - path: testdata/
+      linters:
+        - gosec
+        - errcheck
+        
+    # Exclude some linters from running on generated files
+    - path: ".*\\.pb\\.go"
+      linters:
+        - all
+        
+    # Exclude some specific issues
+    - text: "Use of weak random number generator"
+      linters:
+        - gosec
+    - text: "Subprocess launched with variable"
+      linters:
+        - gosec
+    - text: "cyclomatic complexity"
+      linters:
+        - gocyclo
+
+  fix: false
+  max-issues-per-linter: 0
+  max-same-issues: 0

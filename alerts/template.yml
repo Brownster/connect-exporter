@@ -1,0 +1,104 @@
+# Template alerting rules for your exporter
+# Copy and customize these rules for your specific exporter
+
+groups:
+  # Alerting rules for AWS Connect Exporter
+  - name: AWSConnectExporter.rules
+    rules:
+      # Exporter availability
+      - alert: AWSConnectExporterDown
+        expr: up{job="aws-connect-exporter"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: aws-connect-exporter
+        annotations:
+          summary: "AWS Connect Exporter is down"
+          description: "AWS Connect Exporter has been down for more than 5 minutes on {{ $labels.instance }}"
+          dashboard: "https://grafana.company.com/d/aws-connect-exporter-overview"
+          runbook: "https://docs.company.com/runbooks/aws-connect-exporter"
+
+      # Service availability alerts
+      - alert: ServiceUnavailable
+        expr: aws_connect_exporter_service_available == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "Service {{ $labels.service }} is unavailable"
+          description: "Service {{ $labels.service }} has been unavailable for more than 2 minutes"
+          
+      # High response times
+      - alert: HighResponseTime
+        expr: aws_connect_exporter_response_time_seconds > 5
+        for: 3m
+        labels:
+          severity: warning
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "High response time for {{ $labels.service }}"
+          description: "Response time for {{ $labels.service }} is {{ $value }}s, above threshold of 5s"
+
+      # Error rate alerts
+      - alert: HighErrorRate
+        expr: rate(aws_connect_exporter_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "High error rate for {{ $labels.service }}"
+          description: "Error rate for {{ $labels.service }} is {{ $value | humanizePercentage }}"
+
+  # System health alerts (if monitoring system metrics)
+  - name: SystemHealth.rules
+    rules:
+      - alert: HighCPUUsage
+        expr: aws_connect_exporter_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: aws_connect_exporter_memory_usage_percent > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: DiskSpaceLow
+        expr: aws_connect_exporter_disk_free_percent < 15
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk space is {{ $value }}% free on {{ $labels.instance }} {{ $labels.path }}"
+
+  # Business logic alerts (customize for your domain)
+  - name: BusinessLogic.rules
+    rules:
+      - alert: BusinessMetricAnomaly
+        expr: aws_connect_exporter_business_metric > 1000 or aws_connect_exporter_business_metric < 10
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Business metric anomaly detected"
+          description: "Business metric value {{ $value }} is outside normal range"
+
+      # SLA violation alerts
+      - alert: SLAViolation
+        expr: aws_connect_exporter_sla_compliance_percent < 99
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SLA violation detected"
+          description: "SLA compliance is {{ $value }}% for {{ $labels.service }}"

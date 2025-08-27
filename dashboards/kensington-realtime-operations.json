@@ -1,0 +1,312 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Kensington Contact Center - Real-time Operations",
+    "tags": ["kensington", "contact-center", "realtime", "operations"],
+    "style": "dark",
+    "timezone": "Europe/London",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "📞 Queue Overview",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(aws_connect_exporter_realtime_queue_connect_queue_slots_available)",
+            "legendFormat": "Available Slots",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(aws_connect_exporter_realtime_queue_connect_queue_agents{state=\"NonProductive\"})",
+            "legendFormat": "Non-Productive Agents",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "displayMode": "basic",
+              "orientation": "horizontal"
+            },
+            "unit": "short",
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 3},
+                {"color": "green", "value": 5}
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "orientation": "horizontal",
+          "textMode": "auto",
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "center"
+        }
+      },
+      {
+        "id": 2,
+        "title": "👥 Agent Status Distribution",
+        "type": "piechart",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+        "targets": [
+          {
+            "expr": "count by(status_name) (aws_connect_exporter_agent_realtime_status_agent_state)",
+            "legendFormat": "{{status_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "unit": "short"
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "pieType": "pie",
+          "tooltip": {"mode": "single"},
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "values": ["value", "percent"]
+          },
+          "displayLabels": ["name", "value"]
+        }
+      },
+      {
+        "id": 3,
+        "title": "📋 Queue Performance by Channel",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+        "targets": [
+          {
+            "expr": "aws_connect_exporter_realtime_queue_connect_queue_slots_available",
+            "legendFormat": "{{queue}} ({{channel}})",
+            "refId": "A",
+            "format": "table",
+            "instant": true
+          },
+          {
+            "expr": "aws_connect_exporter_realtime_queue_connect_queue_agents{state=\"NonProductive\"}",
+            "legendFormat": "{{queue}} ({{channel}})",
+            "refId": "B",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "custom": {
+              "align": "center",
+              "displayMode": "color-background"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 2},
+                {"color": "green", "value": 5}
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "queue"},
+              "properties": [
+                {"id": "displayName", "value": "Queue"},
+                {"id": "custom.width", "value": 150}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "channel"},
+              "properties": [
+                {"id": "displayName", "value": "Channel"},
+                {"id": "custom.width", "value": 80}
+              ]
+            }
+          ]
+        },
+        "transformations": [
+          {
+            "id": "merge",
+            "options": {}
+          },
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "region": true,
+                "queue_id": true,
+                "queue_type": true,
+                "__name__": true
+              },
+              "indexByName": {},
+              "renameByName": {
+                "Value #A": "Available Slots",
+                "Value #B": "Non-Productive"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "📈 Real-time Queue Metrics Trend",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 14},
+        "targets": [
+          {
+            "expr": "aws_connect_exporter_realtime_queue_connect_queue_slots_available",
+            "legendFormat": "{{queue}} - Available Slots",
+            "refId": "A"
+          },
+          {
+            "expr": "aws_connect_exporter_realtime_queue_connect_queue_agents{state=\"NonProductive\"}",
+            "legendFormat": "{{queue}} - Non-Productive",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "gradientMode": "opacity",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              },
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {"type": "linear"},
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {"group": "A", "mode": "none"},
+              "thresholdsStyle": {"mode": "off"}
+            },
+            "unit": "short",
+            "min": 0
+          }
+        },
+        "options": {
+          "tooltip": {"mode": "multi"},
+          "legend": {
+            "calcs": ["last", "max"],
+            "displayMode": "table",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "⚠️ Operational Alerts",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 24, "x": 0, "y": 22},
+        "targets": [
+          {
+            "expr": "sum(aws_connect_exporter_realtime_queue_connect_queue_slots_available) < 3",
+            "legendFormat": "Low Available Slots",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(aws_connect_exporter_realtime_queue_connect_queue_agents{state=\"NonProductive\"}) > 5",
+            "legendFormat": "High Non-Productive",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "red", "value": 1}
+              ]
+            },
+            "unit": "bool",
+            "noValue": "All Good ✅"
+          }
+        },
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "justifyMode": "center",
+          "orientation": "horizontal",
+          "reduceOptions": {
+            "calcs": ["lastNotNull"],
+            "fields": "",
+            "values": false
+          },
+          "textMode": "value_and_name"
+        }
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 1,
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "external link",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": ["kensington"],
+        "title": "Daily Performance Dashboard",
+        "tooltip": "Switch to daily performance view",
+        "type": "dashboards",
+        "url": ""
+      }
+    ],
+    "liveNow": true,
+    "panels": [],
+    "schemaVersion": 30,
+    "version": 1,
+    "weekStart": "monday"
+  }
+}

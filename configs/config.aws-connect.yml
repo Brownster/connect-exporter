@@ -1,0 +1,120 @@
+# AWS Connect Exporter Configuration
+# Production configuration template for AWS Connect monitoring
+
+# Server configuration
+listen_address: 127.0.0.1
+listen_port: 9090
+log_level: info
+
+# AWS Configuration
+aws:
+  # AWS region where your Connect instance is located
+  region: "us-east-1"
+  # AWS Connect Instance ARN - REQUIRED
+  # Format: arn:aws:connect:region:account-id:instance/instance-id
+  instance_arn: "arn:aws:connect:us-east-1:123456789012:instance/your-instance-id"
+
+# Collector Configuration
+collectors:
+  # Realtime Queue Metrics Collector
+  realtime_queue:
+    enabled: true
+    interval: 60  # Collection interval in seconds (1 minute)
+    metrics_cache_ttl: 15s
+    queue_cache_ttl: 5m
+    queue_refresh_interval: 5m
+    queues_include_regex: ""
+    # Available real-time metrics via GetCurrentMetricData
+    # Uncomment any extra metrics you wish to collect. Each entry
+    # maps the AWS metric name to the Prometheus metric output.
+    # - AGENTS_AFTER_CONTACT_WORK -> connect_queue_agents{state="AfterContactWork"}
+    # - AGENTS_AVAILABLE         -> connect_queue_agents{state="Available"}
+    # - AGENTS_ERROR             -> connect_queue_agents{state="Error"}
+    # - AGENTS_NON_PRODUCTIVE    -> connect_queue_agents{state="NonProductive"}
+    # - AGENTS_ON_CALL           -> connect_queue_agents{state="OnCall"}
+    # - AGENTS_ON_CONTACT        -> connect_queue_agents{state="OnContact"}
+    # - AGENTS_ONLINE            -> connect_queue_agents{state="Online"}
+    # - AGENTS_STAFFED           -> connect_queue_agents{state="Staffed"}
+    # - CONTACTS_IN_QUEUE        -> connect_queue_contacts_in_queue
+    # - CONTACTS_SCHEDULED       -> connect_queue_contacts_scheduled
+    # - OLDEST_CONTACT_AGE       -> connect_queue_oldest_contact_age_seconds
+    # - SLOTS_ACTIVE             -> connect_queue_slots_active
+    # - SLOTS_AVAILABLE          -> connect_queue_slots_available
+    
+  # Agent Status Collector  
+  agent_status:
+    enabled: true
+    interval: 300  # Collection interval in seconds (5 minutes)
+
+  # Agent Realtime Status Collector
+  agent_realtime_status:
+    enabled: true
+    interval: 60  # Collection interval in seconds (1 minute)
+
+  # Historical Queue Metrics Collector
+  historical_queue:
+    enabled: true
+    interval: 300  # Collection interval in seconds (5 minutes)
+
+  historical_calls:
+    enabled: true
+    interval: 300
+
+  historical_aht:
+    enabled: true
+    interval: 300
+
+  historical_acw:
+    enabled: true
+    interval: 300
+
+# Global settings
+global:
+  # Default timeout for all operations
+  timeout: 30s
+  
+  # Default labels to add to all metrics
+  labels:
+    environment: "production"
+    service: "aws-connect"
+    
+  # Retry configuration
+  retry:
+    max_attempts: 3
+    backoff_duration: 1s
+    max_backoff_duration: 5s
+
+# Optional: Custom metric configurations
+metrics:
+  # Metric filtering (disable unwanted metrics)
+  disabled_metrics: []
+  
+  # Custom metric labels (applied to all metrics)
+  custom_labels:
+    team: "contact-center"
+    cost_center: "customer-service"
+
+# AWS IAM Permissions Required:
+# - connect:ListQueues
+# - connect:GetCurrentMetricData
+# - connect:GetMetricDataV2
+# - connect:ListAgentStatuses
+# - connect:GetCurrentUserData
+#
+# Example IAM Policy:
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [
+#     {
+#       "Effect": "Allow",
+#       "Action": [
+#         "connect:ListQueues",
+#         "connect:GetCurrentMetricData",
+#         "connect:GetMetricDataV2",
+#         "connect:ListAgentStatuses",
+#         "connect:GetCurrentUserData"
+#       ],
+#       "Resource": "arn:aws:connect:*:*:instance/your-instance-id"
+#     }
+#   ]
+# }

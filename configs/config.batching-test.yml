@@ -1,0 +1,27 @@
+# Configuration for testing 120-queue batching with mock API
+listen_address: 127.0.0.1
+listen_port: 9091
+
+aws:
+  region: "eu-west-2"
+  instance_arn: "arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772"
+
+collectors:
+  realtime_queue:
+    enabled: true
+    interval: 30  # 30 seconds for quick testing
+    metrics_cache_ttl: 10s
+    queue_cache_ttl: 30s
+    queue_refresh_interval: 30s
+  agent_status:
+    enabled: true
+    interval: 60
+  agent_realtime_status:
+    enabled: true
+    interval: 60
+  historical_queue:
+    enabled: true
+    interval: 120
+  historical_calls:
+    enabled: true
+    interval: 120

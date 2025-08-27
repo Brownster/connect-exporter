@@ -1,0 +1,39 @@
+# AWS Connect Exporter - Kensington Updated Configuration
+listen_address: 127.0.0.1
+listen_port: 8543
+
+aws:
+  region: "eu-west-2"
+  instance_arn: "arn:aws:connect:eu-west-2:851725229028:instance/207eb2"
+
+collectors:
+  realtime_queue:
+    enabled: true
+    interval: 30
+    metrics_cache_ttl: 15s
+    queue_cache_ttl: 5m
+    queue_refresh_interval: 5m
+    
+  agent_status:
+    enabled: true
+    interval: 300
+    
+  agent_realtime_status:
+    enabled: true
+    interval: 60
+    
+  historical_queue:
+    enabled: true
+    interval: 300
+    
+  historical_calls:
+    enabled: true
+    interval: 300
+    
+  historical_aht:
+    enabled: true
+    interval: 300
+    
+  historical_acw:
+    enabled: true
+    interval: 300
