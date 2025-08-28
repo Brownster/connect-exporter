@@ -70,19 +70,59 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 		queueIDs = append(queueIDs, queue.ID)
 	}
 
-	// Retrieve current user data using queue filter
-	input := &connect.GetCurrentUserDataInput{
-		InstanceId: &instanceID,
-		Filters: &types.UserDataFilters{
-			Queues: queueIDs, // Use queue IDs to get agents assigned to these queues
-		},
-		MaxResults: aws.Int32(100),
+	logrus.WithFields(logrus.Fields{
+		"total_queues": len(queueIDs),
+		"instance_id":  instanceID,
+	}).Debug("Starting agent realtime status collection")
+
+	// AWS Connect GetCurrentUserData API has a 100 queue limit
+	// Process queues in batches to respect this limit
+	const maxQueuesPerRequest = 100
+	allUserData := make([]types.UserData, 0)
+
+	for i := 0; i < len(queueIDs); i += maxQueuesPerRequest {
+		end := i + maxQueuesPerRequest
+		if end > len(queueIDs) {
+			end = len(queueIDs)
+		}
+
+		batchQueueIDs := queueIDs[i:end]
+		
+		logrus.WithFields(logrus.Fields{
+			"batch_start": i,
+			"batch_end":   end,
+			"batch_size":  len(batchQueueIDs),
+		}).Debug("Processing agent queue batch")
+
+		// Retrieve current user data for this batch of queues
+		input := &connect.GetCurrentUserDataInput{
+			InstanceId: &instanceID,
+			Filters: &types.UserDataFilters{
+				Queues: batchQueueIDs,
+			},
+			MaxResults: aws.Int32(100),
+		}
+
+		data, err := conn.GetCurrentUserData(context.Background(), input)
+		if err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"batch_start": i,
+				"batch_end":   end,
+				"batch_size":  len(batchQueueIDs),
+			}).Error("Failed to get current user data for batch, continuing with next batch")
+			continue // Continue with other batches even if one fails
+		}
+
+		// Collect users from this batch
+		if data.UserDataList != nil {
+			allUserData = append(allUserData, data.UserDataList...)
+		}
 	}
 
-	data, err := conn.GetCurrentUserData(context.Background(), input)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current user data: %w", err)
-	}
+	logrus.WithFields(logrus.Fields{
+		"total_users":  len(allUserData),
+		"total_queues": len(queueIDs),
+	}).Debug("Completed agent realtime status batching")
 
 	// Get agent metadata from shared AgentManager
 	agentMap := conn.GetAgentManager().GetAgentMap()
@@ -95,7 +135,7 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 
 	rpManager := conn.GetRoutingProfileQueueManager()
 
-	for _, user := range data.UserDataList {
+	for _, user := range allUserData {
 
 		agentID := ""
 		if user.User != nil && user.User.Id != nil {

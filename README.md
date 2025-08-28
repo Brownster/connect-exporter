@@ -1,404 +1,293 @@
 # AWS Connect Exporter
 
-Prometheus exporter that collects metrics from AWS Connect using the monitoring-maas framework.
+A production-ready Prometheus exporter for AWS Connect that provides comprehensive contact center metrics with advanced configuration capabilities.
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Go 1.21 or newer
-- AWS credentials with permissions to access AWS Connect
-
-## Building
+**New to the project?** Run the setup script:
 
 ```bash
-go build -o aws-connect-exporter ./cmd/connect-exporter_exporter
+./scripts/setup.sh
 ```
 
-![connect exporter _ Mermaid Chart-2025-07-03-230709](https://github.com/user-attachments/assets/42617ddc-84a4-4a0f-9bd7-8d4c5456e9ea)
+**Already set up?** Jump to usage:
 
-![Untitled diagram _ Mermaid Chart-2025-07-03-230653](https://github.com/user-attachments/assets/1fdd0e82-b31f-4ef6-97ad-8669e9ab3594)
+```bash
+# Development (no AWS costs)
+ENV=development ./bin/aws-connect-exporter --config.file=configs/config.development.yml --no-advertise
 
+# Production  
+./bin/aws-connect-exporter --config.file=config.aws-connect-validated.yml --no-advertise
+```
 
+## 📁 Project Structure
 
+```
+aws-connect-exporter/
+├── bin/                          # 📦 Compiled binaries
+│   ├── aws-connect-exporter     # Main production binary
+│   └── README.md               # Binary documentation
+├── configs/                     # ⚙️  Configuration files
+│   ├── config.development.yml  # Development config (mock API)
+│   ├── config.aws-connect.yml  # Production template
+│   └── README.md              # Configuration documentation
+├── docs/                        # 📚 Documentation
+│   ├── aws-connect-setup.md    # Complete setup guide
+│   ├── quick-start.md          # Quick start guide
+│   └── tools/aws-mock-api-main/ # Mock API for development
+├── scripts/                     # 🔧 Build and utility scripts
+│   ├── build.sh               # Build automation
+│   ├── setup.sh               # Quick setup for new users
+│   └── import-dashboards.sh   # Grafana dashboard import
+├── dashboards/                  # 📊 Grafana dashboards
+├── cmd/                        # Go application entry point
+├── collectors/                 # Metric collectors
+├── connectors/                 # AWS Connect API connectors
+└── config.aws-connect-validated.yml  # 🎯 ACTIVE TEST CONFIG
+```
 
-## Minimal Configuration
+## ✨ Key Features
 
+### 🔄 **Configuration-Driven Architecture**
+- **No Code Changes**: Add any AWS Connect metric via YAML configuration
+- **Generic Collectors**: Flexible realtime and historical metric collection
+- **Batch Processing**: Handles 100+ queues with proper AWS API compliance
+- **Production Validated**: 16+ comprehensive metrics tested against real AWS Connect
+
+### 📊 **Comprehensive Metric Coverage**
+
+**Agent Metrics** (Enhanced Labeling):
+- Realtime agent status with `first_name`, `last_name`, `username`
+- Routing profile assignments and queue associations
+- Agent state distribution and performance tracking
+
+**Queue Metrics** (Realtime):
+- Contact volumes and wait times
+- Agent availability by state and queue
+- Queue capacity and utilization metrics
+
+**Historical Metrics** (Daily Performance):
+- Contact handling volumes (handled, abandoned, queued)
+- Service level performance with configurable thresholds
+- Average handle times, queue answer times, abandonment rates
+
+### 🏷️ **Rich Labeling System**
+- **Agent Labels**: `agent_id`, `username`, `first_name`, `last_name`, `routing_profile_id`, `status_name`
+- **Queue Labels**: `queue_id`, `queue_name`, `queue_type`, `channel`, `region`
+- **Historical Labels**: `direction` (inbound/outbound), service level thresholds
+
+## 🛠️ Installation & Setup
+
+### Prerequisites
+- **Go 1.21+** for building from source
+- **AWS Account** with AWS Connect instance
+- **IAM Permissions** for AWS Connect API access
+- **Node.js** (optional, for development mock API)
+
+### Option 1: Quick Setup (Recommended)
+```bash
+git clone https://github.com/Brownster/connect-exporter.git
+cd connect-exporter
+./scripts/setup.sh
+```
+
+### Option 2: Manual Setup
+```bash
+# 1. Install dependencies
+go mod tidy
+
+# 2. Build binary
+./scripts/build.sh
+# OR manually: go build -o bin/aws-connect-exporter ./cmd/connect-exporter_exporter
+
+# 3. Configure AWS credentials
+export AWS_PROFILE=your-profile
+export AWS_REGION=us-east-1
+
+# 4. Update configuration with your AWS Connect instance ARN
+# Edit config.aws-connect-validated.yml or create your own
+
+# 5. Run exporter
+./bin/aws-connect-exporter \
+  --web.listen-port=9090 \
+  --labels.fqdn=your-hostname \
+  --labels.location=your-location \
+  --labels.country=US \
+  --labels.ip-address=127.0.0.1 \
+  --config.file=config.aws-connect-validated.yml \
+  --no-advertise
+```
+
+## 💻 Development Mode
+
+For cost-free development and testing:
+
+```bash
+# Terminal 1: Start mock AWS Connect API
+cd docs/tools/aws-mock-api-main
+node server.js
+
+# Terminal 2: Run exporter with mock API
+ENV=development ./bin/aws-connect-exporter \
+  --web.listen-port=9090 \
+  --labels.fqdn=localhost \
+  --labels.location=test \
+  --labels.country=UK \
+  --labels.ip-address=127.0.0.1 \
+  --config.file=configs/config.development.yml \
+  --no-advertise \
+  --log.level=debug
+```
+
+## 📈 Monitoring
+
+### Metrics Endpoint
+```bash
+# Check metrics
+curl http://localhost:9090/metrics
+
+# Health check  
+curl http://localhost:9090/health
+```
+
+### Sample Prometheus Queries
+```promql
+# Current contacts in queue
+aws_connect_exporter_generic_realtime_generic_metric{metric_name="connect_queue_contacts_in_queue"}
+
+# Agent status distribution
+sum by (status_name) (aws_connect_exporter_agent_realtime_status_connect_agent_status_state)
+
+# Daily handled contacts by queue
+sum by (queue_name) (aws_connect_exporter_generic_historical_generic_metric{metric_name="connect_historical_contacts_handled_total"})
+```
+
+### Grafana Dashboards
+Pre-built dashboards available in `dashboards/`:
+- **Real-time Operations**: Live queue and agent monitoring
+- **Daily Performance**: Historical metrics and trends
+
+Import with: `./scripts/import-dashboards.sh`
+
+## ⚙️ Configuration
+
+### Minimal Configuration
 ```yaml
-listen_address: 127.0.0.1
-listen_port: 9090
-
 aws:
   region: "us-east-1"
   instance_arn: "arn:aws:connect:us-east-1:123456789012:instance/your-instance-id"
 
-  collectors:
-    agent_realtime_status:
-      enabled: true
-      interval: 60
-    generic_realtime:
-      enabled: true
-      interval: 30
-      collectors:
-        - name: "queue_realtime_metrics"
-          metrics:
-            - aws_name: "AGENTS_AVAILABLE"
-              prometheus_name: "connect_queue_agents"
-              labels:
-                state: "Available"
-            - aws_name: "AGENTS_STAFFED"
-              prometheus_name: "connect_queue_agents"
-              labels:
-                state: "Staffed"
-            - aws_name: "SLOTS_AVAILABLE"
-              prometheus_name: "connect_queue_slots_available"
-              labels: {}
-            - aws_name: "CONTACTS_IN_QUEUE"
-              prometheus_name: "connect_queue_contacts_in_queue"
-              labels: {}
-          groupings: ["QUEUE", "CHANNEL"]
-          filters: []
-    generic_historical:
-      enabled: true
-      interval: 300
-      collectors:
-        - name: "historical_queue"
-          metrics:
-            - aws_name: "CONTACTS_HANDLED"
-              prometheus_name: "connect_historical_contacts_handled_total"
-              labels: {}
-            - aws_name: "CONTACTS_ABANDONED"
-              prometheus_name: "connect_historical_contacts_abandoned_total"
-              labels: {}
-          groupings: ["QUEUE", "CHANNEL"]
-          filters: []
-  ```
-
-## Running
-
-```bash
-./aws-connect-exporter \
-  --web.listen-port=9090 \
-  --labels.fqdn=localhost \
-  --labels.location=dev \
-  --labels.country=UK \
-  --labels.ip-address=127.0.0.1 \
-  --config.file=config.aws-connect.yml \
-  --no-advertise
-```
-
-## Metrics Exposed
-
-Metrics are published under the `aws_connect_exporter_*` namespace. Common metrics include:
-
-- `aws_connect_exporter_generic_realtime_generic_metric` (labels: `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`, `state`)
-- `aws_connect_exporter_generic_historical_generic_metric` (labels: `collector`, `metric_name`, `queue_id`, `queue_name`, `queue_type`, `channel`, `region`, `direction`)
-- `aws_connect_exporter_agent_realtime_status_connect_agent_status_state`
-
-Legacy metrics such as `aws_connect_exporter_realtime_queue_*` or `aws_connect_exporter_agent_status_*` have been replaced by the configurable generic collectors.
-
-The monitoring framework also exposes internal scrape metrics (e.g.
-`maas_scrape_total`, `maas_scrape_failed_total`, and
-`maas_scrape_duration_seconds`) to help troubleshoot collection issues.
-
-## Generic Realtime Collector
-
-The generic realtime collector provides a config-driven approach to collecting AWS Connect realtime metrics. Instead of hardcoded metric mappings, you can define any combination of AWS Connect current metrics in your configuration file.
-
-### Configuration
-
-```yaml
 collectors:
+  agent_realtime_status:
+    enabled: true
+    interval: 60
   generic_realtime:
     enabled: true
-    interval: 30  # Collection interval in seconds
+    interval: 30
     collectors:
-      - name: "queue_realtime_metrics"  # Collector name (used in labels)
+      - name: "queue_metrics"
         metrics:
-          # Agent metrics with state labels
-          - aws_name: "AGENTS_AVAILABLE"
-            prometheus_name: "connect_queue_agents"
-            labels:
-              state: "Available"
-          - aws_name: "AGENTS_STAFFED"
-            prometheus_name: "connect_queue_agents"
-            labels:
-              state: "Staffed"
-          - aws_name: "AGENTS_ON_CONTACT"
-            prometheus_name: "connect_queue_agents"
-            labels:
-              state: "OnContact"
-          # Queue capacity metrics
-          - aws_name: "SLOTS_AVAILABLE"
-            prometheus_name: "connect_queue_slots_available"
-            labels: {}
           - aws_name: "CONTACTS_IN_QUEUE"
             prometheus_name: "connect_queue_contacts_in_queue"
-            labels: {}
-        groupings: ["QUEUE", "CHANNEL"]  # AWS Connect groupings
-        filters: []  # Optional additional filters
+        groupings: ["QUEUE", "CHANNEL"]
 ```
 
-### Collector Groupings
+### Configuration Files
+- **`config.aws-connect-validated.yml`** - Production-validated configuration ⭐
+- **`configs/config.development.yml`** - Development with mock API
+- **`configs/config.aws-connect.yml`** - Full production template
 
-All metrics listed under a collector share the same `groupings` list. The exporter sends
-one AWS Connect API request per collector and the API applies groupings to that entire
-request. If you need different grouping dimensions for some metrics, define separate
-collectors so each one issues its own API call with its specific groupings. Per-metric
-grouping is not supported because it would require additional requests for every metric.
+See `configs/README.md` for detailed configuration documentation.
 
-### Supported AWS Metrics
+## 🔧 IAM Permissions
 
-Any AWS Connect current metric can be configured. Common metrics include:
-
-- **Agent Metrics**: `AGENTS_AVAILABLE`, `AGENTS_STAFFED`, `AGENTS_ON_CONTACT`, `AGENTS_AFTER_CONTACT_WORK`, `AGENTS_NON_PRODUCTIVE`, `AGENTS_ERROR`
-- **Queue Metrics**: `CONTACTS_IN_QUEUE`, `OLDEST_CONTACT_AGE`, `SLOTS_AVAILABLE`, `SLOTS_ACTIVE`
-
-### Output Format
-
-All generic realtime metrics are published as `aws_connect_exporter_generic_realtime_generic_metric` with labels:
-- `collector`: The collector name from configuration
-- `metric_name`: The Prometheus metric name from configuration  
-- `queue_id`, `queue_name`, `queue_type`: Queue information
-- `channel`: Channel type (VOICE, CHAT, TASK)
-- `region`: AWS region
-- `state`: Additional state label (if configured)
-
-### Benefits
-
-- **Flexible**: Add new metrics without code changes
-- **Consistent**: Same API patterns and retry logic as hardcoded collectors
-- **Extensible**: Support for multiple collector configurations
-- **Compatible**: Uses the same AWS Connect APIs as existing collectors
-- **Replaces Legacy**: Can completely replace hardcoded `realtime_queue` and `agent_status` collectors
-
-### Migration from Hardcoded Collectors
-
-The generic realtime collector can replace the following hardcoded collectors:
-
-**✅ Replaced Collectors:**
-- `realtime_queue`: All 10 realtime queue metrics (agents, slots, contacts, etc.)
-- `agent_status`: Aggregated agent state metrics by queue
-
-**⚠️ Still Required:**
-- `agent_realtime_status`: Individual agent status (uses different API)
-- `historical_*`: Historical metrics (use different time-based APIs)
-
-In the default configuration, the hardcoded collectors are now **disabled** and replaced by equivalent generic collector configurations.
-
-
-All queue metrics include a `channel` label. Possible values are
-`VOICE`, `CHAT`, or `TASK`.
-
-## Metrics Glossary and Mapping
-
-This exporter provides real-time and historical metrics from the Amazon Connect API. The metric names in Prometheus may differ slightly from the terminology used in the AWS Console or in business requirements. The following table maps common terms to the metrics provided by this exporter.
-
-| Business Metric / Stakeholder Term | Prometheus Metric & Query | AWS API Metric | Description |
-| ---------------------------------- | ------------------------- | -------------- | ----------- |
-| **Callers in Queue** | `aws_connect_realtime_queue_connect_queue_contacts_in_queue{...}` | `CONTACTS_IN_QUEUE` | The number of contacts currently waiting in a specific queue. |
-| **Longest Wait Time** | `aws_connect_realtime_queue_connect_queue_oldest_contact_age_seconds{...}` | `OLDEST_CONTACT_AGE` | The age, in seconds, of the longest-waiting contact in a queue. |
-| **Agent Status per Queue** | `aws_connect_realtime_queue_connect_queue_agents{state="..."}` | `AGENTS_AVAILABLE`, etc. | The number of agents in a specific state (`Available`, `OnContact`). |
-| **Total Concurrent Calls** | `sum(aws_connect_realtime_queue_connect_queue_agents{state="OnContact"})` | `AGENTS_ON_CONTACT` | **Calculated Total:** The number of agents handling any contact (voice, chat, task). |
-| **Total Calls Today (Inbound)** | `increase(aws_connect_historical_calls_connect_historical_contacts_handled_total{direction="inbound"}[1d])` | `CONTACTS_HANDLED` | **Calculated Total:** The number of inbound contacts handled today. |
-| **Total Calls Today (Outbound)** | `increase(aws_connect_historical_calls_connect_historical_contacts_handled_total{direction="outbound"}[1d])` | `CONTACTS_HANDLED_OUTBOUND` | **Calculated Total:** The number of outbound contacts handled today. |
-
-### Understanding the Historical Collectors
-
-The exporter ships with two complementary collectors for historical metrics:
-
-**historical_queue Collector (The Analyst's Tool)**
-
-- **Purpose:** Granular, deep-dive analysis.
-- **Use Case:** Answering detailed questions like, "What is the abandonment rate specifically for our CHAT channel in the Support queue?"
-- **Provides:** Depth and detail.
-
-**historical_calls Collector (The Dashboard Builder's Tool)**
-
-- **Purpose:** High-level, business-facing dashboarding and trend analysis.
-- **Use Case:** Answering common questions like, "Show me a graph of our total inbound call rate today," which is a simple `rate(aws_connect_historical_calls_connect_historical_contacts_handled_total[5m])` query. Or, "How many calls did we handle yesterday?" using `increase(aws_connect_historical_calls_connect_historical_contacts_handled_total[1d])`.
-- **Provides:** Convenience and compatibility with standard PromQL functions.
-
-## Required IAM Permissions
-
-- `connect:ListQueues`
-- `connect:GetCurrentMetricData`
-- `connect:GetMetricDataV2`
-- `connect:ListAgentStatuses`
-- `connect:GetCurrentUserData`
-- `connect:ListUsers`
-- `connect:ListRoutingProfileQueues`
-
-## Testing with Mock AWS API
-
-For testing and development, you can use the included mock AWS Connect API server instead of connecting to real AWS services.
-
-### Prerequisites for Testing
-
-- Node.js (v16 or newer)
-- npm
-
-### Step-by-Step Testing Instructions
-
-1. **Start the Mock API Server**
-   ```bash
-   cd docs/tools/aws-mock-api-main
-   npm install
-npm start
+Required AWS permissions:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "connect:ListQueues",
+        "connect:GetCurrentMetricData", 
+        "connect:GetMetricDataV2",
+        "connect:ListAgentStatuses",
+        "connect:GetCurrentUserData",
+        "connect:ListUsers",
+        "connect:DescribeUser",
+        "connect:ListRoutingProfiles"
+      ],
+      "Resource": "arn:aws:connect:*:*:instance/your-instance-id"
+    }
+  ]
+}
 ```
-   The mock server will start on `http://localhost:3000` and simulate AWS Connect API endpoints.
-   Verify it is running:
-   ```bash
-   curl http://localhost:3000/health
-   ```
-   Metrics returned by the mock API are configured in
-   `docs/tools/aws-mock-api-main/metrics-config.json`.
 
-2. **Configure the Exporter for Mock API**
-   Create a test configuration file `config.test.yml`:
-   ```yaml
-   listen_address: 127.0.0.1
-   listen_port: 9091
-   
-   aws:
-     region: "eu-west-2"
-     instance_arn: "arn:aws:connect:eu-west-2:123456789012:instance/f604177c-b2ab-4c76-9033-635d195b2772"
-     endpoint: "http://localhost:3000"  # Point to mock API
-   
-   collectors:
-     realtime_queue:
-       enabled: true
-       interval: 60
-     agent_status:
-       enabled: true
-       interval: 300
-     agent_realtime_status:
-       enabled: true
-       interval: 60
-   ```
+## 📊 Architecture
 
-3. **Build the Exporter**
-   ```bash
-   go build -o connect-exporter ./cmd/connect-exporter_exporter
-   ```
+![Architecture Diagram](docs/architecture-diagram.png)
 
-4. **Run the Exporter with Mock API**
-   ```bash
-   ENV=development ./connect-exporter \
-     --web.listen-port=9091 \
-     --labels.fqdn=localhost \
-     --labels.location=test \
-     --labels.country=UK \
-     --labels.ip-address=127.0.0.1 \
-     --config.file=config.test.yml \
-     --no-advertise
-   ```
-   Note: The `ENV=development` environment variable is required to enable mock API mode.
+The exporter uses a **configuration-driven architecture** with:
 
-5. **Verify Metrics Collection**
-   Open another terminal and check that metrics are being collected:
-   ```bash
-   curl http://localhost:9091/metrics
-   ```
-   You should see AWS Connect metrics with mock data.
+- **Generic Collectors**: Flexible metric definitions via YAML
+- **AWS Connect Connectors**: Efficient API client with caching and batching
+- **Agent Manager**: Enhanced agent metadata with 12-hour caching
+- **Queue Manager**: Smart queue discovery with AGENT queue filtering
+- **Monitoring-as-a-Service (MAAS) Framework**: Production-ready scaffolding
 
-### Enhanced Mock API Features
+## 🔍 Troubleshooting
 
-The mock API server now provides **complete coverage** for all collectors, enabling full dashboard development without production AWS access:
+### Common Issues
 
-#### **✅ Complete Collector Coverage**
-- **Realtime Queue Collector**: ✅ 100% Working - Queue performance, wait times, agent availability
-- **Agent Status Collector**: ✅ 100% Working - Status definitions and categorization
-- **Agent Realtime Status Collector**: ✅ 100% Working - Live agent status distribution  
-- **Historical Queue Collector**: ✅ 100% Working - Daily call volumes, abandonment rates
+1. **"unexpected false" Error**
+   - Ensure all required CLI flags are provided
+   - Use `--no-advertise` instead of `--advertise=false`
 
-#### **🎯 Dashboard-Ready Data**
-- **11 Realistic Users**: Distributed across different statuses (5 Available, 3 Busy, 2 After Contact Work, 1 Custom Break)
-- **5 Mock Queues**: Sales, Support, and Monitoring queues with VOICE, CHAT, and TASK channels
-- **Dynamic Metrics**: Time-based values that change realistically for testing dashboards
-- **Operational Metrics**: All key Kensington metrics supported:
-  - Queue wait times and caller counts
-  - Agent status distribution by queue/channel  
-  - Daily call volumes (inbound/outbound split)
-  - Abandonment rates and contact handling
+2. **Empty Agent Names**
+   - Verify `connect:DescribeUser` IAM permission
+   - Check agent IdentityInfo is populated in AWS Connect
 
-#### **🔧 Technical Features**
-- **AWS API Compatibility**: Handles both GetCurrentMetricData and GetMetricDataV2 structures
-- **Error Simulation**: Configurable error rate for testing resilience
-- **Pagination Support**: AWS-style pagination with NextToken
-- **Realistic Data Generation**: Correlated metrics that simulate real contact center behavior
-- **Health Monitoring**: `GET /health` endpoint for service verification
+3. **High Memory Usage**
+   - Reduce collection intervals for large instances
+   - Disable unnecessary collectors in configuration
 
-### Complete Metrics Output Example
+4. **API Rate Limiting**
+   - Increase collection intervals
+   - The exporter includes automatic retry logic
 
-With the enhanced mock API, you'll see all operational metrics needed for dashboard building:
-
+### Debug Logging
 ```bash
-curl http://localhost:9091/metrics | grep aws_connect_exporter
+./bin/aws-connect-exporter --log.level=debug --config.file=your-config.yml
 ```
 
-**Sample Output:**
-```
-# Real-time Queue Performance
-aws_connect_exporter_realtime_queue_connect_queue_agents{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",state="NonProductive",region="eu-west-2"} 2
-aws_connect_exporter_realtime_queue_connect_queue_slots_available{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 4
+## 📚 Documentation
 
-# Agent Status Distribution
-aws_connect_exporter_agent_realtime_status_connect_agent_status_state{agent_id="6aed748d-3a99-410c-9e3a-afe3fda0af82",username="alice.smith",routing_profile_id="rp-sales",queue_id="queue-sales-01",status_id="status-001",status_name="Available",status_type="unknown",region="eu-west-2"} 1
+- **[Setup Guide](docs/aws-connect-setup.md)** - Complete installation and configuration
+- **[Quick Start](docs/quick-start.md)** - Get up and running fast
+- **[Configuration](configs/README.md)** - All configuration options explained
+- **[Development Guide](docs/development-with-mock-api.md)** - Development with mock API
+- **[Architecture](docs/DEVELOPER.md)** - Technical architecture and patterns
+- **[Adding Metrics](docs/adding-metrics.md)** - How to add custom metrics
 
-# Daily Performance Metrics
-aws_connect_exporter_historical_queue_connect_historical_contacts_abandoned_total{channel="VOICE",queue_id="queue-sales-01",queue_name="Sales Queue",queue_type="STANDARD",region="eu-west-2"} 6
+## 🤝 Contributing
 
-# Agent Status Definitions
-aws_connect_exporter_agent_status_connect_agent_statuses_total{region="eu-west-2",status_id="available-status-id",status_name="Available",status_type="ROUTABLE"} 3
-aws_connect_exporter_agent_status_connect_agent_statuses_total{region="eu-west-2",status_id="oncall-status-id",status_name="On Call",status_type="NOT_ROUTABLE"} 1
-```
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes and test with the mock API
+4. Run the build: `./scripts/build.sh`
+5. Submit a pull request
 
-### Adjusting Mock API Behavior
+## 📄 License
 
-You can modify the error rate during testing:
-```bash
-# Set 10% error rate
-curl -X POST http://localhost:3000/admin/errorRate \
-  -H 'Content-Type: application/json' \
-  -d '{"rate": 0.1}'
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-# Set 0% error rate (no errors)
-curl -X POST http://localhost:3000/admin/errorRate \
-  -H 'Content-Type: application/json' \
-  -d '{"rate": 0.0}'
-```
+## 🆘 Support
 
-### Coverage Analysis
+- **GitHub Issues**: [Report bugs or request features](https://github.com/Brownster/connect-exporter/issues)
+- **Documentation**: Check the `docs/` directory
+- **Configuration Help**: See `configs/README.md`
 
-For detailed technical analysis of mock API coverage and collector testing, see:
-- **[MOCK_API_GAPS.md](MOCK_API_GAPS.md)** - Complete coverage analysis and testing results
+---
 
-## 📊 Grafana Dashboards
-
-Two comprehensive dashboards are provided for operational monitoring:
-
-### 🚀 **Real-time Operations Dashboard**
-- **Purpose:** Live operational monitoring (30s refresh)
-- **Key Metrics:** Queue availability, agent status distribution, operational alerts
-- **Use Case:** NOC monitoring, immediate response to issues
-
-### 📈 **Daily Performance Analytics Dashboard**  
-- **Purpose:** Strategic performance analysis (5m refresh)
-- **Key Metrics:** Daily volumes, abandonment rates, trend analysis
-- **Use Case:** Management reporting, performance optimization
-
-### Quick Dashboard Setup
-```bash
-cd dashboards
-./import-dashboards.sh
-```
-
-For detailed dashboard documentation, see **[dashboards/README.md](dashboards/README.md)**
-
-### Running Tests
-
-To run the integration tests with the mock API:
-```bash
-# Make sure mock API is running first
-go test ./... -v
-```
-
+**⭐ If this project helps you, please give it a star!**

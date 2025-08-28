@@ -192,9 +192,17 @@ func (m *AgentManager) GetAgentByID(id string) (Agent, bool) {
 // GetAgentMap returns a map of agent IDs to agent metadata for efficient lookups.
 func (m *AgentManager) GetAgentMap() map[string]Agent {
 	m.mu.RLock()
+	m.namesMutex.RLock()
 	defer m.mu.RUnlock()
+	defer m.namesMutex.RUnlock()
+	
 	agentMap := make(map[string]Agent, len(m.agents))
 	for _, agent := range m.agents {
+		// Merge agent names from the names cache if available
+		if names, exists := m.agentNames[agent.ID]; exists {
+			agent.FirstName = names.FirstName
+			agent.LastName = names.LastName
+		}
 		agentMap[agent.ID] = agent
 	}
 	return agentMap

@@ -1394,7 +1394,34 @@ app.get('/users/:instanceId/:userId', (req, res) => {
         return res.status(404).json(AWS_ERRORS.RESOURCE_NOT_FOUND);
     }
     
-    return res.json({ User: user });
+    // Return properly formatted response with IdentityInfo (like the POST version)
+    const response = {
+        User: {
+            Id: user.Id,
+            Arn: user.Arn,
+            Username: user.Username,
+            IdentityInfo: {
+                FirstName: user.FirstName || user.Username.split('.')[0] || 'Unknown',
+                LastName: user.LastName || user.Username.split('.')[1] || 'User',
+                Email: `${user.Username}@example.com`
+            },
+            PhoneConfig: {
+                PhoneType: 'SOFT_PHONE',
+                AutoAccept: false,
+                AfterContactWorkTimeLimit: 120,
+                DeskPhoneNumber: null
+            },
+            DirectoryUserId: user.Id,
+            SecurityProfileIds: ['security-profile-001'],
+            RoutingProfileId: user.RoutingProfile.Id,
+            HierarchyGroupId: null,
+            Tags: {},
+            LastModifiedTime: Math.floor(Date.now() / 1000),
+            LastModifiedRegion: REGION
+        }
+    };
+    
+    return res.json(response);
 });
 
 // Add GET routes for metrics endpoints
