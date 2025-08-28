@@ -36,6 +36,25 @@ func (m *mockAgentLister) ListUsers(ctx context.Context, input *connect.ListUser
 	}, nil
 }
 
+// DescribeUser is the mock implementation of the DescribeUser method.
+func (m *mockAgentLister) DescribeUser(ctx context.Context, input *connect.DescribeUserInput) (*connect.DescribeUserOutput, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	// Return a basic mock user description
+	return &connect.DescribeUserOutput{
+		User: &types.User{
+			Id:       input.UserId,
+			Username: aws.String("test-user"),
+			Arn:      aws.String("arn:aws:connect:us-east-1:123456789012:instance/test/agent/" + *input.UserId),
+			IdentityInfo: &types.UserIdentityInfo{
+				FirstName: aws.String("Test"),
+				LastName:  aws.String("User"),
+			},
+		},
+	}, nil
+}
+
 // GetInstanceID is the mock implementation of the GetInstanceID method.
 func (m *mockAgentLister) GetInstanceID() string {
 	return "test-instance"

@@ -48,7 +48,7 @@ func TestGetMockEndpoint(t *testing.T) {
 	t.Cleanup(func() { _ = os.Setenv("AWS_CONNECT_MOCK_ENDPOINT", orig) })
 
 	assert.NoError(t, os.Unsetenv("AWS_CONNECT_MOCK_ENDPOINT"))
-	assert.Equal(t, "http://localhost:3000", getMockEndpoint(), "default endpoint when env not set")
+	assert.Equal(t, "http://127.0.0.1:3000", getMockEndpoint(), "default endpoint when env not set")
 
 	assert.NoError(t, os.Setenv("AWS_CONNECT_MOCK_ENDPOINT", "http://example.com"))
 	assert.Equal(t, "http://example.com", getMockEndpoint(), "env var should override")

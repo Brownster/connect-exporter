@@ -1,11 +1,24 @@
 # AWS Connect Target Configuration
 
-This document describes how to set up an AWS Connect integration with MaaS-NG.
+This document describes how to set up an AWS Connect integration with SM3.
 
 Integration is done via APIs below:
 - [AWS Connect API](https://docs.aws.amazon.com/connect/latest/APIReference/) (it requires AWS credentials, it uses AWS SDK for Go).
 - [AWS Connect Real-time Metrics API](https://docs.aws.amazon.com/connect/latest/APIReference/API_GetCurrentMetricData.html) (requires IAM permissions for real-time data).
 - [AWS Connect Historical Metrics API](https://docs.aws.amazon.com/connect/latest/APIReference/API_GetMetricDataV2.html) (requires IAM permissions for historical data).
+
+## Quick Reference for Technicians
+
+**📺 For Wallboard/Dashboard Requirements:**
+- See **[WALLBOARD_MAPPING.md](WALLBOARD_MAPPING.md)** - Translate customer wallboard needs into configuration
+
+**📋 For Service Level Agreements (SLA monitoring):**
+- See **[THRESHOLD_CONFIG.md](THRESHOLD_CONFIG.md)** - Complete guide for configuring customer-specific service level thresholds
+
+**📊 For Custom Metrics (beyond default set):**
+- See **[adding-metrics.md](adding-metrics.md)** - Step-by-step guide for adding customer-requested metrics
+
+**🔧 Basic Setup:** Continue reading this document for standard deployment configuration
 
 ## Instructions
 
@@ -47,7 +60,7 @@ exporter_awsconnect:
 | `--labels.country` | **Required**. Country code (e.g., UK, US, CA) |
 | `--labels.ip-address` | **Required**. IP address of the exporter instance |
 | `--config.file` | Path to configuration file. Default: config.yml |
-| `--no-advertise` | Disable service advertisement. Recommended for production |
+| `--no-advertise` | Disable service advertisement. Recommended for testing |
 | `--log.level` | Logging level: debug, info, warn, error. Default: info |
 
 ## Configuration Features
@@ -75,6 +88,26 @@ exporter_awsconnect:
 - **Rate Limiting**: Built-in 2 TPS compliance with exponential backoff
 - **Error Resilience**: Retry logic with graceful failure handling
 - **Agent Name Caching**: 12-hour cache with rate-limited refresh
+
+## Custom Configuration Guides
+
+### Service Level Thresholds (SLA Monitoring)
+For customers requiring specific service level agreements (e.g., "80% of calls answered within 20 seconds"), see the comprehensive threshold configuration guide:
+
+**📋 [THRESHOLD_CONFIG.md](THRESHOLD_CONFIG.md)**
+- Step-by-step SLA configuration walkthrough
+- Multiple customer scenarios (Premium/Standard tiers, Compliance monitoring)
+- Best practices for technicians
+- Comprehensive troubleshooting guide
+
+### Adding Custom Metrics
+For customers needing metrics beyond the default set (e.g., callback tracking, VIP queue monitoring), see the detailed metrics addition guide:
+
+**📊 [adding-metrics.md](adding-metrics.md)**
+- Customer requirements analysis framework
+- Real-time vs historical metric configuration
+- Common customer scenarios with examples
+- Testing and validation procedures
 
 ## IAM Permissions
 
@@ -146,17 +179,13 @@ The exporter includes:
 - **Network**: 5-15 API calls per minute (based on configuration)
 - **Disk**: <1GB for binary and configuration
 
-### High Availability
-- Deploy multiple exporter instances with load balancing
-- Use IAM roles instead of access keys where possible  
+### Availability
 - Configure appropriate scrape intervals to avoid API exhaustion
 - Monitor exporter health with `/health` endpoint
 
 ### Security
 - Store AWS credentials securely (IAM roles preferred)
 - Use least-privilege IAM policies
-- Enable CloudTrail logging for API audit trails
-- Secure metrics endpoint with authentication/authorization
 
 ## Troubleshooting
 
@@ -182,12 +211,27 @@ The exporter includes:
    - Disable unnecessary collectors in configuration
    - Monitor with `aws_connect_exporter_scrape_total` metrics
 
+5. **Service Level Thresholds Not Working**
+   - See detailed troubleshooting in **[THRESHOLD_CONFIG.md](THRESHOLD_CONFIG.md)**
+   - Common issues: incorrect comparison operators, missing historical data
+   - Validation procedures for customer SLA requirements
+
+6. **Custom Metrics Not Appearing**
+   - See comprehensive guide in **[adding-metrics.md](adding-metrics.md)**
+   - Verify AWS metric names and instance support
+   - Step-by-step validation process included
+
 ### Debug Mode
 ```bash
 ./aws-connect-exporter --log.level=debug --config.file=config.yml
 ```
 
 This will provide detailed logging for troubleshooting API calls, rate limiting, and metric collection.
+
+### Advanced Configuration Support
+For complex customer requirements involving custom metrics or SLA monitoring, refer to:
+- **[THRESHOLD_CONFIG.md](THRESHOLD_CONFIG.md)** - Service level agreements and compliance monitoring
+- **[adding-metrics.md](adding-metrics.md)** - Custom metric implementation
 
 ---
 

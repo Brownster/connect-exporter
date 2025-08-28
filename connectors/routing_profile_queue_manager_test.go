@@ -51,7 +51,11 @@ func TestRoutingProfileQueueManagerCaching(t *testing.T) {
 	mgr := NewRoutingProfileQueueManager(lister, 50*time.Millisecond)
 	qs, err := mgr.GetQueuesForRoutingProfile("rp1")
 	assert.NoError(t, err)
-	assert.Equal(t, []string{"q1", "q2"}, qs)
+	expected := []Queue{
+		{ID: "q1", Name: "", Type: "STANDARD"},
+		{ID: "q2", Name: "", Type: "STANDARD"},
+	}
+	assert.Equal(t, expected, qs)
 	assert.Equal(t, 1, lister.calls)
 
 	qs, err = mgr.GetQueuesForRoutingProfile("rp1")
