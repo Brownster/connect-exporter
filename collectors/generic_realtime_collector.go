@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/avast/retry-go/v4"
 	"github.com/aws/aws-sdk-go-v2/service/connect"
 	"github.com/aws/aws-sdk-go-v2/service/connect/types"
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,13 +26,6 @@ import (
 const (
 	// genericMaxQueuesPerRequest is the maximum number of queues that can be processed in a single API request.
 	genericMaxQueuesPerRequest = 100
-
-	// genericDefaultRetryAttempts is the maximum number of retry attempts for failed API calls.
-	genericDefaultRetryAttempts = 3
-	// genericDefaultRetryDelay is the initial delay between retry attempts.
-	genericDefaultRetryDelay = 1 * time.Second
-	// genericDefaultMaxRetryDelay is the maximum delay between retry attempts.
-	genericDefaultMaxRetryDelay = 5 * time.Second
 )
 
 // NewGenericRealtimeCollector creates a new scheduled scraper for collecting
@@ -86,6 +78,9 @@ func (s *GenericRealtimeScraper) Scrape(c maas.Connector) ([]maas.Metric, error)
 	if !rt.Enabled {
 		return []maas.Metric{}, nil
 	}
+
+	// Align cache TTL with schedule interval
+	s.metricsTTL = time.Duration(rt.Interval) * time.Second
 
 	// Check cache first
 	now := time.Now()
@@ -208,24 +203,9 @@ func (s *GenericRealtimeScraper) processQueueBatch(conn *connectors.AWSConnectCo
 		}
 	}
 
-	var data *connect.GetCurrentMetricDataOutput
-	err := retry.Do(
-		func() error {
-			var err error
-			data, err = conn.GetCurrentMetricData(context.Background(), input)
-			if err != nil {
-				logrus.WithError(err).WithField("collector", col.Name).Warn("Failed to get current metric data, retrying...")
-				return err
-			}
-			return nil
-		},
-		retry.Attempts(genericDefaultRetryAttempts),
-		retry.Delay(genericDefaultRetryDelay),
-		retry.MaxDelay(genericDefaultMaxRetryDelay),
-	)
-
+	data, err := conn.GetCurrentMetricData(context.Background(), input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current metric data after retries: %w", err)
+		return nil, fmt.Errorf("failed to get current metric data: %w", err)
 	}
 
 	// Process the metric results

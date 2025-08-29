@@ -80,6 +80,9 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 	const maxQueuesPerRequest = 100
 	allUserData := make([]types.UserData, 0)
 
+	// Fetch and cache agent statuses once per scrape via AgentManager
+	statusMap := conn.GetAgentManager().GetStatusMap()
+
 	for i := 0; i < len(queueIDs); i += maxQueuesPerRequest {
 		end := i + maxQueuesPerRequest
 		if end > len(queueIDs) {
@@ -87,7 +90,7 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 		}
 
 		batchQueueIDs := queueIDs[i:end]
-		
+
 		logrus.WithFields(logrus.Fields{
 			"batch_start": i,
 			"batch_end":   end,
@@ -178,10 +181,9 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 			if user.Status.StatusName != nil {
 				statusName = aws.ToString(user.Status.StatusName)
 			}
-			// Attempt enrichment with ListAgentStatuses for type
+			// Enrich from cached agent status map (no per-agent API calls)
 			if user.Status.StatusArn != nil {
-				st, ok := getStatusDetails(aws.ToString(user.Status.StatusArn), conn)
-				if ok {
+				if st, ok := getStatusDetailsFromCache(aws.ToString(user.Status.StatusArn), statusMap); ok {
 					if st.Name != nil {
 						statusName = aws.ToString(st.Name)
 					}
@@ -213,21 +215,7 @@ func extractStatusID(arn string) string {
 
 // getStatusDetails fetches additional status information, such as the status type,
 // by calling the ListAgentStatuses API.
-func getStatusDetails(arn string, conn *connectors.AWSConnectConnector) (types.AgentStatusSummary, bool) {
-	instanceID := conn.GetInstanceID()
-	input := &connect.ListAgentStatusesInput{
-		InstanceId: &instanceID,
-		MaxResults: aws.Int32(1000),
-	}
-	data, err := conn.ListAgentStatuses(context.Background(), input)
-	if err != nil {
-		logrus.WithError(err).Warn("failed to list agent statuses for enrichment")
-		return types.AgentStatusSummary{}, false
-	}
-	for _, st := range data.AgentStatusSummaryList {
-		if st.Arn != nil && aws.ToString(st.Arn) == arn {
-			return st, true
-		}
-	}
-	return types.AgentStatusSummary{}, false
+func getStatusDetailsFromCache(arn string, cache map[string]types.AgentStatusSummary) (types.AgentStatusSummary, bool) {
+	st, ok := cache[arn]
+	return st, ok
 }

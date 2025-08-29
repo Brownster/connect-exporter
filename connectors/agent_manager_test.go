@@ -55,6 +55,19 @@ func (m *mockAgentLister) DescribeUser(ctx context.Context, input *connect.Descr
 	}, nil
 }
 
+// ListAgentStatuses is the mock implementation of ListAgentStatuses.
+func (m *mockAgentLister) ListAgentStatuses(ctx context.Context, input *connect.ListAgentStatusesInput) (*connect.ListAgentStatusesOutput, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return &connect.ListAgentStatusesOutput{
+		AgentStatusSummaryList: []types.AgentStatusSummary{
+			{Arn: aws.String("arn:aws:connect:us-east-1:123456789012:instance/test/agent-state/Available"), Name: aws.String("Available"), Type: types.AgentStatusTypeRoutable},
+			{Arn: aws.String("arn:aws:connect:us-east-1:123456789012:instance/test/agent-state/Offline"), Name: aws.String("Offline"), Type: types.AgentStatusTypeOffline},
+		},
+	}, nil
+}
+
 // GetInstanceID is the mock implementation of the GetInstanceID method.
 func (m *mockAgentLister) GetInstanceID() string {
 	return "test-instance"

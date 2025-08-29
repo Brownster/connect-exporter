@@ -76,3 +76,18 @@ func TestRoutingProfileQueueManagerError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, qs)
 }
+
+// TestRoutingProfileQueueManagerQueueName ensures queue name is captured when provided.
+func TestRoutingProfileQueueManagerQueueName(t *testing.T) {
+	lister := &mockRPQLister{output: &connect.ListRoutingProfileQueuesOutput{
+		RoutingProfileQueueConfigSummaryList: []types.RoutingProfileQueueConfigSummary{
+			{QueueId: aws.String("q1"), QueueName: aws.String("Sales")},
+		},
+	}}
+	mgr := NewRoutingProfileQueueManager(lister, time.Minute)
+	qs, err := mgr.GetQueuesForRoutingProfile("rpX")
+	assert.NoError(t, err)
+	if assert.Len(t, qs, 1) {
+		assert.Equal(t, "Sales", qs[0].Name)
+	}
+}

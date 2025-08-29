@@ -17,6 +17,7 @@ import (
 
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/connect"
 	"github.com/sirupsen/logrus"
@@ -87,6 +88,12 @@ func NewAWSConnectConnector(region, instanceARN string) (*AWSConnectConnector, e
 	// Initialize AWS config
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(region),
+		config.WithRetryer(func() aws.Retryer {
+			return retry.NewStandard(func(o *retry.StandardOptions) {
+				// Keep near-defaults explicit to avoid multiplicative retries elsewhere
+				o.MaxAttempts = 3
+			})
+		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
@@ -126,9 +133,9 @@ func (c *AWSConnectConnector) Execute(command interface{}) (interface{}, error) 
 	case *connect.GetCurrentUserDataInput:
 		return c.GetCurrentUserData(context.Background(), cmd)
 	case *connect.ListUsersInput:
-        return c.ListUsers(context.Background(), cmd)
-    case *connect.ListRoutingProfilesInput:
-        return c.ListRoutingProfiles(context.Background(), cmd)
+		return c.ListUsers(context.Background(), cmd)
+	case *connect.ListRoutingProfilesInput:
+		return c.ListRoutingProfiles(context.Background(), cmd)
 	default:
 		return nil, fmt.Errorf("unsupported command type: %T", command)
 	}
@@ -296,6 +303,11 @@ func (c *AWSConnectConnector) configure() error {
 	// Initialize AWS config
 	awsCfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(c.region),
+		config.WithRetryer(func() aws.Retryer {
+			return retry.NewStandard(func(o *retry.StandardOptions) {
+				o.MaxAttempts = 3
+			})
+		}),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)

@@ -48,7 +48,7 @@ func waitForURL(url string, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	backoff := 100 * time.Millisecond
 	maxBackoff := 2 * time.Second
-	
+
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(url)
 		if err == nil && resp.StatusCode == http.StatusOK {
@@ -59,7 +59,7 @@ func waitForURL(url string, timeout time.Duration) error {
 			_, _ = io.Copy(io.Discard, resp.Body)
 			_ = resp.Body.Close()
 		}
-		
+
 		// Exponential backoff with jitter
 		time.Sleep(backoff)
 		backoff = time.Duration(float64(backoff) * 1.5)
@@ -75,17 +75,17 @@ func TestExporterWithMockAPI(t *testing.T) {
 	if !isPortAvailable(9090) {
 		t.Skip("Port 9090 is not available, skipping integration test")
 	}
-	
+
 	// Check if mock API is running, start it if not
 	var mockCmd *exec.Cmd
 	var startedMockAPI bool
-	
+
 	if resp, err := http.Get("http://localhost:3000/health"); err != nil || resp.StatusCode != http.StatusOK {
 		// Mock API not running, start it
 		if !isPortAvailable(3000) {
 			t.Skip("Port 3000 is not available and mock API is not running, skipping integration test")
 		}
-		
+
 		mockDir := filepath.Join("..", "docs", "tools", "aws-mock-api-main")
 		if _, err := os.Stat(filepath.Join(mockDir, "node_modules")); err != nil {
 			npmCmd := exec.Command("npm", "install")
@@ -100,12 +100,12 @@ func TestExporterWithMockAPI(t *testing.T) {
 			t.Fatalf("failed to start mock API: %v", err)
 		}
 		startedMockAPI = true
-		
+
 		// Wait longer for mock API startup to avoid intermittent timeouts
 		if err := waitForURL("http://localhost:3000/health", 30*time.Second); err != nil {
 			t.Fatalf("mock API not ready: %v", err)
 		}
-		
+
 		// Additional delay to ensure mock API is fully initialized
 		time.Sleep(2 * time.Second)
 	} else {
@@ -115,9 +115,9 @@ func TestExporterWithMockAPI(t *testing.T) {
 		}
 		t.Log("Using existing mock API on port 3000")
 	}
-	
+
 	if startedMockAPI && mockCmd != nil {
-		defer func() { 
+		defer func() {
 			_ = mockCmd.Process.Kill()
 			// Wait for port to be released
 			_ = waitForPortClosed(3000, 5*time.Second)
@@ -144,19 +144,19 @@ func TestExporterWithMockAPI(t *testing.T) {
 	var out bytes.Buffer
 	exporterCmd.Stdout = &out
 	exporterCmd.Stderr = &out
-	
+
 	t.Logf("Starting exporter with command: %v", exporterCmd.Args)
 	t.Logf("Working directory: %s", exporterCmd.Dir)
 	t.Logf("Environment: ENV=development, AWS_REGION=us-east-1")
-	
+
 	if err := exporterCmd.Start(); err != nil {
 		t.Fatalf("failed to start exporter: %v", err)
 	}
-	
+
 	// Give exporter a moment to start and log initial output
 	time.Sleep(5 * time.Second)
 	t.Logf("Initial exporter output after 5s: %s", out.String())
-	defer func() { 
+	defer func() {
 		_ = exporterCmd.Process.Kill()
 		// Wait for port to be released
 		_ = waitForPortClosed(9090, 5*time.Second)
@@ -167,7 +167,7 @@ func TestExporterWithMockAPI(t *testing.T) {
 		t.Logf("Exporter command output: %s", out.String())
 		t.Fatalf("exporter not ready: %v\nOutput: %s", err, out.String())
 	}
-	
+
 	// Brief delay to ensure metrics are fully populated
 	time.Sleep(3 * time.Second)
 

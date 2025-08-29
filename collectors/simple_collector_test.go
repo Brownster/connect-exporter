@@ -12,7 +12,7 @@ func TestNewGenericHistoricalScraper(t *testing.T) {
 	assert.NotNil(t, scraper)
 }
 
-// TestNewGenericRealtimeScraper tests that the scraper can be created  
+// TestNewGenericRealtimeScraper tests that the scraper can be created
 func TestNewGenericRealtimeScraper(t *testing.T) {
 	scraper := NewGenericRealtimeScraper()
 	assert.NotNil(t, scraper)

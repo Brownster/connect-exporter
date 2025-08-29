@@ -10,7 +10,6 @@ package connectors
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/connect"
@@ -29,6 +28,7 @@ func (c *AWSConnectConnector) ListQueues(ctx context.Context) ([]Queue, error) {
 		output, err := c.client.ListQueues(ctx, &connect.ListQueuesInput{
 			InstanceId: &instanceID,
 			NextToken:  nextToken,
+			MaxResults: aws.Int32(1000),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error listing queues: %w", err)
@@ -93,45 +93,34 @@ func (c *AWSConnectConnector) GetMetricDataV2(ctx context.Context, input *connec
 // It handles pagination and retries to ensure all user data is fetched.
 func (c *AWSConnectConnector) GetCurrentUserData(ctx context.Context, input *connect.GetCurrentUserDataInput) (*connect.GetCurrentUserDataOutput, error) {
 	instanceID := input.InstanceId
-	var err error
 	var users []types.UserData
 	var count int64
-
-	for attempt := 0; attempt < 3; attempt++ {
-		users = users[:0]
-		var nextToken *string
-		for {
-			var out *connect.GetCurrentUserDataOutput
-			out, err = c.client.GetCurrentUserData(ctx, &connect.GetCurrentUserDataInput{
-				InstanceId: instanceID,
-				Filters:    input.Filters,
-				MaxResults: input.MaxResults,
-				NextToken:  nextToken,
-			})
-			if err != nil {
-				break
-			}
-			users = append(users, out.UserDataList...)
-			if out.ApproximateTotalCount != nil {
-				count = *out.ApproximateTotalCount
-			}
-			if out.NextToken == nil {
-				break
-			}
-			nextToken = out.NextToken
+	var nextToken *string
+	for {
+		out, err := c.client.GetCurrentUserData(ctx, &connect.GetCurrentUserDataInput{
+			InstanceId: instanceID,
+			Filters:    input.Filters,
+			MaxResults: input.MaxResults,
+			NextToken:  nextToken,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("error getting current user data: %w", err)
 		}
-		if err == nil {
-			logrus.WithFields(logrus.Fields{
-				"user_count":   len(users),
-				"instance_arn": c.instanceARN,
-			}).Debug("Successfully retrieved current user data")
-
-			return &connect.GetCurrentUserDataOutput{UserDataList: users, ApproximateTotalCount: aws.Int64(count)}, nil
+		users = append(users, out.UserDataList...)
+		if out.ApproximateTotalCount != nil {
+			count = *out.ApproximateTotalCount
 		}
-		time.Sleep(time.Duration(attempt+1) * time.Second)
+		if out.NextToken == nil {
+			break
+		}
+		nextToken = out.NextToken
 	}
-	logrus.WithError(err).Warn("failed to get current user data")
-	return nil, fmt.Errorf("error getting current user data: %w", err)
+	logrus.WithFields(logrus.Fields{
+		"user_count":   len(users),
+		"instance_arn": c.instanceARN,
+	}).Debug("Successfully retrieved current user data")
+
+	return &connect.GetCurrentUserDataOutput{UserDataList: users, ApproximateTotalCount: aws.Int64(count)}, nil
 }
 
 // ListAgentStatuses retrieves agent status information from the AWS Connect instance.
@@ -149,7 +138,6 @@ func (c *AWSConnectConnector) ListAgentStatuses(ctx context.Context, input *conn
 	return output, nil
 }
 
-
 // ListRoutingProfileQueues retrieves the queue IDs associated with a routing profile.
 func (c *AWSConnectConnector) ListRoutingProfileQueues(ctx context.Context, input *connect.ListRoutingProfileQueuesInput) (*connect.ListRoutingProfileQueuesOutput, error) {
 	output, err := c.client.ListRoutingProfileQueues(ctx, input)
@@ -164,5 +152,3 @@ func (c *AWSConnectConnector) ListRoutingProfileQueues(ctx context.Context, inpu
 
 	return output, nil
 }
-
-

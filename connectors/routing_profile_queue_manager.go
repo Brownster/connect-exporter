@@ -83,41 +83,32 @@ func (m *RoutingProfileQueueManager) GetQueuesForRoutingProfile(rpID string) ([]
 // It handles pagination and retries to ensure all data is fetched.
 func (m *RoutingProfileQueueManager) fetchQueues(rpID string) ([]Queue, error) {
 	instanceID := m.lister.GetInstanceID()
-	var err error
 	var queues []Queue
-	for attempt := 0; attempt < 3; attempt++ {
-		queues = queues[:0]
-		var nextToken *string
-		for {
-			var out *connect.ListRoutingProfileQueuesOutput
-			out, err = m.lister.ListRoutingProfileQueues(context.Background(), &connect.ListRoutingProfileQueuesInput{
-				InstanceId:       &instanceID,
-				RoutingProfileId: aws.String(rpID),
-				NextToken:        nextToken,
-			})
-			if err != nil {
-				break
-			}
-			for _, q := range out.RoutingProfileQueueConfigSummaryList {
-				if q.QueueId != nil {
-					queue := Queue{
-						ID:   aws.ToString(q.QueueId),
-						Name: aws.ToString(q.QueueName), // Capture the queue name!
-						Type: "STANDARD", // Default type - could be enhanced to detect AGENT vs STANDARD
-					}
-					queues = append(queues, queue)
+	var nextToken *string
+	for {
+		out, err := m.lister.ListRoutingProfileQueues(context.Background(), &connect.ListRoutingProfileQueuesInput{
+			InstanceId:       &instanceID,
+			RoutingProfileId: aws.String(rpID),
+			NextToken:        nextToken,
+		})
+		if err != nil {
+			logrus.WithError(err).Warn("failed to list routing profile queues")
+			return nil, err
+		}
+		for _, q := range out.RoutingProfileQueueConfigSummaryList {
+			if q.QueueId != nil {
+				queue := Queue{
+					ID:   aws.ToString(q.QueueId),
+					Name: aws.ToString(q.QueueName), // Capture the queue name!
+					Type: "STANDARD",                // Default type - could be enhanced to detect AGENT vs STANDARD
 				}
+				queues = append(queues, queue)
 			}
-			if out.NextToken == nil {
-				break
-			}
-			nextToken = out.NextToken
 		}
-		if err == nil {
-			return queues, nil
+		if out.NextToken == nil {
+			break
 		}
-		time.Sleep(time.Duration(attempt+1) * time.Second)
+		nextToken = out.NextToken
 	}
-	logrus.WithError(err).Warn("failed to list routing profile queues")
-	return nil, err
+	return queues, nil
 }

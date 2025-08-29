@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/avast/retry-go/v4"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/connect"
 	"github.com/aws/aws-sdk-go-v2/service/connect/types"
@@ -28,13 +27,6 @@ import (
 const (
 	// genericHistoricalMaxQueuesPerRequest is the maximum number of queues that can be processed in a single API request.
 	genericHistoricalMaxQueuesPerRequest = 100
-
-	// genericHistoricalDefaultRetryAttempts is the maximum number of retry attempts for failed API calls.
-	genericHistoricalDefaultRetryAttempts = 3
-	// genericHistoricalDefaultRetryDelay is the initial delay between retry attempts.
-	genericHistoricalDefaultRetryDelay = 1 * time.Second
-	// genericHistoricalDefaultMaxRetryDelay is the maximum delay between retry attempts.
-	genericHistoricalDefaultMaxRetryDelay = 5 * time.Second
 )
 
 // NewGenericHistoricalCollector creates a new scheduled scraper for collecting
@@ -87,6 +79,9 @@ func (s *GenericHistoricalScraper) Scrape(c maas.Connector) ([]maas.Metric, erro
 	if !hc.Enabled {
 		return []maas.Metric{}, nil
 	}
+
+	// Align cache TTL with schedule interval
+	s.metricsTTL = time.Duration(hc.Interval) * time.Second
 
 	// Check cache first
 	now := time.Now()
@@ -142,7 +137,7 @@ func (s *GenericHistoricalScraper) processHistoricalCollectorConfig(conn *connec
 	metricMap := make(map[string]connectors.MetricDefinition)
 	for i, m := range col.Metrics {
 		metricsToFetch[i] = types.MetricV2{Name: aws.String(m.AWSName)}
-		
+
 		// Add MetricFilters if specified
 		if len(m.MetricFilters) > 0 {
 			filters := make([]types.MetricFilterV2, len(m.MetricFilters))
@@ -154,7 +149,7 @@ func (s *GenericHistoricalScraper) processHistoricalCollectorConfig(conn *connec
 			}
 			metricsToFetch[i].MetricFilters = filters
 		}
-		
+
 		// Add Threshold if referenced
 		if m.ThresholdRef != "" {
 			if threshold, exists := thresholdMap[m.ThresholdRef]; exists {
@@ -166,7 +161,7 @@ func (s *GenericHistoricalScraper) processHistoricalCollectorConfig(conn *connec
 				}
 			}
 		}
-		
+
 		metricMap[m.AWSName] = m
 	}
 
@@ -235,24 +230,9 @@ func (s *GenericHistoricalScraper) processQueueBatch(conn *connectors.AWSConnect
 		},
 	}
 
-	var data *connect.GetMetricDataV2Output
-	err := retry.Do(
-		func() error {
-			var err error
-			data, err = conn.GetMetricDataV2(context.Background(), input)
-			if err != nil {
-				logrus.WithError(err).WithField("collector", col.Name).Warn("Failed to get historical metric data, retrying...")
-				return err
-			}
-			return nil
-		},
-		retry.Attempts(genericHistoricalDefaultRetryAttempts),
-		retry.Delay(genericHistoricalDefaultRetryDelay),
-		retry.MaxDelay(genericHistoricalDefaultMaxRetryDelay),
-	)
-
+	data, err := conn.GetMetricDataV2(context.Background(), input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get historical metric data after retries: %w", err)
+		return nil, fmt.Errorf("failed to get historical metric data: %w", err)
 	}
 
 	// Process the metric results
