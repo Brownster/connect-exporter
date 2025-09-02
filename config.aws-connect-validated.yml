@@ -129,22 +129,3 @@ global:
     max_attempts: 3
     backoff_duration: 1s
     max_backoff_duration: 5s
-
-# Validated Metrics Summary:
-# - Agent Realtime Status: 3+ agents with real status tracking
-# - Queue Realtime: 3 metrics per queue (agents available, contacts in queue, oldest contact age)
-# - Historical: 16 comprehensive metrics covering volume, quality, and timing
-#   * Original 8: CONTACTS_HANDLED, CONTACTS_ABANDONED, CONTACTS_QUEUED, SERVICE_LEVEL, ABANDONMENT_RATE, AVG_HANDLE_TIME, AVG_QUEUE_ANSWER_TIME, AVG_AFTER_CONTACT_WORK_TIME
-#   * Phase 1 additions: CONTACTS_CREATED, CONTACTS_HOLD_ABANDONS, AGENT_ANSWER_RATE, AVG_RESOLUTION_TIME, AVG_ABANDON_TIME, AVG_CONTACT_DURATION, AVG_HOLD_TIME, MAX_QUEUED_TIME
-#
-# Total: ~80+ metrics from real AWS Connect instance
-#
-# Usage:
-# AWS_PROFILE=your-profile AWS_REGION=eu-west-2 ./connect-exporter \
-#   --config.file=config.aws-connect-validated.yml \
-#   --instance-arn=your-instance-arn \
-#   --labels.fqdn=your-fqdn \
-#   --labels.location=your-location \
-#   --labels.country=your-country \
-#   --labels.ip-address=your-ip \
-#   --no-advertise
