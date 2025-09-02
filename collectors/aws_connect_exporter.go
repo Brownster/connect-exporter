@@ -21,20 +21,7 @@ func NewAWSConnectExporter(options ...func(*maas.Exporter)) (*maas.Exporter, err
 	// Create collectors with default configuration - they will get the real config during Connect()
 	defaultConfig := connectors.AWSConnectConfig{
 		Collectors: connectors.CollectorsConfig{
-			RealtimeQueue: connectors.RealtimeQueueConfig{
-				Enabled:              false, // Replaced by generic_realtime
-				Interval:             30,
-				MetricsCacheTTL:      15 * time.Second,
-				QueueCacheTTL:        5 * time.Minute,
-				QueueRefreshInterval: 5 * time.Minute,
-				QueuesIncludeRegex:   "",
-			},
-			AgentStatus:         connectors.AgentStatusConfig{Enabled: false, Interval: 60}, // Removed - not operationally useful
 			AgentRealtimeStatus: connectors.AgentRealtimeStatusConfig{Enabled: true, Interval: 60},
-			HistoricalQueue:     connectors.HistoricalQueueConfig{Enabled: false, Interval: 300}, // Replaced by generic_historical
-			HistoricalCalls:     connectors.HistoricalCallsConfig{Enabled: false, Interval: 300}, // Replaced by generic_historical
-			HistoricalAHT:       connectors.HistoricalAHTConfig{Enabled: false, Interval: 300},   // Replaced by generic_historical
-			HistoricalACW:       connectors.HistoricalACWConfig{Enabled: false, Interval: 300},   // Replaced by generic_historical
 			GenericRealtime:     connectors.GenericRealtimeConfig{Enabled: true, Interval: 30},
 			GenericHistorical:   connectors.GenericHistoricalConfig{Enabled: true, Interval: 300},
 		},
