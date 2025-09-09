@@ -1,8 +1,6 @@
 package collectors
 
 import (
-	"time"
-
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/sabio-engineering-product/connect-exporter/connectors"
 	maas "github.com/sabio-engineering-product/connect-exporter/monitoring-maas"

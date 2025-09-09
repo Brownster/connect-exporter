@@ -169,13 +169,23 @@ const AWS_ERRORS = {
  * This object simulates various queue configurations
  * as if they were in an AWS Connect instance.
  ****************************************************/
-// Minimal queue summary list returned by the ListQueues endpoint
-// to facilitate queue discovery in tests.
-const MOCK_QUEUE_SUMMARIES = [
-  { Id: 'q-1', Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/q-1`, Name: 'Sales_Queue_VOICE' },
-  { Id: 'q-2', Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/q-2`, Name: 'Support_Queue_CHAT' },
-  { Id: 'q-3', Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/q-3`, Name: 'Test_Queue_TASK' }
-];
+// Generate 105 queues to test batching logic (trigger 100 + 5 batch scenario)
+const MOCK_QUEUE_SUMMARIES = [];
+for (let i = 1; i <= 105; i++) {
+  const queueId = `queue-${i.toString().padStart(3, '0')}`;
+  const channels = ['VOICE', 'CHAT', 'TASK'];
+  const channel = channels[(i - 1) % channels.length];
+  
+  MOCK_QUEUE_SUMMARIES.push({
+    Id: queueId,
+    Arn: `arn:aws:connect:${REGION}:${ACCOUNT_ID}:instance/${INSTANCE_ID}/queue/${queueId}`,
+    Name: `TestQueue_${i.toString().padStart(3, '0')}_${channel}`,
+    QueueType: 'STANDARD',
+    Status: 'ENABLED'
+  });
+}
+
+console.log(`🎯 Generated ${MOCK_QUEUE_SUMMARIES.length} queues to trigger batching (100 + ${MOCK_QUEUE_SUMMARIES.length - 100})`);
 
 // Simplified routing profile definitions for queue lookups
 const ROUTING_PROFILES = {
@@ -289,7 +299,26 @@ const ROUTING_PROFILES = {
   }
 };
 
-const MOCK_QUEUES = {
+// Convert MOCK_QUEUE_SUMMARIES to MOCK_QUEUES format for backward compatibility
+const MOCK_QUEUES = {};
+MOCK_QUEUE_SUMMARIES.forEach((queue, index) => {
+  const key = queue.Id.replace('queue-', '').replace(/-/g, '_');
+  MOCK_QUEUES[key] = {
+    Id: queue.Id,
+    Name: queue.Name,
+    Arn: queue.Arn,
+    QueueType: queue.QueueType || 'STANDARD',
+    RoutingProfile: queue.RoutingProfile || 'rp-sales',
+    StaffingTarget: { min: 5 + (index % 10), max: 15 + (index % 20) },
+    Channel: queue.Channel,
+    Priority: 1 + (index % 3),
+    HoursOfOperation: index % 2 === 0 ? 'BasicHours' : 'ExtendedHours',
+    OutboundCallerId: queue.Channel === 'VOICE' ? `+123456${(7890 + index).toString().padStart(4, '0')}` : ''
+  };
+});
+
+// Legacy MOCK_QUEUES_OLD for reference (now replaced by generated queues above)
+const MOCK_QUEUES_OLD = {
   // Original queues
   'sales': {
     Id: 'queue-sales-01',
@@ -654,6 +683,8 @@ const MOCK_QUEUES = {
     OutboundCallerId: '+1234567914'
   }
 };
+
+console.log(`🎯 Dynamic MOCK_QUEUES generated: ${Object.keys(MOCK_QUEUES).length} queues to enable batching test`);
 
 // ----------------------------------------------------------
 // Queue metric totals

@@ -127,6 +127,34 @@ func (s *AgentRealtimeStatusScraper) Scrape(c maas.Connector) ([]maas.Metric, er
 		"total_queues": len(queueIDs),
 	}).Debug("Completed agent realtime status batching")
 
+	// Deduplicate agents that appear in multiple batches to prevent duplicate metrics
+	seenAgents := make(map[string]bool)
+	uniqueUserData := make([]types.UserData, 0)
+	duplicateCount := 0
+
+	for _, user := range allUserData {
+		if user.User != nil && user.User.Id != nil {
+			agentID := aws.ToString(user.User.Id)
+			if !seenAgents[agentID] {
+				seenAgents[agentID] = true
+				uniqueUserData = append(uniqueUserData, user)
+			} else {
+				duplicateCount++
+			}
+		}
+	}
+
+	if duplicateCount > 0 {
+		logrus.WithFields(logrus.Fields{
+			"duplicates_removed": duplicateCount,
+			"unique_agents":      len(uniqueUserData),
+			"total_returned":     len(allUserData),
+		}).Debug("Removed duplicate agents from batched results")
+	}
+
+	// Use deduplicated data for processing
+	allUserData = uniqueUserData
+
 	// Get agent metadata from shared AgentManager
 	agentMap := conn.GetAgentManager().GetAgentMap()
 
